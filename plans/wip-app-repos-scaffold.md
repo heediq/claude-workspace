@@ -31,10 +31,14 @@ entity + container-level synthesis, D-069, real new feature — not started)**.
    supply-chain policy otherwise blocks installing same-day-published internal packages — kept
    the full 24h window for third-party deps). Pushed, updates existing PR:
    github.com/heediq/heediq-api/pull/2 (`feature/api-scaffold` → develop).
-4. **heediq-worker-summarization** (open PR `feature/summarization-worker`) ⬅ NEXT — same: bump to
-   `0.2.0`, update field references. Will likely need the same `minimumReleaseAgeExclude:
-   ['@heediq/*']` fix in its `pnpm-workspace.yaml`.
-5. **heediq-worker-transcription** — Python `models.py` is hand-maintained (mirrors
+4. ~~**heediq-worker-summarization**~~ ✅ Bumped `@heediq/shared` to `0.2.0`. Renamed
+   `recordingId`→`sourceId`, `recordingsTable`→`sourcesTable`,
+   `RECORDINGS_TABLE_NAME`→`SOURCES_TABLE_NAME`, `heediq-recordings`→`heediq-sources` across
+   `content-loader.ts`, `writer.ts`, `handler.ts`, `config.ts`, tests. Same
+   `minimumReleaseAgeExclude: ['@heediq/*']` fix applied. 12/12 tests green. Pushed, updates
+   existing PR: github.com/heediq/heediq-worker-summarization/pull/2
+   (`feature/summarization-worker` → develop).
+5. **heediq-worker-transcription** ⬅ NEXT — Python `models.py` is hand-maintained (mirrors
    `@heediq/shared`, not generated) — needs the same field renames applied manually.
 6. **heediq-web** — not started yet; will just use the new `Source` naming directly, no migration
    needed.
