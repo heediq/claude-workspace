@@ -2,7 +2,17 @@
 
 **Status:** All backend repos scaffolded and PRs open. CI green on all repos. heediq-web is next.
 
-**MVP build order (D-010):** auth/onboarding → home/Listen → recordings library → recording detail/summary
+**MVP build order (D-069, supersedes D-010's scope):** auth/onboarding → home/Listen → recordings
+library → source detail/summary → multi-source upload + container-level synthesis view
+
+**⚠️ Pending rename (D-068 — Locked, not yet executed in code):** `recording` → **Source**
+(`heediq-sources`, `sourceId`), `project` → **Container** (`heediq-containers`, `containerId`,
+self-referencing `parentContainerId`), plus a new `labels: string[]` field on Source. This was
+locked *after* the current open PRs were written — they still use `recording`/`heediq-recordings`
+naming. Decision was to execute as a standalone rename PR (dev has no real data yet, cheapest
+point to rename) **before** further schema-touching work, ideally before merging the open PRs
+below to avoid renaming twice. Needs its own Step 1/2 plan across all five repos — not yet
+started.
 
 ---
 

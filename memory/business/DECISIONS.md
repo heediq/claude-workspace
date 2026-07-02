@@ -190,6 +190,8 @@ Recall.ai) with calendar OAuth integration, rather than building a custom bot in
 **Decision:** auth/onboarding → home/Listen → recordings library → recording detail/summary
 (critical path: record → transcribe → summarize → view). Org/billing and calendar/meeting-bot
 settings are follow-on.
+**Superseded by:** D-069 (build order sequence unchanged; scope widened to include multi-source
+ingestion + container-level synthesis before first ship)
 **Related:** `memory/business/product.md`
 
 ---
@@ -577,6 +579,45 @@ DNS validation via Route 53 (D-051). No per-subdomain certs unless a specific re
 **Why:** Mirrors the transcription tier model pattern (D-059: small/large-v3). Haiku is dramatically cheaper for free-tier jobs (~10–20× vs Sonnet); Sonnet provides higher extraction quality for paid users. Provider interface (D-032) already supports swapping the model without rewriting the worker.
 **Supersedes:** —         **Superseded by:** —
 **Related code:** `heediq-shared/src/messages.ts`, `heediq-worker-summarization/src/provider.ts`, `heediq-worker-transcription/src/models.py`
+
+### D-068 · Generic entity naming — Source / Container / multi-label (2026-07-02) — Locked
+**Area:** Architecture
+**Decision:** Rename the core "recording" entity to **Source** (table `heediq-sources`,
+`sourceId`) — any ingested unit (audio, PDF, doc, image, pasted text), not just audio. Rename the
+core "project" entity to **Container** (table `heediq-containers`, `containerId`,
+self-referencing `parentContainerId`) — one generic self-nesting table gives project/epic/story
+(or any depth) without separate tables per level. A Source attaches to one or more Containers and
+carries a `labels: string[]` field for free-form multi-label tagging in addition to its container
+association — labeling is not limited to "which container." Applies across `@heediq/shared`
+schemas, DynamoDB table/field names in `heediq-infra` FoundationStack, and all consumers
+(`heediq-api`, `heediq-worker-transcription`, `heediq-worker-summarization`, `heediq-web`).
+Executed as a standalone rename PR across all five repos before further feature work, since dev
+has no real data yet (cheapest point to rename).
+**Why:** Supports the long-term universal-memory platform vision (`product.md`) without a costly
+rename later once real data and more consumers exist. "Source" reads naturally as ingestion
+input regardless of type; "Container" generalizes project/epic/story into one flexible hierarchy
+instead of three narrowly-named tables.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/foundation-stack.ts`,
+`heediq-api/`, `heediq-worker-transcription/`, `heediq-worker-summarization/`, `heediq-web/`
+
+### D-069 · MVP v1 scope expanded to multi-source ingestion + container-level synthesis (2026-07-02) — Locked
+**Area:** Product
+**Decision:** MVP v1 expands beyond audio-only to include multi-source ingestion (PDF/doc/image
+uploads alongside audio, already source-agnostic at the pipeline level per D-065) plus a
+**container-level synthesis** capability: given multiple labeled Sources attached to the same
+Container (e.g. meeting transcripts + a rules PDF + design-standard screenshots for one project),
+generate a single structured technical-requirement output ready to implement, rather than the user
+manually reconciling separate per-source summaries. Critical path (build order sequence
+unchanged): auth/onboarding → home/Listen → recordings library → source detail/summary →
+multi-source upload + container-level synthesis view. Org/billing and calendar/meeting-bot
+settings remain follow-on.
+**Why:** Validates the platform's core differentiator (ready-to-implement requirements assembled
+from many source types, not months of clarification) at v1 instead of as a later fast-follow. The
+source-agnostic SQS entry point (D-065) already exists, so the marginal build is upload UI +
+container-level synthesis logic, not new pipeline architecture.
+**Supersedes:** D-010 (scope only — build order sequence unchanged) **Superseded by:** —
+**Related code:** `memory/business/product.md`, `plans/wip-app-repos-scaffold.md`
 
 ---
 

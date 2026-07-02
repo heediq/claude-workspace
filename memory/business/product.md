@@ -1,7 +1,7 @@
 # Heediq — Product
 
-`DECISIONS.md` (D-010, D-017–D-020, D-022, D-024–D-026) points here rather than duplicating this
-detail.
+`DECISIONS.md` (D-010, D-017–D-020, D-022, D-024–D-026, D-068, D-069) points here rather than
+duplicating this detail.
 
 ## Vision (founding brief)
 Heediq is a business development / requirements-capture assistant. Record or transcribe
@@ -17,10 +17,12 @@ turn discussions into actionable specs without manual note-taking.
 Long-term direction: Heediq doesn't just capture requirements — it eventually helps build the
 systems behind them (Heed → Define → Build; see `branding.md`).
 
-### Long-term platform vision — universal contextual memory (not MVP scope)
-Captured 2026-07-01 as a north-star direction, not a locked decision. **Explicitly out of MVP
-scope — MVP build order below is unchanged; this is context to keep in mind while implementing,
-not a spec to build toward yet.**
+### Long-term platform vision — universal contextual memory
+Captured 2026-07-01, refined 2026-07-02. The long-term platform direction below is **not** fully
+in MVP scope, but a first slice of it now is — see D-069. Don't confuse the two: D-069 (multi-source
+ingestion + container-level synthesis) is locked and being built; everything else here (arbitrary
+connectors, full personal/professional memory, assistant reasoning over it, custom RAG) remains
+north-star context, not a spec to build toward yet.
 
 The idea: Heediq grows from a meeting-transcription tool into a general **personal/organizational
 memory platform**. Users (individuals or companies) feed it data from many sources — not just
@@ -28,28 +30,41 @@ meetings — and the system organizes it into a durable, structured knowledge ba
 contextual memory for their daily work and life.
 
 - **Universal ingestion**: any data a customer puts into the system (meetings, documents, notes,
-  emails, whatever a future connector supports) is a candidate input, not just audio.
-- **Auto-categorization with human confirmation**: on ingest, the system proposes labels/categories
-  and asks a short confirmation questionnaire — "this looks related to Project X / Epic Y, correct?"
-  — rather than either fully automating classification or forcing manual filing. Keeps the human in
-  the loop for a cheap trust-building check.
-- **Hierarchical structure**: projects (or any ongoing user-defined activity) contain sub-projects
-  (epics/stories); new input is matched against this existing structure so meetings/notes attach to
-  the right node instead of living as flat, disconnected transcripts.
+  emails, whatever a future connector supports) is a candidate input — a **Source** (D-068), not
+  just audio.
+- **Auto-categorization with human confirmation**: on ingest, the system proposes a Container
+  match and labels, and asks a short confirmation questionnaire — "this looks related to Project
+  X / Epic Y, and about auth/security — correct?" — rather than either fully automating
+  classification or forcing manual filing. Keeps the human in the loop for a cheap trust-building
+  check.
+- **Hierarchical structure + rich labels**: a **Container** (D-068; project, or any ongoing
+  user-defined activity) nests sub-containers (epics/stories) via `parentContainerId`; a Source
+  attaches to a Container *and* carries its own free-form `labels` — the container answers "which
+  activity is this part of," labels answer "what is this actually about" (topic, component, type)
+  — so matching isn't limited to a single container slot.
 - **User-curated extraction**: after summarization, the user chooses which statements/decisions/
   actions/plans actually get persisted into the structured memory — extraction proposes, the user
   decides what's kept (consistent with the existing Item Detail / editable-before-export concept
   above).
-- **End state**: a comprehensive, structured memory of a user's ongoing activities (both
-  professional and personal) that Heediq can reason over as an assistant — surfacing what's due,
-  what was decided, and answering questions about past context.
-- **Possible monetizable extension**: a per-org/per-user custom RAG index built from this structured
-  memory, usable to ground responses from AI models with that org's/user's own context.
+- **Container-level synthesis (now in MVP v1, D-069)**: given several labeled Sources attached to
+  one Container — e.g. meeting transcripts + a rules PDF + design-standard screenshots for one
+  project — generate a single structured technical-requirement output ready to implement, instead
+  of the user manually reconciling separate per-source summaries. This is the proof-of-concept
+  slice of the platform vision, shipped as part of MVP v1 rather than deferred.
+- **End state (still north-star, not MVP)**: a comprehensive, structured memory of a user's
+  ongoing activities (both professional and personal) that Heediq can reason over as an assistant
+  — surfacing what's due, what was decided, and answering questions about past context, across
+  arbitrary connectors (email, drive, calendar, etc.), not just uploaded files.
+- **Possible monetizable extension (still north-star, not MVP)**: a per-org/per-user custom RAG
+  index built from this structured memory, usable to ground responses from AI models with that
+  org's/user's own context. No vector-store infra is being added now. To keep this cheap to add
+  later: Sources and extracted items already carry clean provenance (which Source, which
+  Container, labels, timestamps) under D-068/D-069 — that provenance is what a future embedding/
+  indexing pass would need, so no extra prep work is required today beyond the D-068 naming.
 
-This reframes the MVP's project/epic/story matching and structured extraction as the first slice of
-a much larger "auto-organizing memory" capability, not a one-off feature — useful context when
-naming data models and extraction contracts now, even though nothing beyond the current MVP build
-order is being built yet.
+D-068's generic naming (Source/Container/labels) is what makes the MVP's source-matching and
+structured extraction the first real slice of this larger "auto-organizing memory" capability
+rather than a one-off feature, without a data-model rewrite later.
 
 Original extraction categories envisioned: **Requirements, User Stories, Decisions, Open
 Questions, Action Items** — each tagged, source-linked back to the transcript (quote/timestamp),
@@ -75,8 +90,7 @@ Roles:
 - **Admin** — billing, seats, member management; sees all org content
 - **Member** — sees only their own content
 
-No per-recording sharing at launch (deferred; future option is a shareable link or explicit
-grant).
+No per-Source sharing at launch (deferred; future option is a shareable link or explicit grant).
 
 ## Free tier & billing
 Free tier is a per-org shared usage pool with a one-way usage-decay ratchet, based on cumulative
@@ -141,6 +155,8 @@ integration, rather than building a custom bot in-house — third-party agents a
 cross-platform call-joining reliably.
 
 ## MVP build order
-Critical path (the full core loop): **auth/onboarding → home screen → recordings library →
-recording detail/summary view** (record → transcribe → summarize → view). Org/billing settings
-and calendar/meeting-bot settings are follow-on work, after the core loop is validated.
+Critical path (D-069, supersedes D-010's scope; sequence unchanged): **auth/onboarding → home
+screen → recordings library → source detail/summary → multi-source upload + container-level
+synthesis view** (record/upload → transcribe/parse → summarize → view → synthesize across
+sources). Org/billing settings and calendar/meeting-bot settings are follow-on work, after the
+core loop is validated.
