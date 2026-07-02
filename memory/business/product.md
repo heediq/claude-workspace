@@ -17,6 +17,40 @@ turn discussions into actionable specs without manual note-taking.
 Long-term direction: Heediq doesn't just capture requirements — it eventually helps build the
 systems behind them (Heed → Define → Build; see `branding.md`).
 
+### Long-term platform vision — universal contextual memory (not MVP scope)
+Captured 2026-07-01 as a north-star direction, not a locked decision. **Explicitly out of MVP
+scope — MVP build order below is unchanged; this is context to keep in mind while implementing,
+not a spec to build toward yet.**
+
+The idea: Heediq grows from a meeting-transcription tool into a general **personal/organizational
+memory platform**. Users (individuals or companies) feed it data from many sources — not just
+meetings — and the system organizes it into a durable, structured knowledge base that becomes
+contextual memory for their daily work and life.
+
+- **Universal ingestion**: any data a customer puts into the system (meetings, documents, notes,
+  emails, whatever a future connector supports) is a candidate input, not just audio.
+- **Auto-categorization with human confirmation**: on ingest, the system proposes labels/categories
+  and asks a short confirmation questionnaire — "this looks related to Project X / Epic Y, correct?"
+  — rather than either fully automating classification or forcing manual filing. Keeps the human in
+  the loop for a cheap trust-building check.
+- **Hierarchical structure**: projects (or any ongoing user-defined activity) contain sub-projects
+  (epics/stories); new input is matched against this existing structure so meetings/notes attach to
+  the right node instead of living as flat, disconnected transcripts.
+- **User-curated extraction**: after summarization, the user chooses which statements/decisions/
+  actions/plans actually get persisted into the structured memory — extraction proposes, the user
+  decides what's kept (consistent with the existing Item Detail / editable-before-export concept
+  above).
+- **End state**: a comprehensive, structured memory of a user's ongoing activities (both
+  professional and personal) that Heediq can reason over as an assistant — surfacing what's due,
+  what was decided, and answering questions about past context.
+- **Possible monetizable extension**: a per-org/per-user custom RAG index built from this structured
+  memory, usable to ground responses from AI models with that org's/user's own context.
+
+This reframes the MVP's project/epic/story matching and structured extraction as the first slice of
+a much larger "auto-organizing memory" capability, not a one-off feature — useful context when
+naming data models and extraction contracts now, even though nothing beyond the current MVP build
+order is being built yet.
+
 Original extraction categories envisioned: **Requirements, User Stories, Decisions, Open
 Questions, Action Items** — each tagged, source-linked back to the transcript (quote/timestamp),
 and editable before export.
