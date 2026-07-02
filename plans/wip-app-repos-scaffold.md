@@ -19,19 +19,24 @@ entity + container-level synthesis, D-069, real new feature — not started)**.
    `UpdateSourceRequest`, added `labels: string[]`. Bumped to `0.2.0` (breaking). 50/50 tests
    green. PR open: github.com/heediq/heediq-shared/pull/4 (`refactor/rename-recording-to-source`
    → develop).
-2. **heediq-infra** ⬅ NEXT — rename `heediq-recordings` DynamoDB table → `heediq-sources` in
-   `FoundationStack` (`lib/foundation/foundation-stack.ts`), GSIs, SSM param
-   `/heediq/api/recordings-table-name` → `/heediq/api/sources-table-name`. Dev table is empty —
-   safe to destroy/recreate, no data migration needed. Watch `RemovalPolicy` on the table
-   construct before assuming destroy/recreate is consequence-free.
-3. **heediq-api** (open PR `feature/api-scaffold`) — bump `@heediq/shared` to `0.2.0`, update all
-   `recording`/`recordingId` references and the table-name SSM param read.
+2. ~~**heediq-infra**~~ ✅ `heediq-recordings` → `heediq-sources` table (FoundationStack), GSIs,
+   `RECORDINGS_TABLE_NAME`→`SOURCES_TABLE_NAME` env vars, SSM param renamed. Confirmed dev table
+   `RemovalPolicy.DESTROY` + no real data — safe destroy/recreate. 153/153 tests green. PR open:
+   github.com/heediq/heediq-infra/pull/31 (`refactor/rename-recordings-table-to-sources` →
+   develop).
+3. **heediq-api** (open PR `feature/api-scaffold`) ⬅ NEXT — bump `@heediq/shared` to `0.2.0`,
+   update all `recording`/`recordingId` references and the table-name SSM param read.
 4. **heediq-worker-summarization** (open PR `feature/summarization-worker`) — same: bump to
    `0.2.0`, update field references.
 5. **heediq-worker-transcription** — Python `models.py` is hand-maintained (mirrors
    `@heediq/shared`, not generated) — needs the same field renames applied manually.
 6. **heediq-web** — not started yet; will just use the new `Source` naming directly, no migration
    needed.
+
+**Merge order matters:** heediq-shared PR #4 must merge (and publish `0.2.0`) before heediq-api /
+heediq-worker-summarization can bump their dependency and update field references. heediq-infra
+PR #31 can merge independently (no code dependency on `@heediq/shared`'s version) but should land
+before any of the app repos deploy against it, since the table name changes together.
 
 ---
 
