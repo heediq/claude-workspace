@@ -24,10 +24,16 @@ entity + container-level synthesis, D-069, real new feature — not started)**.
    `RemovalPolicy.DESTROY` + no real data — safe destroy/recreate. 153/153 tests green. PR open:
    github.com/heediq/heediq-infra/pull/31 (`refactor/rename-recordings-table-to-sources` →
    develop).
-3. **heediq-api** (open PR `feature/api-scaffold`) ⬅ NEXT — bump `@heediq/shared` to `0.2.0`,
-   update all `recording`/`recordingId` references and the table-name SSM param read.
-4. **heediq-worker-summarization** (open PR `feature/summarization-worker`) — same: bump to
-   `0.2.0`, update field references.
+3. ~~**heediq-api**~~ ✅ Bumped `@heediq/shared` to `0.2.0`. Renamed route file, mount path
+   (`/recordings`→`/sources`), env var (`RECORDINGS_TABLE_NAME`→`SOURCES_TABLE_NAME`), S3 key
+   prefix, and all field references; added `labels: []` on Source creation. 17/17 tests green.
+   Scoped `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` to `'@heediq/*'` (pnpm's 24h
+   supply-chain policy otherwise blocks installing same-day-published internal packages — kept
+   the full 24h window for third-party deps). Pushed, updates existing PR:
+   github.com/heediq/heediq-api/pull/2 (`feature/api-scaffold` → develop).
+4. **heediq-worker-summarization** (open PR `feature/summarization-worker`) ⬅ NEXT — same: bump to
+   `0.2.0`, update field references. Will likely need the same `minimumReleaseAgeExclude:
+   ['@heediq/*']` fix in its `pnpm-workspace.yaml`.
 5. **heediq-worker-transcription** — Python `models.py` is hand-maintained (mirrors
    `@heediq/shared`, not generated) — needs the same field renames applied manually.
 6. **heediq-web** — not started yet; will just use the new `Source` naming directly, no migration
