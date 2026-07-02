@@ -5,14 +5,33 @@
 **MVP build order (D-069, supersedes D-010's scope):** auth/onboarding → home/Listen → recordings
 library → source detail/summary → multi-source upload + container-level synthesis view
 
-**⚠️ Pending rename (D-068 — Locked, not yet executed in code):** `recording` → **Source**
+**⚠️ Pending rename (D-068 — Locked, in progress):** `recording` → **Source**
 (`heediq-sources`, `sourceId`), `project` → **Container** (`heediq-containers`, `containerId`,
-self-referencing `parentContainerId`), plus a new `labels: string[]` field on Source. This was
-locked *after* the current open PRs were written — they still use `recording`/`heediq-recordings`
-naming. Decision was to execute as a standalone rename PR (dev has no real data yet, cheapest
-point to rename) **before** further schema-touching work, ideally before merging the open PRs
-below to avoid renaming twice. Needs its own Step 1/2 plan across all five repos — not yet
-started.
+self-referencing `parentContainerId`, not yet built — no project/epic/story concept exists in
+code today, this is net-new not a rename), plus a new `labels: string[]` field on Source. Locked
+*after* the current open PRs were written — they still use `recording`/`heediq-recordings`
+naming. Split into two PRs: **PR 1 (rename, mechanical, in progress)** vs **PR 2+ (Container
+entity + container-level synthesis, D-069, real new feature — not started)**.
+
+**PR 1 rename sequence:**
+1. ~~**heediq-shared**~~ ✅ `Recording`→`Source`, `recordingId`→`sourceId`, `RecordingStatus`→
+   `SourceStatus`, `CreateRecordingRequest`/`UpdateRecordingRequest`→`CreateSourceRequest`/
+   `UpdateSourceRequest`, added `labels: string[]`. Bumped to `0.2.0` (breaking). 50/50 tests
+   green. PR open: github.com/heediq/heediq-shared/pull/4 (`refactor/rename-recording-to-source`
+   → develop).
+2. **heediq-infra** ⬅ NEXT — rename `heediq-recordings` DynamoDB table → `heediq-sources` in
+   `FoundationStack` (`lib/foundation/foundation-stack.ts`), GSIs, SSM param
+   `/heediq/api/recordings-table-name` → `/heediq/api/sources-table-name`. Dev table is empty —
+   safe to destroy/recreate, no data migration needed. Watch `RemovalPolicy` on the table
+   construct before assuming destroy/recreate is consequence-free.
+3. **heediq-api** (open PR `feature/api-scaffold`) — bump `@heediq/shared` to `0.2.0`, update all
+   `recording`/`recordingId` references and the table-name SSM param read.
+4. **heediq-worker-summarization** (open PR `feature/summarization-worker`) — same: bump to
+   `0.2.0`, update field references.
+5. **heediq-worker-transcription** — Python `models.py` is hand-maintained (mirrors
+   `@heediq/shared`, not generated) — needs the same field renames applied manually.
+6. **heediq-web** — not started yet; will just use the new `Source` naming directly, no migration
+   needed.
 
 ---
 
