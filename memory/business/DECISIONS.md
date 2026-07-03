@@ -621,6 +621,13 @@ container-level synthesis logic, not new pipeline architecture.
 
 ---
 
+### D-070 · AWS region resolved from GitHub org-level variable, not hardcoded per repo (2026-07-03) — Locked
+**Area:** Infra / Process
+**Decision:** CI workflows resolve the AWS region from the GitHub organization-level Actions variable `vars.AWS_REGION`, not a hardcoded `eu-west-1` string duplicated in each repo's `deploy.yml`. Applies going forward to all repos' workflow files.
+**Why:** All 5+ repos' `deploy.yml` files hardcoded the identical `AWS_REGION: eu-west-1` string — a single source of truth avoids a multi-repo edit if the primary region (D-044) ever changes.
+**Supersedes:** — **Superseded by:** —
+**Related code:** all repos' `.github/workflows/deploy.yml` (heediq-web updated first; other repos to be migrated as a follow-up, not blocking)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
