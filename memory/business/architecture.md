@@ -28,7 +28,7 @@ recordings carry `org_id` + `owner_user_id`). Query pattern:
 `WHERE org_id = :tenant AND (owner_user_id = :user OR :role = 'admin')`.
 
 ## Database
-DynamoDB-only at launch (D-007). Design: **multi-table** — one table per service/entity domain, e.g. `heediq-recordings`, `heediq-orgs` (D-031). Aurora Serverless v2 (Postgres) deferred — open migration path per service if relational queries become necessary. At small scale, Aurora's ~$45/mo fixed floor dominates the bill disproportionately (see Cost baselines below).
+DynamoDB-only at launch (D-007). Design: **multi-table** — one table per service/entity domain, e.g. `heediq-sources`, `heediq-orgs` (D-031, table renamed from `heediq-recordings` per D-068). Aurora Serverless v2 (Postgres) deferred — open migration path per service if relational queries become necessary. At small scale, Aurora's ~$45/mo fixed floor dominates the bill disproportionately (see Cost baselines below).
 
 ## Upload & transcription processing flow
 Client uploads audio directly to S3 via a presigned URL (avoids Lambda payload limits, standard
