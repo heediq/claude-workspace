@@ -628,6 +628,13 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** all repos' `.github/workflows/deploy.yml` (heediq-web updated first; other repos to be migrated as a follow-up, not blocking)
 
+### D-071 · Deploy role ARNs resolved from GitHub org-level variables, not hardcoded per repo (2026-07-03) — Locked
+**Area:** Infra / Process
+**Decision:** CI workflows resolve `role-to-assume` for `configure-aws-credentials` from GitHub organization-level Actions variables, not hardcoded ARN strings duplicated per repo: `vars.AWS_DEPLOY_ROLE_DEV` (dev, `276594885933`), `vars.AWS_DEPLOY_ROLE_STAGING` (staging, `475790160542`), `vars.AWS_DEPLOY_ROLE_PROD` (prod, `438825592314`), `vars.AWS_DEPLOY_ROLE_SHARED` (shared-services `GitHubActionsDeployRole`, `313828097088`), `vars.AWS_ECR_ROLE` (shared-services `GitHubActionsECRRole`, `313828097088`).
+**Why:** Same rationale as D-070 — the same account-scoped role ARNs were duplicated across every repo's `deploy.yml`; a single org-level source of truth means a role rename/rotation is a one-place edit instead of a multi-repo hunt.
+**Supersedes:** — **Superseded by:** —
+**Related code:** all repos' `.github/workflows/deploy*.yml`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
