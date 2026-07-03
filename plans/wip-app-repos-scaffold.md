@@ -1,8 +1,11 @@
 # WIP — App repos scaffold (MVP critical path)
 
 **Status:** All backend repos scaffolded and PRs open. CI green on all repos. D-068 PR 1 rename
-sequence complete (steps 1–5, all pushed/PR'd — see below). heediq-web is next and should be built
-directly with `Source`/`sourceId` naming (no migration needed, it's a new repo).
+sequence complete (steps 1–5, all pushed/PR'd — see below). `heediq-infra` PR #31 additionally
+redeployed clean to dev — all 7 stacks live against `heediq-sources`/`sourceId` naming (hit the
+cross-stack export deadlock gotcha twice along the way; now documented in
+`heediq-infra/README.md` Gotchas). heediq-web is next and should be built directly with
+`Source`/`sourceId` naming (no migration needed, it's a new repo).
 
 **MVP build order (D-069, supersedes D-010's scope):** auth/onboarding → home/Listen → sources
 library → source detail/summary → multi-source upload + container-level synthesis view
