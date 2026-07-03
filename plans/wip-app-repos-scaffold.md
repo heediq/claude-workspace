@@ -4,8 +4,10 @@
 sequence complete (steps 1–5, all pushed/PR'd — see below). `heediq-infra` PR #31 additionally
 redeployed clean to dev — all 7 stacks live against `heediq-sources`/`sourceId` naming (hit the
 cross-stack export deadlock gotcha twice along the way; now documented in
-`heediq-infra/README.md` Gotchas). heediq-web is next and should be built directly with
-`Source`/`sourceId` naming (no migration needed, it's a new repo).
+`heediq-infra/README.md` Gotchas). heediq-web initial scaffold (tooling, D-008 tokens, 3 base UI
+kit components, placeholder routes, CI/deploy workflows) is committed on `feature/web-scaffold`
+(not yet PR'd) — typecheck/test/build all green. The four MVP screens (auth, home/Listen, sources
+library, source detail) are the next step on that branch.
 
 **MVP build order (D-069, supersedes D-010's scope):** auth/onboarding → home/Listen → sources
 library → source detail/summary → multi-source upload + container-level synthesis view
@@ -68,7 +70,7 @@ before any of the app repos deploy against it, since the table name changes toge
 3. ~~**heediq-infra fix**~~ ✅ PR open (fix/transcription-task-runtime → develop). SSM-based image tag promotion + setup.sh section 3 (SSM seed).
 4. ~~**heediq-worker-transcription**~~ ✅ PR open (feature/transcription-worker). 11 pytest + mypy. deploy.yml: ECR push + ssm/task-def/pipes promotion per env.
 5. ~~**heediq-worker-summarization**~~ ✅ PR #1 open (feature/summarization-worker). 10 Vitest tests. deploy.yml: esbuild → lambda update-function-code per env.
-6. **heediq-web** → Vite + React PWA. ⬅ NEXT
+6. **heediq-web** → Vite + React PWA. Initial scaffold done (this session); MVP screens ⬅ NEXT
 
 ---
 
@@ -77,6 +79,14 @@ before any of the app repos deploy against it, since the table name changes toge
 **Branch:** `feature/web-scaffold`
 
 **Purpose:** Vite + React PWA — auth, home/Listen, sources library, source detail + summary.
+
+**Initial scaffold — done, committed (not yet PR'd):** tooling (Vite/TS/Tailwind/Vitest per D-030),
+D-008 design tokens (`tailwind.config.ts`, `src/styles/tokens.css` — `success`/`warning`/`danger`/
+`info` are provisional, not yet locked), 3 base UI-kit components (Button, Spinner, Card, each with
+its own README + `03-ui-kit.md`-compliant states), placeholder routes for all 4 MVP screens, a
+dev-only `/dev/ui` component gallery, and CI (`ci.yml`) + deploy (`deploy.yml`) workflows. 5/5 tests
+green, typecheck clean, `pnpm run build` succeeds. See `heediq-web/README.md` for full detail.
+**Next**: build out the 4 screens below on the same branch.
 
 ### Screens (MVP)
 1. **Auth** — Cognito hosted UI + Google/Microsoft IdP, org creation on first login
