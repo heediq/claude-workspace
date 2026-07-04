@@ -684,7 +684,7 @@ container-level synthesis logic, not new pipeline architecture.
 **Area:** Architecture / Product
 **Decision:** Email is the canonical, unique identity across every sign-in method (native password, Google, Microsoft) — never "one account per provider." `heediq-users` gains a `by-email` GSI (email lowercased/trimmed before every write and lookup — our own normalization, not relied on from Cognito) as the source of truth for "does this email exist, and does it have a password" (a `passwordSet` boolean we maintain ourselves, since Cognito's `InitiateAuth` deliberately returns the same generic error for "wrong password" and "no password set on this federated-only user" and cannot be used to distinguish them). The unified sign-in/sign-up screen is email-first: submit email → we look it up → branch to sign-up (not found), sign-in (found, `passwordSet=true`), or a **generic, non-disclosing** linking prompt (found, `passwordSet=false`): "This email uses a different sign-in method — check your email to set a password," never naming the provider. That prompt sends a one-time code via **Cognito's native ForgotPassword/ConfirmForgotPassword flow** (reused as-is, not custom-built) to set a password on the *existing* `sub` via the confirm-forgot-password path — no new Cognito user is ever created for an email that already exists. The equivalent flow for linking a second federated provider (e.g. already-Google, now trying Microsoft) uses the same "verify email ownership, then attach" shape but calls `AdminLinkProviderForUser` instead. Native-account-gets-federated-login-added is handled by Cognito's built-in "attributes for linking federated users" = `email` setting (auto-links when both sides assert a verified email) — this direction needs no custom code.
 **Why:** Reactive, email-first linking (rather than exposing "sign up" vs "sign in" as separate entry points) prevents the exact failure mode Andrii flagged: a user unknowingly creating a second, disconnected account with the same email. Staying generic about which provider is already linked avoids handing an unauthenticated caller a provider fingerprint for a given email, at the cost of one extra click for the legitimate owner. Reusing Cognito's native ForgotPassword instead of building custom OTP delivery avoids owning an extra email-sending/code-verification path — **pending a spike to confirm ForgotPassword/ConfirmForgotPassword actually completes for a user whose `UserStatus` is `EXTERNAL_PROVIDER`** (this is not documented Cognito behavior we've verified yet; see Open/proposed below for the fallback if it doesn't).
-**Supersedes:** — **Superseded by:** —
+**Supersedes:** — **Superseded by:** D-086 (ForgotPassword-reuse mechanism proven not to work; identity model/GSI/passwordSet/generic-prompt parts of this decision stand unchanged)
 **Related code:** `heediq-api/src/handlers/auth-*.ts` (not yet built), `heediq-web/src/routes/AuthPage.tsx` (not yet built), `heediq-infra` FoundationStack (User Pool "attributes for linking federated users" setting)
 
 ### D-079 · Account linking is available both reactively (login-time) and proactively (Settings) (2026-07-04) — Locked
@@ -710,10 +710,10 @@ container-level synthesis logic, not new pipeline architecture.
 
 ### D-082 · Auth flows are client-direct-to-Cognito; backend owns only lookup-email + link/confirm (2026-07-04) — Locked
 **Area:** Architecture
-**Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`), native sign-in (`InitiateAuth` USER_PASSWORD_AUTH), and the linking OTP request (`ForgotPassword`) all call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The **only** two backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), and (2) `POST /auth/link/confirm` (calls `ConfirmForgotPassword` server-side and flips our own `passwordSet=true` in the same request, atomically) — needed only because Cognito has no concept of `passwordSet` at all, so nothing else can record that bit once a federated-only user sets a password. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
-**Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, or an Admin API needing IAM creds) — not for defense-in-depth on operations Cognito already secures itself (e.g. `ForgotPassword`'s built-in non-enumeration behavior for unknown emails).
-**Supersedes:** — **Superseded by:** —
-**Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/confirm` pending the D-078 ForgotPassword spike), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
+**Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`) and native sign-in (`InitiateAuth` USER_PASSWORD_AUTH) call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The linking OTP request itself is **no longer** one of these client-direct calls — see D-086, which supersedes the `ForgotPassword`-for-linking part of this decision after the spike proved it doesn't work for `EXTERNAL_PROVIDER` users. The backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), (2) `POST /auth/link/request-otp` and (3) `POST /auth/link/confirm` (D-086 — generate/verify our own OTP via SES, then call `AdminSetUserPassword` server-side and flip our own `passwordSet=true` in the same request, atomically) — needed both because Cognito has no concept of `passwordSet` at all, and because `ForgotPassword` itself is unusable for this case. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
+**Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, an Admin API needing IAM creds, or — per D-086 — a spike proving the public API doesn't support our case) — not for defense-in-depth on operations Cognito already secures itself.
+**Supersedes:** — **Superseded by:** — (the linking-OTP claim specifically is corrected by D-086; native sign-up/sign-in staying client-direct is unaffected and still stands)
+**Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/request-otp` + `link/confirm` pending per D-086), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
 
 ### D-083 · Proactive provider-linking uses a dedicated OAuth callback route (2026-07-04) — Locked
 **Area:** Architecture
@@ -751,9 +751,34 @@ source later without changing how anything logs, so this doesn't lock the door s
 helper, not yet built), `heediq-infra` (X-Ray IAM permissions + per-env CloudWatch Dashboard, not yet
 built)
 
+### D-086 · Cross-provider linking uses custom OTP-via-SES, not Cognito ForgotPassword (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** The D-078 spike is resolved: calling Cognito's `ForgotPassword` against a user in
+`UserStatus: EXTERNAL_PROVIDER` returns `NotAuthorizedException: User password cannot be reset in the
+current state` — confirmed against a real federated user (`admin@heediq.com`, Google) in the dev User
+Pool. Cognito will never let a federated-only user through its native password-reset flow. The
+linking-verification code is therefore custom-built, owned entirely by `heediq-api`: (1) `POST
+/auth/link/request-otp` generates a 6-digit code, stores it in DynamoDB (`heediq-users` item or a new
+short-TTL item, keyed by email, ~10 min TTL) and sends it via **SES** (reusing D-054/D-058's
+`noreply@heediq.com` identity + `heediq-ses-email-sending` cross-account role, already granted to
+`heediq-api`), (2) `POST /auth/link/confirm` verifies the code against DynamoDB, and on success calls
+`AdminSetUserPassword` (not `ConfirmForgotPassword`) to set the password on the existing `sub`, then
+flips `passwordSet=true` in the same request. Same non-disclosing UX as D-078 (generic "check your
+email" prompt, no provider named) — only the delivery/verification mechanism changes.
+**Why:** The spike this decision resolves was explicitly flagged as unverified in D-078 and D-082; it's
+now proven Cognito has no native path for this case, so the fallback both decisions already
+anticipated is what gets built. `AdminSetUserPassword` requires IAM credentials the browser never
+holds, which is why `link/confirm` (already backend-owned per D-082) is the natural home for the new
+`link/request-otp` endpoint too, rather than splitting OTP-send client-side and verify server-side.
+**Supersedes:** D-078 (ForgotPassword-reuse mechanism only — identity model/GSI/passwordSet/generic
+prompt unchanged), D-082 (the linking-OTP-request claim only — native sign-up/sign-in staying
+client-direct is unaffected)
+**Superseded by:** —
+**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — not yet
+built), `heediq-infra` (no new resources — reuses D-058's SES role + existing DynamoDB table)
+
 ---
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
-- **Cognito ForgotPassword for `EXTERNAL_PROVIDER`-status users (D-078 spike)** — needs verification before implementation: does `ForgotPassword`/`ConfirmForgotPassword` actually complete for a federated-only user? If not, fall back to a custom OTP-via-SES flow owned entirely by `heediq-api`, calling `AdminSetUserPassword` directly after our own code verification — same UX, more code to own.
