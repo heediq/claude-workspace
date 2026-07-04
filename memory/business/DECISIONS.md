@@ -837,6 +837,83 @@ now and gives room for a `/api/v2/` migration path later without a big-bang rewr
 
 ---
 
+### D-089 · Own-verification email-confirmation model replaces IdP-trust; unified verify+password component (2026-07-04) — Locked
+**Area:** Architecture / Product
+**Decision:** Email verification for setting/activating a password on an account is performed
+entirely on our side via Cognito's `SignUp`/`ConfirmSignUp` confirmation-code mechanism (D-087's
+delivery mechanism, generalized) — never inferred from an IdP's asserted `email_verified`
+attribute. One shared **two-step** component (step 1: enter the emailed code; step 2: set the
+password — separate screens, not one combined form) is reused across all three entry points: (a)
+reactive login-time linking (existing email found with no password set), (b) native sign-up, and
+(c) proactive "add a sign-in method" in Settings. Backend flow in all three cases: `request-otp`
+(Cognito `SignUp` with a throwaway random password if no native Cognito user yet exists for this
+email, else `ResendConfirmationCode`) → user enters the code → `ConfirmSignUp` verifies it → user
+sets their real password → `AdminSetUserPassword` → `AdminLinkProviderForUser` if a federated
+identity needs attaching → the `heediq-user-auth-methods` row (D-091) is written/flipped active in
+the same request.
+**Why:** Investigating a QA report (Andrii logged in with Google, logged out, tried email/password
+sign-in, got a plain "create password" form with no linking/verification) surfaced that
+`PreTokenGeneration` was trusting Google's IdP-asserted `email_verified`, which was never actually
+mapped in the Google/Microsoft `attributeMapping` — silently blocking org auto-provisioning (see
+D-090). Rather than just fix the attribute mapping, Andrii decided the product should never depend
+on an IdP's verification claim at all: verification is always ours, and consistently required
+before any password can be set, whether that's first-time native signup, reactive linking, or
+proactive settings linking. One shared component/flow (not three bespoke ones) keeps the UX and
+code path identical everywhere D-078's identity model applies.
+**Supersedes:** D-080 (its IdP-trust gating mechanism only — the underlying goal, "only a verified
+email counts as identity," is preserved, just moved to our own verification), D-082 (native
+sign-up no longer stays fully client-direct-to-Cognito with an immediate real password — it now
+goes through the same backend verify-then-password flow as linking), D-086/D-087 (scope only —
+generalized from "linking" to all three entry points, and split from one combined form into two
+sequential steps; the underlying SignUp/ConfirmSignUp-reuse mechanism from D-087 is kept)
+**Superseded by:** —
+**Related code:** `heediq-api/src/routes/auth.ts` (`request-otp`/`confirm` need generalizing
+beyond `/auth/link/*` to also serve native signup), `heediq-web/src/routes/HomePage.tsx`,
+`heediq-web/src/routes/SettingsPage.tsx` (needs the new shared verify+password component),
+`heediq-infra/lib/foundation/foundation-stack.ts` (PreTokenGeneration trigger — drops the
+`email_verified` check per D-090)
+
+### D-090 · Org/user auto-provisioning no longer gated on IdP-asserted email_verified (2026-07-04) — Locked
+**Area:** Architecture / Policy
+**Decision:** `auth-provision.ts`'s `PreTokenGeneration` trigger drops its `email_verified` check
+entirely (previously gating org/user creation per D-080). Org/user auto-provisioning happens
+unconditionally on first login for any method (native or federated), preserving D-077's
+zero-friction promise (`GET /me` works immediately after any login, no onboarding gate).
+Trustworthy identity/verification is enforced separately and only where it matters — before a
+password can be set/activated on an account (D-089) — not as a precondition for basic product
+access.
+**Why:** Confirmed root cause of the QA bug: the Google/Microsoft IdP attribute mappings in
+`foundation-stack.ts` never mapped `email_verified`, so it read as falsy on every federated login,
+silently blocking provisioning. Rather than fix the mapping and keep relying on IdP-asserted
+verification (D-080's model), Andrii decided the product should never gate on that signal at all —
+it's brittle (this bug proves it) and redundant now that D-089 enforces our own verification at the
+point where identity actually matters.
+**Supersedes:** D-080
+**Superseded by:** —
+**Related code:** `heediq-api/src/handlers/auth-provision.ts` (drop the `emailVerified` check),
+`heediq-infra/lib/foundation/foundation-stack.ts`
+
+### D-091 · heediq-user-auth-methods is the source of truth for active login methods (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** `heediq-user-auth-methods` (created per D-087) is the authoritative record of which
+sign-in methods are active for an account and any Cognito-side metadata needed to operate on them
+(provider name, Cognito `sub`/`ProviderAttributeValue`, `linkedAt`, etc.) — Cognito itself is used
+purely as the auth mechanism (token issuance, password verification), never queried ad hoc for
+"what methods does this user have." Settings' sign-in-methods section (previously add-only per
+D-079/D-083) is extended to read this table and display currently active methods, not just offer
+buttons to add missing ones. Removing/unlinking a method is explicitly out of scope for now — Settings
+shows current methods and offers adding new ones only.
+**Why:** Andrii wants our own DB, not Cognito's `identities` claim or scattered flags, to be the one
+place the app (and Claude) reasons about a user's sign-in methods — consistent with D-089/D-090's
+shift toward owning identity/verification logic ourselves rather than trusting Cognito state. This
+also closes a gap found during the same QA session: Settings had no way to see which methods were
+already active.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/src/routes/auth.ts` (new `GET` endpoint for a user's methods — not yet
+built), `heediq-web/src/routes/SettingsPage.tsx` (needs list rendering — not yet built)
+
+---
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

@@ -32,8 +32,21 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `SettingsLinkCallbackPage` for proactive linking). Still open: `POST /settings/link/add-provider`
   (proactive linking's backend half — not yet built). See `DECISIONS.md` for full decision text.
 
+- **Auth redesign locked, not yet implemented (D-089–D-091, 2026-07-04).** QA surfaced that
+  Google/Microsoft `attributeMapping` in `foundation-stack.ts` never mapped `email_verified`, so
+  `auth-provision.ts`'s D-080 check always read false and silently skipped org auto-provisioning for
+  every federated login — reproducing "Google login → log out → email/password shows plain signup,
+  not linking." Rather than just fix the mapping, three new decisions replace the model: D-089 (own
+  verify-then-password flow, one shared two-step component, generalized from linking-only to also
+  cover native signup and proactive settings-linking — supersedes D-080's IdP-trust mechanism, D-082's
+  native-signup-stays-client-direct claim, and D-086/D-087's linking-only/one-combined-form scope),
+  D-090 (provisioning trigger drops the `email_verified` check entirely — provisioning is now
+  unconditional on first login, D-077's zero-friction promise unaffected), D-091 (`heediq-user-auth-
+  methods` becomes the source of truth Settings reads to display currently-active methods, not just
+  add-buttons). **Not yet built** — see `plans/wip-web-navigation-shell.md` for the active thread.
+
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080, D-083, D-087
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-087, D-090 (supersedes D-080)
   - Cognito App Client `callbackUrls` now includes `/settings/link-callback` alongside `/auth/callback` (D-083), each with a `localhost:5173` dev variant. 28/28 foundation-stack tests green.
   - **D-087 built and merged (PR #35, #36)**: `heediq-user-auth-methods`/`heediq-auth-audit-log` tables (`pk`/`sk`) + 3 Cognito triggers (pre-signup, post-confirmation, post-authentication) wired on the User Pool, real handler code deployed by `heediq-api` CI. IAM policies use an account/region-scoped `formatArn()` pattern, not a direct `userPool.userPoolArn` reference, to avoid a CloudFormation circular dependency. 161/161 tests green.
   - `feature/auth-org-provisioning-trigger` branch (not yet PR'd): FoundationStack UserPool now has `custom:orgId`/`custom:role` custom attributes + a PreTokenGeneration Lambda trigger (`heediq-auth-provision`, placeholder inline code — real handler deployed by `heediq-api`'s CI) + new SSM param `/heediq/api/cognito-hosted-ui-domain` (D-077). 155/155 tests green.
