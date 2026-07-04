@@ -13,8 +13,16 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
+- **Account linking model (D-078, D-079, D-080, D-081) — locked, not yet implemented.** Email is the
+  one true identity across native + IdP signup; `by-email` GSI + self-maintained `passwordSet` flag on
+  `heediq-users`; linking available reactively (login-time conflict) and proactively (Settings); no
+  separate marketing page — `/` is always the unified sign-in/sign-up screen. Spans `heediq-web`
+  (unified screen, linking UI), `heediq-api` (by-email lookup, AdminSetUserPassword/AdminLinkProviderForUser
+  calls), `heediq-infra` (PreTokenGeneration `email_verified` gate, D-080). See `DECISIONS.md` for full
+  text; no code README yet since no implementation has started.
+
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080
   - `feature/auth-org-provisioning-trigger` branch (not yet PR'd): FoundationStack UserPool now has `custom:orgId`/`custom:role` custom attributes + a PreTokenGeneration Lambda trigger (`heediq-auth-provision`, placeholder inline code — real handler deployed by `heediq-api`'s CI) + new SSM param `/heediq/api/cognito-hosted-ui-domain` (D-077). 155/155 tests green.
   - PR #31 open (refactor/rename-recordings-table-to-sources → develop). D-068 rename fully deployed clean to dev (all 7 stacks). 153/153 tests green.
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062). Deployed to dev.
@@ -33,7 +41,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: new consuming repos need manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079
   - PR #2 open (feature/api-scaffold → develop, updated with D-068 rename). 19 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
   - `feature/auth-provision-trigger` branch (not yet PR'd): new standalone handler `src/handlers/auth-provision.ts` — the real Cognito PreTokenGeneration trigger body (D-077), idempotent get-or-create of org+user by `sub`, injects `custom:orgId`/`custom:role` claims. Deliberately does not import `src/config.ts` (would eagerly require unrelated env vars). CI deploys it as a second Lambda (`heediq-auth-provision`) via its own bundle/zip/`update-function-code` steps alongside the main API Lambda.
   - Critical bug fixed: `SendMessageCommand` now sets `MessageAttributes: { tier }` on transcription enqueue — without this attribute, both EventBridge Pipe filters fail and no job is ever processed.
@@ -51,7 +59,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077
+  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081
   - D-075/D-076 (2026-07-04): full i18n coverage via `react-i18next`, `src/i18n/` — all user text incl. errors goes through `t()`/translation keys.
   - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, **ErrorState**) + dev-only `/dev/ui` gallery + CI/deploy workflows. 53 tests, typecheck/build green.
   - **Auth screen built (D-020, D-077)**: `HomePage` (sign-in entry + post-login redirect), `AuthCallbackPage` (Hosted UI OAuth PKCE code exchange, loading/error branches via `ErrorState`), `lib/auth/` (`pkce.ts`, `cognito-oauth.ts`, `token-store.ts`, `AuthContext.tsx`, `ProtectedRoute.tsx`). No client-side onboarding step — `custom:orgId`/`custom:role` arrive pre-baked in the token via `heediq-api`'s PreTokenGeneration trigger. `SourcesLibraryPage`/`SourceDetailPage` still placeholders, now gated behind `ProtectedRoute`.
