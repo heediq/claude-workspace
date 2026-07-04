@@ -708,6 +708,13 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/src/App.tsx`, `heediq-web/src/routes/HomePage.tsx`
 
+### D-082 · Auth flows are client-direct-to-Cognito; backend owns only lookup-email + link/confirm (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`), native sign-in (`InitiateAuth` USER_PASSWORD_AUTH), and the linking OTP request (`ForgotPassword`) all call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The **only** two backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), and (2) `POST /auth/link/confirm` (calls `ConfirmForgotPassword` server-side and flips our own `passwordSet=true` in the same request, atomically) — needed only because Cognito has no concept of `passwordSet` at all, so nothing else can record that bit once a federated-only user sets a password. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
+**Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, or an Admin API needing IAM creds) — not for defense-in-depth on operations Cognito already secures itself (e.g. `ForgotPassword`'s built-in non-enumeration behavior for unknown emails).
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/confirm` pending the D-078 ForgotPassword spike), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
+
 ---
 
 ## Open / proposed (not yet locked)
