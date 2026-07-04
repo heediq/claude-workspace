@@ -75,14 +75,15 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Downstream**: nothing — leaf consumer
 - **Shared surfaces**: `/heediq/web/url` SSM param (consumed by `heediq-api` for CORS origin config); `/heediq/web/cloudfront-distribution-id` SSM param (consumed by web CI for cache invalidation); S3 `heediq-web-assets` bucket (written by web CI, served by CloudFront via OAC); `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` SSM params (written by `heediq-infra` FoundationStack, consumed by web CI to inject `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID` at build time, D-077); the `custom:orgId`/`custom:role` ID token claims contract — stamped by `heediq-api`'s auth-provision Lambda (D-077), consumed by heediq-web's AuthContext — a rename on either side breaks auth silently
 
-### Account linking (D-078–D-083)
-- **Upstream**: `heediq-infra` FoundationStack (`by-email` GSI on `heediq-users`, Cognito App Client `callbackUrls` incl. `/settings/link-callback`, D-083); `heediq-api` (`POST /auth/lookup-email` — built; `POST /auth/link/confirm` and `POST /settings/link/add-provider` — not yet built, see below); Cognito unauthenticated IdP JSON API + Hosted UI OAuth (D-082, D-083)
-- **Downstream**: nothing yet — leaf feature within heediq-web; will gate `heediq-api`'s `AdminLinkProviderForUser`/`AdminSetUserPassword` calls once built
+### Account linking (D-078–D-087)
+- **Upstream**: `heediq-infra` FoundationStack (`by-email` GSI on `heediq-users`; `heediq-user-auth-methods`/`heediq-auth-audit-log` tables; 3 Cognito triggers — pre-signup/post-confirmation/post-authentication; Cognito App Client `callbackUrls` incl. `/settings/link-callback`, D-083); `heediq-api` (`POST /auth/lookup-email`, `POST /auth/link/request-otp`, `POST /auth/link/confirm` — all built, D-087); Cognito unauthenticated IdP JSON API + Hosted UI OAuth (D-082, D-083)
+- **Downstream**: nothing yet — leaf feature within heediq-web; `POST /settings/link/add-provider` (proactive linking's backend half) will reuse the same `heediq-api` `lib/cognito.ts` helpers once built
 - **Shared surfaces**:
-  - `passwordSet` flag on `heediq-users` (DynamoDB) — set by `heediq-api` provisioning, read by `/auth/lookup-email` to branch `HomePage`'s sign-in vs. forgot-password-linking step
-  - `identities` Cognito ID-token claim — produced by Cognito on any federated sign-in, consumed by `heediq-web`'s `SettingsLinkCallbackPage` to get the provider's `{userId, providerName}` (see `heediq-web/src/lib/auth/README.md`)
+  - `passwordSet` flag on `heediq-users` (DynamoDB) — set by `heediq-api` provisioning, read by `/auth/lookup-email` to branch `HomePage`'s sign-in vs. reactive-linking step; flipped `true` by `recordAuthMethodAndAudit` in `routes/auth.ts` once `link/confirm` succeeds
+  - `identities` Cognito ID-token claim — produced by Cognito on any federated sign-in, consumed by `heediq-web`'s `SettingsLinkCallbackPage` to get the provider's `{userId, providerName}` (see `heediq-web/src/lib/auth/README.md`); also parsed server-side in the 3 Cognito trigger handlers via `getProviderContext()`
   - `/settings/link-callback` Cognito callback URL — registered in `heediq-infra` FoundationStack (D-083); breaks the proactive-linking OAuth round trip if removed or renamed on either side
-  - **Blocked backend work**: `POST /auth/link/confirm` blocked on a spike (does `ForgotPassword`/`ConfirmForgotPassword` work for a Cognito user in `EXTERNAL_PROVIDER` status?); `POST /settings/link/add-provider` blocked on installing `@aws-sdk/client-cognito-identity-provider` in `heediq-api`, itself blocked by the pnpm `minimumReleaseAge` cooldown on `@heediq/shared@0.3.0`
+  - `heediq-user-auth-methods`/`heediq-auth-audit-log` (D-087) — written by both `heediq-api`'s `/auth/link/*` routes and its 3 Cognito trigger Lambdas; `pk = USER#<accountId>` ties both tables to the canonical `heediq-users` row resolved via `by-email`
+  - **Still open**: `POST /settings/link/add-provider` (proactive linking's backend call) — not yet built
 
 <!--
 Template:
