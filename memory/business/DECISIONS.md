@@ -710,10 +710,10 @@ container-level synthesis logic, not new pipeline architecture.
 
 ### D-082 · Auth flows are client-direct-to-Cognito; backend owns only lookup-email + link/confirm (2026-07-04) — Locked
 **Area:** Architecture
-**Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`) and native sign-in (`InitiateAuth` USER_PASSWORD_AUTH) call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The linking OTP request itself is **no longer** one of these client-direct calls — see D-086, which supersedes the `ForgotPassword`-for-linking part of this decision after the spike proved it doesn't work for `EXTERNAL_PROVIDER` users. The backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), (2) `POST /auth/link/request-otp` and (3) `POST /auth/link/confirm` (D-086 — generate/verify our own OTP via SES, then call `AdminSetUserPassword` server-side and flip our own `passwordSet=true` in the same request, atomically) — needed both because Cognito has no concept of `passwordSet` at all, and because `ForgotPassword` itself is unusable for this case. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
-**Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, an Admin API needing IAM creds, or — per D-086 — a spike proving the public API doesn't support our case) — not for defense-in-depth on operations Cognito already secures itself.
-**Supersedes:** — **Superseded by:** — (the linking-OTP claim specifically is corrected by D-086; native sign-up/sign-in staying client-direct is unaffected and still stands)
-**Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/request-otp` + `link/confirm` pending per D-086), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
+**Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`) and native sign-in (`InitiateAuth` USER_PASSWORD_AUTH) call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The linking OTP request itself is **no longer** one of these client-direct calls — see D-087 (superseding D-086, which itself superseded the `ForgotPassword`-for-linking part of this decision after the spike proved it doesn't work for `EXTERNAL_PROVIDER` users). The backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), (2) `POST /auth/link/request-otp` and (3) `POST /auth/link/confirm` (D-087 — `SignUp`/`ConfirmSignUp` reused for code delivery/verification, then `AdminSetUserPassword` + `AdminLinkProviderForUser` server-side, flipping our own `passwordSet=true` in the same request) — needed both because Cognito has no concept of `passwordSet` at all, and because `ForgotPassword` itself is unusable for this case. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
+**Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, an Admin API needing IAM creds, or — per D-087 — a spike proving the public API doesn't support our case) — not for defense-in-depth on operations Cognito already secures itself.
+**Supersedes:** — **Superseded by:** — (the linking-OTP claim specifically is corrected by D-087; native sign-up/sign-in staying client-direct is unaffected and still stands)
+**Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/request-otp` + `link/confirm` pending per D-087), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
 
 ### D-083 · Proactive provider-linking uses a dedicated OAuth callback route (2026-07-04) — Locked
 **Area:** Architecture
@@ -773,9 +773,40 @@ holds, which is why `link/confirm` (already backend-owned per D-082) is the natu
 **Supersedes:** D-078 (ForgotPassword-reuse mechanism only — identity model/GSI/passwordSet/generic
 prompt unchanged), D-082 (the linking-OTP-request claim only — native sign-up/sign-in staying
 client-direct is unaffected)
+**Superseded by:** D-087 (custom OTP+SES mechanism replaced by Cognito-native SignUp/ConfirmSignUp
+confirmation-code reuse — same problem, no custom OTP/SES code needed)
+**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — superseded,
+see D-087)
+
+### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** Replicating a working pattern from Andrii's own prior implementation
+(`EmotiXOrg/emotix-infra`), linking a password to an existing `EXTERNAL_PROVIDER`-only user reuses
+Cognito's **own** `SignUp`/`ConfirmSignUp` verification-code mechanism instead of building custom
+OTP generation/storage/SES-sending (D-086). Flow: (1) `POST /auth/link/request-otp` calls Cognito's
+`SignUp` with the user's email and a throwaway random password — this creates a **native** Cognito
+user in `UNCONFIRMED` status and Cognito automatically emails its own confirmation code (via
+Cognito's own SES-backed delivery — no app code touches SES directly for this). (2) `POST
+/auth/link/confirm` calls `ConfirmSignUp` with the code (verifies it), then `AdminSetUserPassword`
+(sets the real chosen password, `Permanent=True`), then `AdminLinkProviderForUser` (links the
+existing federated identity — Google/Microsoft — onto this newly-confirmed native user via its
+`ProviderAttributeValue`/`sub`), then flips our own `passwordSet=true` / writes the `METHOD#COGNITO`
+DynamoDB row in the same request. Same non-disclosing UX as D-078/D-086 (generic prompt, no provider
+named). If `SignUp` returns `UsernameExistsException`/`AliasExistsException` (user already mid-flow),
+skip straight to `ResendConfirmationCode` rather than erroring.
+**Why:** Cognito already owns code generation, expiry, delivery, and resend-rate-limiting for
+`SignUp`/`ConfirmSignUp` — reusing it means zero custom OTP code (no DynamoDB TTL item design, no
+hashing/storage, no SES template, no custom rate-limiting) versus D-086's fully hand-rolled
+equivalent. This is a strictly smaller, already-proven implementation (Andrii built and ran this
+exact pattern in `emotix-infra`) for the identical problem D-086 was solving. `AdminSetUserPassword`
+and `AdminLinkProviderForUser` still require IAM credentials the browser never holds, so both backend
+endpoints stay server-owned per D-082 — unaffected by this decision.
+**Supersedes:** D-086 (custom OTP+SES mechanism only — the problem statement, non-disclosing UX, and
+`passwordSet` semantics from D-078 are unchanged)
 **Superseded by:** —
 **Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — not yet
-built), `heediq-infra` (no new resources — reuses D-058's SES role + existing DynamoDB table)
+built, replaces D-086's design), `heediq-infra` (no new resources — no SES role needed by app code
+for this path; D-058's SES role stays for other transactional email)
 
 ---
 

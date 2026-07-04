@@ -13,20 +13,24 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **Account linking model (D-078, D-079, D-080, D-081, D-082, D-083) — in progress.** Email is the
+- **Account linking model (D-078–D-087) — in progress.** Email is the
   one true identity across native + IdP signup; `by-email` GSI + self-maintained `passwordSet` flag on
   `heediq-users`; linking available reactively (login-time conflict) and proactively (Settings); no
   separate marketing page — `/` is always the unified sign-in/sign-up screen. Client talks to Cognito
   directly wherever its public APIs allow (D-082) — see `heediq-web/src/lib/auth/README.md`. Proactive
   linking of a never-before-used provider needs its own OAuth round trip on a dedicated
-  `/settings/link-callback` route (D-083), also documented there. Frontend built:
+  `/settings/link-callback` route (D-083), also documented there. D-078 spike resolved: Cognito
+  `ForgotPassword` fails for `EXTERNAL_PROVIDER` users (confirmed live); reactive linking instead
+  reuses Cognito's own `SignUp`/`ConfirmSignUp` confirmation-code flow (D-087, superseding D-086's
+  custom-OTP-via-SES design — pattern replicated from `EmotiXOrg/emotix-infra`'s
+  `password-setup-start`/`password-setup-complete` Lambdas). Frontend built:
   `HomePage` (unified sign-in/sign-up), `SettingsPage`/`SettingsLinkCallbackPage` (proactive linking).
-  Backend still open: `heediq-api` `POST /auth/link/confirm` (blocked on a spike confirming
-  `ForgotPassword` works for `EXTERNAL_PROVIDER` users) and `POST /settings/link/add-provider`
-  (no longer blocked — `@aws-sdk/client-cognito-identity-provider` installed in `heediq-api` and
-  both `heediq-api`/`heediq-web` bumped to `@heediq/shared@0.3.0` now that the pnpm
-  `minimumReleaseAge` cooldown is disabled workspace-wide, D-084; endpoint itself not yet built).
-  See `DECISIONS.md` for full decision text.
+  Backend still open: `heediq-api` `POST /auth/link/request-otp` + `POST /auth/link/confirm` per
+  D-087's `SignUp`/`ConfirmSignUp`+`AdminSetUserPassword`+`AdminLinkProviderForUser` design, and
+  `POST /settings/link/add-provider` (no longer blocked — `@aws-sdk/client-cognito-identity-provider`
+  installed in `heediq-api` and both `heediq-api`/`heediq-web` bumped to `@heediq/shared@0.3.0` now
+  that the pnpm `minimumReleaseAge` cooldown is disabled workspace-wide, D-084; endpoint itself not
+  yet built). See `DECISIONS.md` for full decision text.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
   README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080, D-083
