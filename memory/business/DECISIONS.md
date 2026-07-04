@@ -659,6 +659,16 @@ container-level synthesis logic, not new pipeline architecture.
 
 ---
 
+### D-075 · Full i18n coverage in heediq-web — all user-facing text, including errors (2026-07-04) — Locked
+**Area:** Architecture / Product
+**Decision:** `heediq-web` routes every piece of user-facing text — labels, copy, empty states, toasts, and **error messages** (client-side validation, API/structured-error mappings per `07-engineering-standards.md` §3, network/timeout failures) — through an i18n solution from the start, rather than hardcoding English strings in components and retrofitting later. No user-facing string is written directly in JSX/TS; it is a translation key resolved through the i18n layer. Applies going forward to all new `heediq-web` code; existing scaffold strings (Button/Spinner/Card, placeholder routes) get migrated as part of adopting the library.
+**Why:** Andrii wants the app translatable at any point without a costly retrofit; errors are historically the easiest category to leave hardcoded (thrown/caught ad hoc) and the hardest to retrofit later since they're scattered across API-error mapping, form validation, and catch blocks. Locking the *coverage scope* (100%, including errors) now — before more screens are built — means the pattern is established from the first real feature.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/README.md` (once the i18n library/setup is added), `heediq-web/src/`
+
+---
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
+- **i18n library choice for heediq-web** — D-075 locks full-coverage scope; the specific library (e.g. `react-i18next`, `@lingui/react`, `FormatJS/react-intl`), key-naming convention, and locale-file structure are not yet chosen — decide when i18n is actually wired in.
