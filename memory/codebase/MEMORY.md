@@ -55,7 +55,14 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: new consuming repos need manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-087
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-087, D-088
+  - **D-088 fixed (2026-07-04)**: `heediq-web` was calling `/auth/lookup-email` etc. with no version
+    prefix against a backend that only serves `/api/v1/auth/lookup-email` — 404 in `dev.heediq.com`.
+    Root cause: both sides' route tests mounted a sub-router/mocked the client in isolation, never
+    exercising the real `/api/v1` mount path. Fixed by centralizing the prefix in exactly one place
+    per side (`heediq-web/src/lib/api-client.ts`'s `request()`; `heediq-api/src/app.ts`'s
+    `app.route()` calls, already correct) and adding `src/__tests__/app-routing.test.ts` — imports
+    the real `app`, not a bare sub-router. 58/58 tests green.
   - PR #1, #2 merged (feature/api-scaffold → develop, updated with D-068 rename). 19 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
   - **D-087 built and merged (PR #6, #7)**: `routes/auth.ts` adds `POST /auth/link/request-otp` + `POST /auth/link/confirm`; new `src/lib/cognito.ts` SDK wrapper; 3 new `src/handlers/auth-trigger-*.ts` Cognito trigger handlers (own esbuild bundle + deploy step each, same pattern as `auth-provision.ts`). Deliberately does not upsert the main `users` row from `PostConfirmation` — `auth-provision.ts`'s PreTokenGeneration trigger owns that lazy provisioning. 54/54 tests green.
   - `feature/auth-provision-trigger` branch (not yet PR'd): new standalone handler `src/handlers/auth-provision.ts` — the real Cognito PreTokenGeneration trigger body (D-077), idempotent get-or-create of org+user by `sub`, injects `custom:orgId`/`custom:role` claims. Deliberately does not import `src/config.ts` (would eagerly require unrelated env vars). CI deploys it as a second Lambda (`heediq-auth-provision`) via its own bundle/zip/`update-function-code` steps alongside the main API Lambda.
@@ -74,7 +81,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Layout README: `src/components/layout/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081, D-082, D-083, D-087
+  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Layout README: `src/components/layout/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081, D-082, D-083, D-087, D-088
   - D-075/D-076 (2026-07-04): full i18n coverage via `react-i18next`, `src/i18n/` — all user text incl. errors goes through `t()`/translation keys.
   - `feature/web-scaffold` is an ongoing incrementally-merged branch (PR #1, #5, #6, #7 all merged to develop) — tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, ErrorState, Input) + dev-only `/dev/ui` gallery + CI/deploy workflows, most recently the i18n aria-label fix on `ProtectedRoute` (PR #7).
   - **Unified sign-in/sign-up screen built (D-078, D-081, D-082, D-087)**: `HomePage` replaces the old plain sign-in entry — email-first, branches into sign-up/sign-in/forgot-password/reactive-linking steps, calls Cognito directly via `lib/auth/cognito-idp.ts` (see auth README). Federated-only accounts now call the real `POST /auth/link/request-otp` + `POST /auth/link/confirm` endpoints (D-087; PR #9, #10), not a forgot-password placeholder. `AuthCallbackPage` still handles the Hosted UI OAuth PKCE code exchange for SSO login.

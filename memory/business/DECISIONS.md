@@ -810,6 +810,33 @@ for this path; D-058's SES role stays for other transactional email)
 
 ---
 
+### D-088 · API version prefix owned by exactly one place per side; route tests must exercise the real mounted app (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** `/api/v1/` remains the locked versioning scheme (D-042) for every `heediq-api` REST
+endpoint, going forward. Two new standing rules close the gap that caused a production 404
+(`heediq-web` calling `/auth/lookup-email` against a backend that only serves
+`/api/v1/auth/lookup-email`): (1) **the version prefix is constructed in exactly one place per
+side** — backend: `app.ts`'s top-level `app.route('/api/v1/...', ...)` calls; frontend:
+`api-client.ts`'s `request()`, which now prepends `/api/v1` to every call. Route handlers, route
+modules, and feature call sites never write the prefix themselves — they only know their resource
+path (`/auth/lookup-email`, `/sources`, etc.). (2) **any test that asserts on a route's mounted
+path must exercise the real top-level `app` export**, not a bare sub-router mounted at `/` in
+isolation — mounting a sub-router alone hides prefix mismatches entirely (this is exactly how the
+bug shipped with tests green on both sides).
+**Why:** Both `heediq-api`'s route tests (mounting `authRouter` at `/`) and `heediq-web`'s
+`HomePage` tests (mocking `apiClient.post`) passed while the real wired-up request 404'd in
+`dev.heediq.com`, because neither exercised the actual prefix. Centralizing prefix construction to
+one line per side means a future new endpoint can't repeat this mismatch, and it can never drift
+between the two sides independently. Versioning itself is kept (not dropped) since it costs nothing
+now and gives room for a `/api/v2/` migration path later without a big-bang rewrite.
+**Supersedes:** — (extends D-042, does not change the `/api/v1/` scheme itself)
+**Superseded by:** —
+**Related code:** `heediq-web/src/lib/api-client.ts`, `heediq-api/src/app.ts`,
+`heediq-api/src/__tests__/app-routing.test.ts` (new), `heediq-api/README.md`,
+`heediq-web/README.md`, `heediq-web/src/lib/auth/README.md`
+
+---
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
