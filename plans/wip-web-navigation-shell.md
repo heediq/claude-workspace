@@ -1,49 +1,42 @@
 # WIP — Minimal app shell (logout + nav) so manual QA can proceed
 
-**Branch:** not started yet — will be `feature/web-app-shell` off `develop` in `heediq-web`
+**Branch:** `feature/web-app-shell` off `develop` in `heediq-web` (PR #7 merged first, as planned).
 
 **Goal:** Andrii is manually testing the D-078–D-087 login/sign-up/account-linking flows at
 `https://dev.heediq.com/sources` and is blocked: once logged in there is no way to log out, and no
-nav to reach `/settings` (proactive provider linking) — `useAuth().logout()` exists in
-`AuthContext.tsx` but is not wired to any button anywhere in the app. `SourcesLibraryPage` is a
-"coming soon" placeholder with no chrome at all (see `src/routes/SourcesLibraryPage.tsx`).
+nav to reach `/settings` (proactive provider linking) — `useAuth().logout()` existed in
+`AuthContext.tsx` but wasn't wired to any button anywhere in the app.
 
-**State:** Not started. Confirmed via code read (this session) that:
-- `AuthContext.tsx` exposes `logout()` (calls `logoutUrl()` → Hosted UI `/logout` redirect) — ready to wire up.
-- No `src/components/layout/` directory exists yet (no `AppShell`/`TopBar` per `03-ui-kit.md`'s
-  layered structure — `03-ui-kit.md` §3 names `PageShell`/`TopBar` as the intended layout primitives,
-  neither built).
-- `SourcesLibraryPage`, `SourceDetailPage` are both still placeholders.
-- `SettingsPage` (provider linking, D-083) exists and works but is only reachable by typing
-  `/settings` directly — no nav link to it anywhere.
-- `heediq-web` PR #7 (`feature/web-scaffold` → develop, i18n aria-label fix on `ProtectedRoute`) is
-  still **open**, unmerged — check whether it should land first.
+**State: implementation complete, not yet manually verified against a real login, no PR yet.**
+Built this session:
+- `src/components/layout/TopBar.tsx` + `AppShell.tsx` (new layout primitives, `03-ui-kit.md` §3) —
+  Settings link + Logout button wired to `useAuth().logout()`. See `src/components/layout/README.md`.
+- Mounted `AppShell` inside `ProtectedRoute` around `/sources`, `/sources/:sourceId`, `/settings` in
+  `App.tsx`. `SettingsLinkCallbackPage` deliberately left bare (transient OAuth-callback screen).
+- Added `nav.settings`/`nav.logout` i18n keys (D-075/D-076).
+- `SourcesLibraryPage`/`SourceDetailPage`/`SettingsPage` changed `min-h-screen` → `flex-1` (AppShell
+  now supplies the full-height wrapper).
+- **Found + fixed a real bug**: `Button`'s `asChild` prop was documented but never actually used
+  before `TopBar` adopted it — crashed with "Slot failed to slot onto its children" any time
+  `loading` was falsy (Radix `Slot` requires exactly one element child; the component was injecting
+  a `null` sibling). Fixed in `Button.tsx`, regression test added, README gotcha documented.
+- Typecheck clean, full suite green (87/87, incl. 2 new `TopBar`/`AppShell` test files + 1 new
+  `Button` regression test). Dev server boots and `/` renders with no console errors.
+- **Not yet done**: manual QA against a real Cognito login at `dev.heediq.com` (not testable from
+  this local sandbox without real dev credentials) — Andrii will test later per his instruction.
+  All code + README + memory changes are committed on the branch; PR not opened yet (explicitly
+  deferred — "keep working, test later").
 
-**Next immediate action:** Build a minimal `TopBar`/`AppShell` layout primitive (per `03-ui-kit.md`
-layering: `layouts` sit above `composed`/`primitives`) with:
-1. A logout button (wire to `useAuth().logout()`) — unblocks re-testing sign-in from scratch.
-2. A link to `/settings` — unblocks manual QA of proactive provider linking (D-083).
-3. Mount it around the `ProtectedRoute`-gated routes (`/sources`, `/sources/:id`, `/settings`) so
-   every authenticated screen has it, not just `/sources`.
-
-Keep this small and reversible — this is scaffolding to unblock manual QA, not the full sources
-library build-out. Don't scope-creep into building `SourcesLibraryPage`'s real content unless
-Andrii asks for that next.
-
-**Test scenarios once built (manual QA):**
+**Test scenarios (manual QA, still to run by Andrii):**
 - Role: any authenticated user. Preconditions: logged in via native sign-up, native sign-in, or SSO.
   Steps: click Logout. Expected: redirected through Hosted UI `/logout` back to `/`, `AuthProvider`
   reports `anonymous`, revisiting `/sources` redirects to `/`.
 - Role: authenticated user with only a federated identity (no password set). Steps: click
   Settings link → attempt to link a second provider (D-083 proactive flow). Expected: reaches
   `SettingsPage`, `startProviderLink()` round trip works end to end.
+- Role: authenticated user on `/sources/:sourceId`. Expected: same TopBar chrome as `/sources`.
 
-**Open questions / risks:**
-- Should the logout button live in a shared `TopBar` (kit component, reusable) or is a bare button
-  on each page acceptable as a stopgap? Recommend the kit `TopBar` — matches `03-ui-kit.md`'s golden
-  rule (no bespoke styling in feature code) and avoids rebuilding this per-screen later.
-- Confirm whether `heediq-web` PR #7 should merge first (unrelated i18n fix, currently open)  before
-  branching for the app shell, to avoid rebase noise.
+**Next immediate action:** Andrii tests the above manually; then decide whether to open the PR.
 
 ---
 
