@@ -19,6 +19,16 @@ If the kit doesn't have it, you either (a) add a **variant** to an existing comp
 file is a bug. The only styling allowed in feature code is **layout composition** (arranging kit
 components via the layout primitives), not visual styling of primitives.
 
+## 1a. No hardcoded user-facing strings — ever
+Every piece of user-facing text — labels, copy, empty/error states, toasts, `aria-label`s, alt text,
+placeholder text — is a translation key resolved through `t()`, never a literal string in JSX/TS.
+This applies to `heediq-web` in full, per D-075 (100% i18n coverage, including error messages) and
+D-076 (`react-i18next`, single bundled `src/i18n/locales/<lng>/translation.json` — bundled at build
+time, not fetched from `public/`, so `t()` works synchronously with no loading gap). A literal string
+anywhere a user can see it (including screen-reader-only text) is a bug, exactly like a raw hex color
+is a bug under the golden rule above. The `/dev/ui` component gallery is the one exception (dev-only,
+build-guarded out of prod) where demo copy may be literal.
+
 ## 2. Design tokens are the single source of truth
 All visual values live in one place (Tailwind theme config + CSS variables), never hardcoded in
 components:
