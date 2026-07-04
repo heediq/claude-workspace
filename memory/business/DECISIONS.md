@@ -680,8 +680,37 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-infra/lib/foundation/foundation-stack.ts` (trigger not yet built — this session's follow-up), `heediq-api/src/middleware/auth.ts`, `heediq-web/README.md`
 
+### D-078 · Email is the one true identity — cross-provider account linking model (2026-07-04) — Locked
+**Area:** Architecture / Product
+**Decision:** Email is the canonical, unique identity across every sign-in method (native password, Google, Microsoft) — never "one account per provider." `heediq-users` gains a `by-email` GSI (email lowercased/trimmed before every write and lookup — our own normalization, not relied on from Cognito) as the source of truth for "does this email exist, and does it have a password" (a `passwordSet` boolean we maintain ourselves, since Cognito's `InitiateAuth` deliberately returns the same generic error for "wrong password" and "no password set on this federated-only user" and cannot be used to distinguish them). The unified sign-in/sign-up screen is email-first: submit email → we look it up → branch to sign-up (not found), sign-in (found, `passwordSet=true`), or a **generic, non-disclosing** linking prompt (found, `passwordSet=false`): "This email uses a different sign-in method — check your email to set a password," never naming the provider. That prompt sends a one-time code via **Cognito's native ForgotPassword/ConfirmForgotPassword flow** (reused as-is, not custom-built) to set a password on the *existing* `sub` via the confirm-forgot-password path — no new Cognito user is ever created for an email that already exists. The equivalent flow for linking a second federated provider (e.g. already-Google, now trying Microsoft) uses the same "verify email ownership, then attach" shape but calls `AdminLinkProviderForUser` instead. Native-account-gets-federated-login-added is handled by Cognito's built-in "attributes for linking federated users" = `email` setting (auto-links when both sides assert a verified email) — this direction needs no custom code.
+**Why:** Reactive, email-first linking (rather than exposing "sign up" vs "sign in" as separate entry points) prevents the exact failure mode Andrii flagged: a user unknowingly creating a second, disconnected account with the same email. Staying generic about which provider is already linked avoids handing an unauthenticated caller a provider fingerprint for a given email, at the cost of one extra click for the legitimate owner. Reusing Cognito's native ForgotPassword instead of building custom OTP delivery avoids owning an extra email-sending/code-verification path — **pending a spike to confirm ForgotPassword/ConfirmForgotPassword actually completes for a user whose `UserStatus` is `EXTERNAL_PROVIDER`** (this is not documented Cognito behavior we've verified yet; see Open/proposed below for the fallback if it doesn't).
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/src/handlers/auth-*.ts` (not yet built), `heediq-web/src/routes/AuthPage.tsx` (not yet built), `heediq-infra` FoundationStack (User Pool "attributes for linking federated users" setting)
+
+### D-079 · Account linking is available both reactively (login-time) and proactively (Settings) (2026-07-04) — Locked
+**Area:** Product
+**Decision:** The linking flow from D-078 is built with two entry points from the start: (1) reactive — triggered automatically when a login attempt hits an existing email with a different credential type, and (2) proactive — an "Add a sign-in method" action in Account Settings for an already-authenticated user who wants to add Google/Microsoft/password to their account ahead of any conflict. Both call the same underlying API (verify email ownership → `AdminSetUserPassword` or `AdminLinkProviderForUser`).
+**Why:** Andrii asked for both; building the Settings entry point alongside the login-time one exercises the same API from two call sites immediately, rather than risking the reactive-only path baking in assumptions that don't generalize.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/routes/SettingsPage.tsx` (not yet built), same API as D-078
+
+### D-080 · Unverified IdP email blocks org auto-provisioning (2026-07-04) — Locked
+**Area:** Architecture / Policy
+**Decision:** D-077's PreTokenGeneration trigger checks `email_verified` on every token it processes. If false (native user with an unconfirmed email, or a federated IdP asserting an unverified email — rare, but possible on some enterprise Microsoft tenants), the trigger does **not** auto-provision the org/user row. Instead it forces our own email-verification step before any org/user creation, since D-078's entire cross-provider linking model depends on email being trustworthy as the one true identity — an unverified email would let an attacker claim someone else's address as if it matched an existing account.
+**Why:** The linking model in D-078 only holds if "this email" reliably means "this person." Trusting an unverified email for org auto-provisioning or linking would undermine that invariant for an edge case (unverified IdP email) that's rare enough not to justify the risk.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/foundation-stack.ts` (PreTokenGeneration trigger, D-077)
+
+### D-081 · No separate marketing/landing page — "/" is always the sign-in/sign-up screen (2026-07-04) — Locked
+**Area:** Product
+**Decision:** For the MVP, `heediq-web` has no distinct public marketing/landing page. The root route (`/`) is always the unified sign-in/sign-up screen from D-078; every unauthenticated user hitting any route is redirected there (already the `ProtectedRoute` behavior for `/sources` and `/sources/:sourceId`, per the Auth screen build).
+**Why:** Simplest routing for an MVP with no marketing site yet; avoids building a landing page and a separate `/login` route for content that doesn't exist. Revisit once there's an actual marketing page to build.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/App.tsx`, `heediq-web/src/routes/HomePage.tsx`
+
 ---
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
+- **Cognito ForgotPassword for `EXTERNAL_PROVIDER`-status users (D-078 spike)** — needs verification before implementation: does `ForgotPassword`/`ConfirmForgotPassword` actually complete for a federated-only user? If not, fall back to a custom OTP-via-SES flow owned entirely by `heediq-api`, calling `AdminSetUserPassword` directly after our own code verification — same UX, more code to own.
