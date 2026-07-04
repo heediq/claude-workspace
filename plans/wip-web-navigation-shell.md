@@ -1,6 +1,7 @@
 # WIP — Minimal app shell (logout + nav) so manual QA can proceed
 
-**Branch:** `feature/web-app-shell` off `develop` in `heediq-web` (PR #7 merged first, as planned).
+**Branch:** merged — PR #12 squash-merged to `develop` and deployed to `dev.heediq.com` (deploy run
+28717326331, success). `feature/web-app-shell` branch deleted.
 
 **Goal:** Andrii is manually testing the D-078–D-087 login/sign-up/account-linking flows at
 `https://dev.heediq.com/sources` and is blocked: once logged in there is no way to log out, and no
@@ -23,9 +24,7 @@ Built this session:
 - Typecheck clean, full suite green (87/87, incl. 2 new `TopBar`/`AppShell` test files + 1 new
   `Button` regression test). Dev server boots and `/` renders with no console errors.
 - **Not yet done**: manual QA against a real Cognito login at `dev.heediq.com` (not testable from
-  this local sandbox without real dev credentials) — Andrii will test later per his instruction.
-  All code + README + memory changes are committed on the branch; PR not opened yet (explicitly
-  deferred — "keep working, test later").
+  this local sandbox without real dev credentials) — this is now the only remaining step.
 
 **Test scenarios (manual QA, still to run by Andrii):**
 - Role: any authenticated user. Preconditions: logged in via native sign-up, native sign-in, or SSO.
@@ -36,7 +35,8 @@ Built this session:
   `SettingsPage`, `startProviderLink()` round trip works end to end.
 - Role: authenticated user on `/sources/:sourceId`. Expected: same TopBar chrome as `/sources`.
 
-**Next immediate action:** Andrii tests the above manually; then decide whether to open the PR.
+**Next immediate action:** Andrii tests the scenarios above live at `dev.heediq.com/sources`. Once
+confirmed, this WIP file can be deleted (nothing left to resume).
 
 ---
 
