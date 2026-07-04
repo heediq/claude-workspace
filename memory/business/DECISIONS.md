@@ -722,6 +722,14 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-infra/lib/foundation/foundation-stack.ts` (Cognito app client callback URLs), `heediq-web/src/routes/SettingsLinkCallbackPage.tsx` (not yet built), `heediq-api` `link/add-provider` endpoint (D-079, blocked on pnpm cooldown per D-082's related-code note)
 
+### D-084 · pnpm `minimumReleaseAge` cooldown disabled across all repos (2026-07-04) — Locked
+**Area:** Infra / Process
+**Decision:** `minimumReleaseAge: 0` set in `pnpm-workspace.yaml` in all five pnpm repos (`heediq-web`, `heediq-infra`, `heediq-shared`, `heediq-api`, `heediq-worker-summarization`), disabling pnpm's default ~24h install-cooldown on freshly-published packages workspace-wide. The `minimumReleaseAgeExclude` per-package overrides already present in some repos (`@heediq/*`, specific `@heediq/shared` versions) are left in place but are now no-ops.
+**Why:** The cooldown was blocking all new dependency installs in `heediq-api` (not just `@heediq/shared` itself — pnpm re-verifies the full lockfile on any install), which was directly blocking `POST /settings/link/add-provider` on installing `@aws-sdk/client-cognito-identity-provider`. Andrii chose to remove the guard outright rather than wait out the window or maintain per-package excludes.
+**Note:** this removes a supply-chain safety default (time to catch a compromised just-published package before it's pulled in) — flagged at decision time; accepted as a deliberate tradeoff for faster iteration in a small team.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/pnpm-workspace.yaml`, `heediq-infra/pnpm-workspace.yaml`, `heediq-shared/pnpm-workspace.yaml`, `heediq-api/pnpm-workspace.yaml`, `heediq-worker-summarization/pnpm-workspace.yaml`
+
 ---
 
 ## Open / proposed (not yet locked)
