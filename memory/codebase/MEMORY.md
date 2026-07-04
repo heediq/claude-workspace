@@ -13,16 +13,22 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **Account linking model (D-078, D-079, D-080, D-081) — locked, not yet implemented.** Email is the
+- **Account linking model (D-078, D-079, D-080, D-081, D-082, D-083) — in progress.** Email is the
   one true identity across native + IdP signup; `by-email` GSI + self-maintained `passwordSet` flag on
   `heediq-users`; linking available reactively (login-time conflict) and proactively (Settings); no
-  separate marketing page — `/` is always the unified sign-in/sign-up screen. Spans `heediq-web`
-  (unified screen, linking UI), `heediq-api` (by-email lookup, AdminSetUserPassword/AdminLinkProviderForUser
-  calls), `heediq-infra` (PreTokenGeneration `email_verified` gate, D-080). See `DECISIONS.md` for full
-  text; no code README yet since no implementation has started.
+  separate marketing page — `/` is always the unified sign-in/sign-up screen. Client talks to Cognito
+  directly wherever its public APIs allow (D-082) — see `heediq-web/src/lib/auth/README.md`. Proactive
+  linking of a never-before-used provider needs its own OAuth round trip on a dedicated
+  `/settings/link-callback` route (D-083), also documented there. Frontend built:
+  `HomePage` (unified sign-in/sign-up), `SettingsPage`/`SettingsLinkCallbackPage` (proactive linking).
+  Backend still open: `heediq-api` `POST /auth/link/confirm` (blocked on a spike confirming
+  `ForgotPassword` works for `EXTERNAL_PROVIDER` users) and `POST /settings/link/add-provider`
+  (blocked on the pnpm `minimumReleaseAge` cooldown for `@heediq/shared@0.3.0`). See `DECISIONS.md`
+  for full decision text.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080, D-083
+  - Cognito App Client `callbackUrls` now includes `/settings/link-callback` alongside `/auth/callback` (D-083), each with a `localhost:5173` dev variant. 28/28 foundation-stack tests green.
   - `feature/auth-org-provisioning-trigger` branch (not yet PR'd): FoundationStack UserPool now has `custom:orgId`/`custom:role` custom attributes + a PreTokenGeneration Lambda trigger (`heediq-auth-provision`, placeholder inline code — real handler deployed by `heediq-api`'s CI) + new SSM param `/heediq/api/cognito-hosted-ui-domain` (D-077). 155/155 tests green.
   - PR #31 open (refactor/rename-recordings-table-to-sources → develop). D-068 rename fully deployed clean to dev (all 7 stacks). 153/153 tests green.
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062). Deployed to dev.
@@ -59,12 +65,14 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081
+  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081, D-082, D-083
   - D-075/D-076 (2026-07-04): full i18n coverage via `react-i18next`, `src/i18n/` — all user text incl. errors goes through `t()`/translation keys.
-  - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, **ErrorState**) + dev-only `/dev/ui` gallery + CI/deploy workflows. 53 tests, typecheck/build green.
-  - **Auth screen built (D-020, D-077)**: `HomePage` (sign-in entry + post-login redirect), `AuthCallbackPage` (Hosted UI OAuth PKCE code exchange, loading/error branches via `ErrorState`), `lib/auth/` (`pkce.ts`, `cognito-oauth.ts`, `token-store.ts`, `AuthContext.tsx`, `ProtectedRoute.tsx`). No client-side onboarding step — `custom:orgId`/`custom:role` arrive pre-baked in the token via `heediq-api`'s PreTokenGeneration trigger. `SourcesLibraryPage`/`SourceDetailPage` still placeholders, now gated behind `ProtectedRoute`.
-  - deploy.yml builds **per-environment** (not build-once-promote like the Lambda/Docker repos) — Vite inlines `VITE_*` env vars at build time; each env's job now also reads `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` from SSM into `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`.
-  - Home/Listen (post-login), sources library, source detail screens still pending per D-069 build order.
+  - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, ErrorState, **Input**) + dev-only `/dev/ui` gallery + CI/deploy workflows. 83 tests, typecheck/build green.
+  - **Unified sign-in/sign-up screen built (D-078, D-081, D-082)**: `HomePage` replaces the old plain sign-in entry — email-first, branches into sign-up/sign-in/forgot-password/federated-linking steps, calls Cognito directly via `lib/auth/cognito-idp.ts` (see auth README). `AuthCallbackPage` still handles the Hosted UI OAuth PKCE code exchange for SSO login.
+  - **Proactive account linking built (D-079, D-083)**: `SettingsPage` (Add Google/Add Microsoft buttons) + `SettingsLinkCallbackPage` (new `/settings/link-callback` route) — see auth README for the full flow and why its tokens must never reach `applyTokens`.
+  - No client-side onboarding step — `custom:orgId`/`custom:role` arrive pre-baked in the token via `heediq-api`'s PreTokenGeneration trigger. `SourcesLibraryPage`/`SourceDetailPage` still placeholders, now gated behind `ProtectedRoute`.
+  - deploy.yml builds **per-environment** (not build-once-promote like the Lambda/Docker repos) — Vite inlines `VITE_*` env vars at build time; each env's job now also reads `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` from SSM into `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`, plus `VITE_COGNITO_REGION` for the direct IdP API calls (D-082).
+  - Sources library, source detail screens still pending per D-069 build order.
 
 <!--
 - **<feature/area>** — <one-line summary>.

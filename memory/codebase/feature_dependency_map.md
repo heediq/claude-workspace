@@ -71,9 +71,18 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Shared surfaces**: `heediq-sources` table (writes structured extraction: requirements, decisions, openQuestions, actionItems); `heediq-jobs` table (writes `status=done/failed` on completion); SQS `heediq-summarization` queue (shared entry point for audio + direct-upload paths, D-065)
 
 ### heediq-web (PWA frontend)
-- **Upstream**: `heediq-infra` WebStack (CloudFront + S3 bucket must exist before deploy); `heediq-api` (all REST endpoints); WebSocket API (`ws-{env}.heediq.com`, D-061); `@heediq/shared` (request/response types, WS message types); Cognito Hosted UI (auth via OAuth 2.0 Authorization Code + PKCE, D-020, D-077)
+- **Upstream**: `heediq-infra` WebStack (CloudFront + S3 bucket must exist before deploy); `heediq-api` (all REST endpoints); WebSocket API (`ws-{env}.heediq.com`, D-061); `@heediq/shared` (request/response types, WS message types); Cognito Hosted UI (auth via OAuth 2.0 Authorization Code + PKCE, D-020, D-077); Cognito unauthenticated IdP JSON API (client-direct SignUp/InitiateAuth/ForgotPassword, D-082)
 - **Downstream**: nothing — leaf consumer
 - **Shared surfaces**: `/heediq/web/url` SSM param (consumed by `heediq-api` for CORS origin config); `/heediq/web/cloudfront-distribution-id` SSM param (consumed by web CI for cache invalidation); S3 `heediq-web-assets` bucket (written by web CI, served by CloudFront via OAC); `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` SSM params (written by `heediq-infra` FoundationStack, consumed by web CI to inject `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID` at build time, D-077); the `custom:orgId`/`custom:role` ID token claims contract — stamped by `heediq-api`'s auth-provision Lambda (D-077), consumed by heediq-web's AuthContext — a rename on either side breaks auth silently
+
+### Account linking (D-078–D-083)
+- **Upstream**: `heediq-infra` FoundationStack (`by-email` GSI on `heediq-users`, Cognito App Client `callbackUrls` incl. `/settings/link-callback`, D-083); `heediq-api` (`POST /auth/lookup-email` — built; `POST /auth/link/confirm` and `POST /settings/link/add-provider` — not yet built, see below); Cognito unauthenticated IdP JSON API + Hosted UI OAuth (D-082, D-083)
+- **Downstream**: nothing yet — leaf feature within heediq-web; will gate `heediq-api`'s `AdminLinkProviderForUser`/`AdminSetUserPassword` calls once built
+- **Shared surfaces**:
+  - `passwordSet` flag on `heediq-users` (DynamoDB) — set by `heediq-api` provisioning, read by `/auth/lookup-email` to branch `HomePage`'s sign-in vs. forgot-password-linking step
+  - `identities` Cognito ID-token claim — produced by Cognito on any federated sign-in, consumed by `heediq-web`'s `SettingsLinkCallbackPage` to get the provider's `{userId, providerName}` (see `heediq-web/src/lib/auth/README.md`)
+  - `/settings/link-callback` Cognito callback URL — registered in `heediq-infra` FoundationStack (D-083); breaks the proactive-linking OAuth round trip if removed or renamed on either side
+  - **Blocked backend work**: `POST /auth/link/confirm` blocked on a spike (does `ForgotPassword`/`ConfirmForgotPassword` work for a Cognito user in `EXTERNAL_PROVIDER` status?); `POST /settings/link/add-provider` blocked on installing `@aws-sdk/client-cognito-identity-provider` in `heediq-api`, itself blocked by the pnpm `minimumReleaseAge` cooldown on `@heediq/shared@0.3.0`
 
 <!--
 Template:
