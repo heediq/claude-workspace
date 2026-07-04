@@ -56,7 +56,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
   README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-087
-  - PR #2 open (feature/api-scaffold → develop, updated with D-068 rename). 19 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
+  - PR #1, #2 merged (feature/api-scaffold → develop, updated with D-068 rename). 19 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
   - **D-087 built and merged (PR #6, #7)**: `routes/auth.ts` adds `POST /auth/link/request-otp` + `POST /auth/link/confirm`; new `src/lib/cognito.ts` SDK wrapper; 3 new `src/handlers/auth-trigger-*.ts` Cognito trigger handlers (own esbuild bundle + deploy step each, same pattern as `auth-provision.ts`). Deliberately does not upsert the main `users` row from `PostConfirmation` — `auth-provision.ts`'s PreTokenGeneration trigger owns that lazy provisioning. 54/54 tests green.
   - `feature/auth-provision-trigger` branch (not yet PR'd): new standalone handler `src/handlers/auth-provision.ts` — the real Cognito PreTokenGeneration trigger body (D-077), idempotent get-or-create of org+user by `sub`, injects `custom:orgId`/`custom:role` claims. Deliberately does not import `src/config.ts` (would eagerly require unrelated env vars). CI deploys it as a second Lambda (`heediq-auth-provision`) via its own bundle/zip/`update-function-code` steps alongside the main API Lambda.
   - Critical bug fixed: `SendMessageCommand` now sets `MessageAttributes: { tier }` on transcription enqueue — without this attribute, both EventBridge Pipe filters fail and no job is ever processed.
@@ -64,13 +64,13 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 - **heediq-worker-transcription** — Python ECS worker: one RunTask = one job via SQS_MESSAGE_BODY container override (D-066). Two per-tier images (free/paid) with model weights baked in (D-062).
   README: `../../heediq-worker-transcription/README.md` · Decisions: D-047, D-059, D-062, D-065, D-066, D-068
-  - PR #9 open (refactor/rename-recording-to-source-py → develop). 11 pytest tests + mypy strict. deploy.yml: two SHA-tagged images → shared-services ECR → ssm put-parameter + register-task-definition + pipes update-pipe per env.
+  - PR #9, #10 merged (refactor/rename-recording-to-source-py → develop). 11 pytest tests + mypy strict. deploy.yml: two SHA-tagged images → shared-services ECR → ssm put-parameter + register-task-definition + pipes update-pipe per env.
   - Transcript written to `heediq-sources[sourceId].transcript` in DynamoDB (task role has no S3 write grant). Downstream summarization worker reads it by sourceId.
   - `src/models.py` is hand-maintained (mirrors `@heediq/shared`, not generated) — D-068 field renames applied manually.
 
 - **heediq-worker-summarization** — Node.js Lambda: reads transcript from DynamoDB, extracts structured fields (requirements/decisions/openQuestions/actionItems) via Claude, writes back to DynamoDB. CI deploys via `lambda update-function-code`.
-  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068
-  - PR #2 open (feature/summarization-worker → develop, updated with D-068 rename). 12 Vitest tests across 4 suites. deploy.yml: test → esbuild bundle → lambda update-function-code per env (dev/staging/prod).
+  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068, D-084
+  - PR #2, #3, #4 merged (feature/summarization-worker → develop, updated with D-068 rename; PR #4 disables pnpm minimumReleaseAge cooldown, D-084). 12 Vitest tests across 4 suites. deploy.yml: test → esbuild bundle → lambda update-function-code per env (dev/staging/prod).
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
