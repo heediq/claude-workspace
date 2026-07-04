@@ -673,6 +673,13 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/src/i18n/`, `heediq-web/README.md`
 
+### D-077 · Org creation on first login via Cognito PostConfirmation + PreTokenGeneration triggers (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** Org + User row creation on first login (D-020's "org creation on first login") is implemented as two Cognito Lambda triggers on the User Pool in `heediq-infra`'s FoundationStack — **PostConfirmation** (fires once per new user: creates the `heediq-orgs` + `heediq-users` DynamoDB rows; email-domain match surfaces a "request to join" pending-approval row per D-020 rather than auto-joining) and **PreTokenGeneration** (injects `custom:orgId`/`custom:role` into every issued token by reading the just-created/existing User row). `heediq-web`'s Auth screen therefore needs no special first-login branch: `GET /me` works immediately after the OAuth callback token exchange, with no client-driven onboarding POST or manual token-refresh dance.
+**Why:** Keeps org/claim provisioning atomic with the identity event Cognito already fires, instead of a client-orchestrated "call /me, 404, show onboarding form, create org via API, force refresh" flow — fewer moving parts, no window where a logged-in user has a claims-less token, and the frontend stays a thin consumer of already-complete claims.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/foundation-stack.ts` (triggers not yet built — this session's follow-up), `heediq-api/src/middleware/auth.ts`, `heediq-web/README.md`
+
 ---
 
 ## Open / proposed (not yet locked)
