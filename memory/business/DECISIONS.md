@@ -635,6 +635,30 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** all repos' `.github/workflows/deploy*.yml`
 
+### D-072 · Status/semantic color tokens (2026-07-04) — Locked
+**Area:** Design
+**Decision:** Lock `success` `#7FCB9C` text / `rgba(90,168,120,0.16)` bg / `rgba(90,168,120,0.32)` border (done state); `danger` `#E68A80` text / `rgba(214,90,80,0.16)` bg / `rgba(214,90,80,0.32)` border (failed state); in-progress/active states (queued, starting, transcribing, diarizing, summarizing) use the existing `accent` token, not a separate color. The placeholder `warning`/`info` tokens are dropped — no current design calls for them.
+**Why:** The `design_handoff_heediq_brand` style guide flagged these as provisional; these are the exact values from that source-of-truth file, replacing guesses in `heediq-web`'s `tokens.css`.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/styles/tokens.css`, `heediq-web/tailwind.config.ts`
+
+### D-073 · Final logo assets supersede D-009 placeholder SVG (2026-07-04) — Locked
+**Area:** Brand
+**Decision:** `heediq-logo.png` (composed mark), `heediq-badge-bg.svg` (badge shape), `heediq-stubs.svg` (four-bar mark, bevel filter, flat `#F0A93B` fill) from `design_handoff_heediq_brand/assets/` are the final logo assets, copied verbatim into `heediq-web/public/brand/`. These are the source of truth for shape/proportions going forward.
+**Why:** The handoff shipped final, more refined assets with different bar shape/proportions than D-009's inline placeholder SVG (same color family and monogram concept). The placeholder was always marked "reproduce verbatim" pending final art — this is that final art.
+**Supersedes:** D-009 (asset shape/proportions only — brand story, wordmark, tagline, color unchanged)
+**Superseded by:** —
+**Related code:** `heediq-web/public/brand/`, `memory/business/branding.md`
+
+### D-074 · Animated 4-bar loading mark component (2026-07-04) — Locked
+**Area:** Design
+**Decision:** A new `LoadingMark` UI-kit primitive — an animated, logo-derived 4-bar SVG (keyframes `heediqRotate`/`heediqEarLeft`/`heediqEarRight`/`heediqFace1`/`heediqFace2`, 5.5s ease-in-out loop, base tilt -12deg, static fallback under `prefers-reduced-motion`) — is the canonical loading indicator for page-level and section-level async waits (`04-loading-and-feedback.md` §2–3). It does not replace `Spinner`, which remains for inline/button-level loading (§4). Two visual variants: flat `accent` fill (small/inline contexts) and a two-tone `linearGradient` (`#FFC876`→`#E89A26`, a decorative one-off scoped to this component, not a promoted design token) for larger/card contexts. Exact keyframe values and SVG bar geometry are copied verbatim from `Heediq Style Guide.dc.html`.
+**Why:** Replaces a generic spinner for page/section transitions with an on-brand, motion-considered mark; the handoff's own style guide names this file as the source of truth for exact CSS.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/components/ui/LoadingMark/`
+
+---
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

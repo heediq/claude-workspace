@@ -49,8 +49,9 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043
+  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074
   - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens (`tailwind.config.ts`, `src/styles/tokens.css`) + 3 base UI-kit components (Button, Spinner, Card) + placeholder routes (home/auth-callback/sources-library/source-detail) + dev-only `/dev/ui` gallery + CI/deploy workflows. 5 tests, typecheck/build green.
+  - In progress this session: D-072 status colors (success/danger tokens replacing provisional placeholders), D-073 final logo assets (`public/brand/`), D-074 `LoadingMark` + `Badge` primitives.
   - deploy.yml builds **per-environment** (not build-once-promote like the Lambda/Docker repos) — Vite inlines `VITE_*` env vars at build time, so each env's job reads its own `/heediq/api/endpoint-url` + `/heediq/api/ws-endpoint-url` from SSM before `pnpm build`.
   - Auth (D-020), home/Listen, sources library, source detail screens not yet built — scaffold only.
 

@@ -55,11 +55,17 @@ Future expansion narrative (pitch decks, etc.):
 Premium, restrained — Linear / Vercel / Raycast aesthetic. Smart but approachable; not
 corporate-enterprise, not playful-consumer.
 
-## Logo — `icon-master.svg` (reproduce verbatim, do not redesign)
+## Logo — final assets (D-073, supersedes the placeholder below)
+Final logo assets live in `design_handoff_heediq_brand/assets/` and are copied verbatim into
+`heediq-web/public/brand/`: `heediq-logo.png` (composed mark), `heediq-badge-bg.svg` (badge
+shape), `heediq-stubs.svg` (four-bar mark, bevel filter, flat `#F0A93B` fill). These files are the
+source of truth for shape/proportions going forward — reproduce verbatim, do not redesign. Same
+color family and h+q monogram concept as the placeholder below, refined bar shape/rounding.
+
+### Historical placeholder (superseded by D-073 — kept for shape reference only)
 Four angled (−12°) rounded amber slabs forming an abstract h+q monogram: slabs 1–2 read as "h,"
 slabs 3–4 read as "q." Slabs 1–3 share a bottom edge, slabs 2–4 share a top edge; slab 1 is the
-ascender, slab 4 is the descender. Centering uses computed bounding-box math to account for the
-rotation offset — don't recompute, reuse the values as-is.
+ascender, slab 4 is the descender.
 
 ```svg
 <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
@@ -108,6 +114,31 @@ Full token scale (the version used for actual UI implementation):
 ⚠️ Implementation note: Tailwind className-based dark backgrounds failed to apply correctly for
 color-critical components in practice — use inline hex styles wherever exact color fidelity
 matters.
+
+## Status/semantic colors (D-072)
+| Token | Value | Use |
+|---|---|---|
+| success | `#7FCB9C` text | done state |
+| success-bg | `rgba(90,168,120,0.16)` | done state background |
+| success-border | `rgba(90,168,120,0.32)` | done state border |
+| danger | `#E68A80` text | failed state |
+| danger-bg | `rgba(214,90,80,0.16)` | failed state background |
+| danger-border | `rgba(214,90,80,0.32)` | failed state border |
+
+In-progress/active states (queued, starting, transcribing, diarizing, summarizing) use the
+existing `accent` token, not a separate color. There are no `warning`/`info` tokens — no current
+design calls for them.
+
+## Loading indicator (D-074)
+Canonical page/section-level loading indicator is the animated 4-bar `LoadingMark` component
+(logo-derived, keyframes `heediqRotate`/`heediqEarLeft`/`heediqEarRight`/`heediqFace1`/
+`heediqFace2`, 5.5s ease-in-out loop, base tilt -12deg, static under `prefers-reduced-motion`).
+Exact keyframe values and SVG bar geometry must be copied verbatim from
+`design_handoff_heediq_brand/Heediq Style Guide.dc.html` — that file is the source of truth, same
+verbatim-reproduction rule as the logo. Two variants: flat `accent` fill (small/inline) and a
+two-tone `linearGradient` (`#FFC876`→`#E89A26`, decorative one-off scoped to this component, not a
+promoted token) for larger/card contexts. `Spinner` remains the primitive for inline/button-level
+loading; `LoadingMark` doesn't replace it.
 
 ## Typography
 - UI: Inter or Geist, weights 400 and 500 only.
