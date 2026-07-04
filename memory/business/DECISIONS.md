@@ -730,6 +730,27 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/pnpm-workspace.yaml`, `heediq-infra/pnpm-workspace.yaml`, `heediq-shared/pnpm-workspace.yaml`, `heediq-api/pnpm-workspace.yaml`, `heediq-worker-summarization/pnpm-workspace.yaml`
 
+### D-085 · Logging & observability: native AWS (CloudWatch + X-Ray), no separate tool (2026-07-04) — Locked
+**Area:** Architecture / Infra / Cost
+**Decision:** Observability across all services (heediq-api, heediq-worker-transcription,
+heediq-worker-summarization, the auth-provision trigger, and future workers) is built entirely on
+native AWS: structured JSON logs (one shared shape, correlation ID threaded through every hop) to
+CloudWatch Logs; CloudWatch Logs Insights as the cross-service search/debug tool; AWS X-Ray for
+distributed tracing across the API → SQS → Fargate/EC2 GPU worker → DynamoDB chain; one CloudWatch
+Dashboard per environment (dev/staging/prod) as the at-a-glance view (error rate, job-stage funnel,
+GPU worker health). No Grafana, no self-hosted or SaaS observability tool.
+**Why:** Already the locked stack (D-001 lists CloudWatch); genuinely zero incremental cost beyond
+what the services already pay for; a separate Grafana instance either costs a running container
+(violates "no cost") or caps retention at 14 days on the free SaaS tier and adds an external vendor
+for a system that's otherwise fully AWS-native. This finally implements the tracing/correlation-ID
+requirement already stated in `07-engineering-standards.md` §3, rather than adding new scope.
+Revisit only if CloudWatch's UX becomes a real bottleneck — Grafana can point at CloudWatch as a data
+source later without changing how anything logs, so this doesn't lock the door shut.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/logger.ts` (new — shared structured-logger + correlation ID
+helper, not yet built), `heediq-infra` (X-Ray IAM permissions + per-env CloudWatch Dashboard, not yet
+built)
+
 ---
 
 ## Open / proposed (not yet locked)
