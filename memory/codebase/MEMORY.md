@@ -23,8 +23,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `HomePage` (unified sign-in/sign-up), `SettingsPage`/`SettingsLinkCallbackPage` (proactive linking).
   Backend still open: `heediq-api` `POST /auth/link/confirm` (blocked on a spike confirming
   `ForgotPassword` works for `EXTERNAL_PROVIDER` users) and `POST /settings/link/add-provider`
-  (blocked on the pnpm `minimumReleaseAge` cooldown for `@heediq/shared@0.3.0`). See `DECISIONS.md`
-  for full decision text.
+  (no longer blocked — `@aws-sdk/client-cognito-identity-provider` installed in `heediq-api` and
+  both `heediq-api`/`heediq-web` bumped to `@heediq/shared@0.3.0` now that the pnpm
+  `minimumReleaseAge` cooldown is disabled workspace-wide, D-084; endpoint itself not yet built).
+  See `DECISIONS.md` for full decision text.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
   README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-080, D-083
@@ -43,7 +45,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
   README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-023/D-059/D-065), WS push (D-061). `Recording`→`Source`, `recordingId`→`sourceId`, `+labels: string[]` (D-068).
-  - `@heediq/shared@0.2.0` published to GitHub Packages (bumped for D-068 breaking rename). 50 tests.
+  - `@heediq/shared@0.3.0` published to GitHub Packages (adds `LookupEmailRequest/Response`,
+    `LinkStartRequest` for D-078 account linking) and consumed by `heediq-api`/`heediq-web`. 58 tests.
   - Gotcha: new consuming repos need manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
