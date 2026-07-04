@@ -666,9 +666,15 @@ container-level synthesis logic, not new pipeline architecture.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/README.md` (once the i18n library/setup is added), `heediq-web/src/`
 
+### D-076 · i18n library — react-i18next (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** `heediq-web` uses `react-i18next` (+ `i18next` core) as the i18n library implementing D-075's full-coverage scope. A single default namespace (`src/i18n/locales/en/translation.json`) holds all keys, nested by screen/module (`home.*`, `sourcesLibrary.*`, `errors.*`, `common.*`); split into per-feature namespaces later only if the file grows unwieldy. `src/i18n/config.ts` initializes synchronously (bundled resources, no lazy backend) so `t()` works both inside React (`useTranslation`) and in plain modules (`api-client.ts` error messages) without a loading gap.
+**Why:** Most mature React i18n solution, native Vite compatibility (no extra build plugin), trivial to unit-test with Vitest/RTL (resources are bundled, not fetched), and supports non-hook `t()` calls needed for error messages thrown outside components. `react-intl` (heavier ICU API) and `@lingui/react` (needs a macro/build step) were considered and rejected as unnecessary tooling weight for the current scope.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/i18n/`, `heediq-web/README.md`
+
 ---
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
-- **i18n library choice for heediq-web** — D-075 locks full-coverage scope; the specific library (e.g. `react-i18next`, `@lingui/react`, `FormatJS/react-intl`), key-naming convention, and locale-file structure are not yet chosen — decide when i18n is actually wired in.
