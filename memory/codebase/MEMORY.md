@@ -14,7 +14,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 ## Modules / Features (pointers)
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077
+  - `feature/auth-org-provisioning-trigger` branch (not yet PR'd): FoundationStack UserPool now has `custom:orgId`/`custom:role` custom attributes + a PreTokenGeneration Lambda trigger (`heediq-auth-provision`, placeholder inline code — real handler deployed by `heediq-api`'s CI) + new SSM param `/heediq/api/cognito-hosted-ui-domain` (D-077). 155/155 tests green.
   - PR #31 open (refactor/rename-recordings-table-to-sources → develop). D-068 rename fully deployed clean to dev (all 7 stacks). 153/153 tests green.
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062). Deployed to dev.
   - **FoundationStack** — 5 tables (sources, orgs, users, jobs w/ DDB Streams NEW_IMAGE, ws-connections w/ TTL + by-source GSI); ACM wildcard cert eu-west-1 (D-063); 14 SSM params. Deployed to dev. Table renamed `heediq-recordings`→`heediq-sources`, `recordingId`→`sourceId` (D-068).
@@ -32,8 +33,9 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: new consuming repos need manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068
-  - PR #2 open (feature/api-scaffold → develop, updated with D-068 rename). 17 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077
+  - PR #2 open (feature/api-scaffold → develop, updated with D-068 rename). 19 tests. deploy.yml: esbuild bundle → Lambda update on develop push.
+  - `feature/auth-provision-trigger` branch (not yet PR'd): new standalone handler `src/handlers/auth-provision.ts` — the real Cognito PreTokenGeneration trigger body (D-077), idempotent get-or-create of org+user by `sub`, injects `custom:orgId`/`custom:role` claims. Deliberately does not import `src/config.ts` (would eagerly require unrelated env vars). CI deploys it as a second Lambda (`heediq-auth-provision`) via its own bundle/zip/`update-function-code` steps alongside the main API Lambda.
   - Critical bug fixed: `SendMessageCommand` now sets `MessageAttributes: { tier }` on transcription enqueue — without this attribute, both EventBridge Pipe filters fail and no job is ever processed.
   - D-068: route `/recordings`→`/sources`, `RECORDINGS_TABLE_NAME`→`SOURCES_TABLE_NAME`, `@heediq/shared` bumped to `0.2.0`, `labels: []` set on Source creation.
 
@@ -49,12 +51,12 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → contentRef IS the sourceId (reads `heediq-sources[sourceId].transcript`). Not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076
+  README: `../../heediq-web/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077
   - D-075/D-076 (2026-07-04): full i18n coverage via `react-i18next`, `src/i18n/` — all user text incl. errors goes through `t()`/translation keys.
-  - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens (`tailwind.config.ts`, `src/styles/tokens.css`) + 3 base UI-kit components (Button, Spinner, Card) + placeholder routes (home/auth-callback/sources-library/source-detail) + dev-only `/dev/ui` gallery + CI/deploy workflows. 5 tests, typecheck/build green.
-  - In progress this session: D-072 status colors (success/danger tokens replacing provisional placeholders), D-073 final logo assets (`public/brand/`), D-074 `LoadingMark` + `Badge` primitives.
-  - deploy.yml builds **per-environment** (not build-once-promote like the Lambda/Docker repos) — Vite inlines `VITE_*` env vars at build time, so each env's job reads its own `/heediq/api/endpoint-url` + `/heediq/api/ws-endpoint-url` from SSM before `pnpm build`.
-  - Auth (D-020), home/Listen, sources library, source detail screens not yet built — scaffold only.
+  - `feature/web-scaffold` branch (not yet PR'd): tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, **ErrorState**) + dev-only `/dev/ui` gallery + CI/deploy workflows. 53 tests, typecheck/build green.
+  - **Auth screen built (D-020, D-077)**: `HomePage` (sign-in entry + post-login redirect), `AuthCallbackPage` (Hosted UI OAuth PKCE code exchange, loading/error branches via `ErrorState`), `lib/auth/` (`pkce.ts`, `cognito-oauth.ts`, `token-store.ts`, `AuthContext.tsx`, `ProtectedRoute.tsx`). No client-side onboarding step — `custom:orgId`/`custom:role` arrive pre-baked in the token via `heediq-api`'s PreTokenGeneration trigger. `SourcesLibraryPage`/`SourceDetailPage` still placeholders, now gated behind `ProtectedRoute`.
+  - deploy.yml builds **per-environment** (not build-once-promote like the Lambda/Docker repos) — Vite inlines `VITE_*` env vars at build time; each env's job now also reads `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` from SSM into `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID`.
+  - Home/Listen (post-login), sources library, source detail screens still pending per D-069 build order.
 
 <!--
 - **<feature/area>** — <one-line summary>.

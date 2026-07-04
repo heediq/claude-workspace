@@ -20,6 +20,7 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
   - `scripts/setup-aws-profiles.sh` — configures AWS SSO profiles for all 4 accounts; owner-only, run once per new machine
   - `scripts/setup.sh` — one-time AWS setup (CDK bootstrap + OIDC providers + IAM roles); upstream for all repos' CI. Must be re-run if org is renamed or trust policy drifts.
   - `scripts/setup-budgets.sh` — creates AWS Budgets via management account
+  - FoundationStack UserPool — owns the Cognito PreTokenGeneration trigger wiring (custom attributes `custom:orgId`/`custom:role` + Lambda association, D-077); the trigger's real handler code is a `heediq-api`-owned artifact deployed by that repo's CI, same cross-repo split as the WebSocket Connection Lambda below
 
 ### Transcription pipeline (TranscriptionStack)
 - **Upstream**: FoundationStack (SQS `heediq-transcription`, S3 `heediq-audio-uploads-*`, DynamoDB `heediq-jobs` + `heediq-sources`); SharedServicesStack (ECR repo `heediq-worker-transcription`); per-env SSM params `/heediq/transcription/{free,paid}-image-tag` (written by CI, read by CloudFormation at deploy time)
@@ -57,7 +58,7 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 ### heediq-api (API Lambda)
 - **Upstream**: `heediq-infra` ApiStack (Lambda must exist before code can be deployed, D-050); `@heediq/shared` (types + validation); Cognito User Pool (JWKS endpoint); DynamoDB tables (sources, orgs, users, jobs, ws-connections); S3 audio bucket; SQS transcription + summarization queues
 - **Downstream**: `heediq-web` (REST API consumer); `heediq-worker-transcription` (reads SQS transcription queue messages enqueued here); `heediq-worker-summarization` (reads SQS summarization queue for direct-path uploads, D-065)
-- **Shared surfaces**: `heediq-sources` table (written by API on create; read by API on get/list; also written by summarization worker on completion); `heediq-jobs` table (written by API on enqueue; read by Status Pusher Lambda); SQS queue URLs (SSM params consumed by API env vars)
+- **Shared surfaces**: `heediq-sources` table (written by API on create; read by API on get/list; also written by summarization worker on completion); `heediq-jobs` table (written by API on enqueue; read by Status Pusher Lambda); SQS queue URLs (SSM params consumed by API env vars); `src/handlers/auth-provision.ts` (D-077) — the Cognito PreTokenGeneration trigger handler; code owned and deployed by heediq-api CI as a second Lambda but *wired as a trigger* by `heediq-infra` FoundationStack; stamps `custom:orgId`/`custom:role` claims onto the ID token — a contract shared with `heediq-web`'s auth flow
 
 ### heediq-worker-transcription
 - **Upstream**: `heediq-infra` TranscriptionStack (EventBridge Pipes + ECS cluster + EC2 GPU Spot ASG + task defs + IAM grants, D-059); `heediq-infra` SharedServicesStack (ECR repo `heediq-worker-transcription`); `heediq-api` (must set `tier` SQS message attribute on enqueue — without it both Pipe filters fail silently); S3 audio bucket (read-only); DynamoDB `heediq-jobs` + `heediq-sources`; SQS `heediq-transcription` (re-enqueue on SIGTERM, D-066) + `heediq-summarization` (enqueues on completion, D-065)
@@ -70,9 +71,9 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Shared surfaces**: `heediq-sources` table (writes structured extraction: requirements, decisions, openQuestions, actionItems); `heediq-jobs` table (writes `status=done/failed` on completion); SQS `heediq-summarization` queue (shared entry point for audio + direct-upload paths, D-065)
 
 ### heediq-web (PWA frontend)
-- **Upstream**: `heediq-infra` WebStack (CloudFront + S3 bucket must exist before deploy); `heediq-api` (all REST endpoints); WebSocket API (`ws-{env}.heediq.com`, D-061); `@heediq/shared` (request/response types, WS message types); Cognito (auth, federated IdPs)
+- **Upstream**: `heediq-infra` WebStack (CloudFront + S3 bucket must exist before deploy); `heediq-api` (all REST endpoints); WebSocket API (`ws-{env}.heediq.com`, D-061); `@heediq/shared` (request/response types, WS message types); Cognito Hosted UI (auth via OAuth 2.0 Authorization Code + PKCE, D-020, D-077)
 - **Downstream**: nothing — leaf consumer
-- **Shared surfaces**: `/heediq/web/url` SSM param (consumed by `heediq-api` for CORS origin config); `/heediq/web/cloudfront-distribution-id` SSM param (consumed by web CI for cache invalidation); S3 `heediq-web-assets` bucket (written by web CI, served by CloudFront via OAC)
+- **Shared surfaces**: `/heediq/web/url` SSM param (consumed by `heediq-api` for CORS origin config); `/heediq/web/cloudfront-distribution-id` SSM param (consumed by web CI for cache invalidation); S3 `heediq-web-assets` bucket (written by web CI, served by CloudFront via OAC); `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` SSM params (written by `heediq-infra` FoundationStack, consumed by web CI to inject `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID` at build time, D-077); the `custom:orgId`/`custom:role` ID token claims contract — stamped by `heediq-api`'s auth-provision Lambda (D-077), consumed by heediq-web's AuthContext — a rename on either side breaks auth silently
 
 <!--
 Template:
