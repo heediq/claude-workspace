@@ -113,7 +113,7 @@ The goal is a memory that is **short enough to scan quickly and comprehensive en
 not a historical archive, not a one-liner that hides important nuance.
 
 ## Committing & pushing memory (always)
-Every memory write must be followed by a commit in `heediq-workspace`. Don't batch memory commits
+Every memory write must be followed by a commit in `claude-workspace`. Don't batch memory commits
 to the end of a session — commit each logical change as it happens so the repo is never silently
 out of sync.
 
@@ -139,4 +139,4 @@ without a prompt to do so.
 Confirm: every README/memory file touched reflects reality; new README paths are pointed to from
 `MEMORY.md`; `feature_dependency_map.md` is current; every decision locked this task is in
 `DECISIONS.md` (with superseded entries marked) per `rules/09-decisions.md`. All memory changes
-are committed to `heediq-workspace`; push if the session is ending.
+are committed to `claude-workspace`; push if the session is ending.
