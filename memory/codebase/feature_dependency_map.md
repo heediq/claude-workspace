@@ -87,10 +87,10 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
   - `auth-provision.ts`'s email-first-then-`sub` lookup (D-090) — a post-linking re-login presents the destination/native user's `sub`, not the original federated `sub`; changing the lookup order risks re-provisioning a duplicate org
   - **Still open**: `POST /settings/link/add-provider` (proactive linking's backend call) — not yet built
 
-### Observability (D-085)
+### Observability (D-085, D-093)
 - **Upstream**: reads other stacks'/repos' static resource names only (Lambda function names, SQS queue/DLQ names, ECS cluster/ASG name) — no CDK construct props, so it deploys independently of every other stack's synth order (enabled by D-037: names carry no env prefix). `heediq-shared/src/logger.ts` (+ Python mirror `heediq-worker-transcription/src/logger.py`) is the structured-log shape every service writes to CloudWatch Logs.
-- **Downstream**: nothing depends on this stack; it's a pure read/dashboard layer
-- **Shared surfaces**: `ObservabilityStack` (`heediq-infra/lib/observability/observability-stack.ts`) dashboard widgets reference the same hardcoded resource-name strings used by ApiStack/SummarizationStack/TranscriptionStack — renaming a Lambda/queue/ASG in its owning stack silently breaks the corresponding dashboard widget (no compile-time link); `createLogger(service)` is imported by `heediq-api`, `heediq-worker-summarization`, and mirrored by hand in `heediq-worker-transcription`'s `logger.py` — a shape change to one must be mirrored in the other
+- **Downstream**: nothing depends on this stack; it's a pure read/dashboard layer. The dashboard's job-stage funnel Logs Insights query depends on `info`-level lines always being emitted (D-093) — dropping the default threshold to `warn` would silently break it.
+- **Shared surfaces**: `ObservabilityStack` (`heediq-infra/lib/observability/observability-stack.ts`) dashboard widgets reference the same hardcoded resource-name strings used by ApiStack/SummarizationStack/TranscriptionStack — renaming a Lambda/queue/ASG in its owning stack silently breaks the corresponding dashboard widget (no compile-time link); `createLogger(service)` is imported by `heediq-api`, `heediq-worker-summarization`, and mirrored by hand in `heediq-worker-transcription`'s `logger.py` — a shape change (including the D-093 `LOG_LEVEL` threshold logic) must be mirrored in the other. `heediq-infra/lib/config.ts`'s `logRetentionFor(workloadEnv)` is the single source for CloudWatch Logs retention (D-093) — ApiStack, SummarizationStack, and TranscriptionStack log groups all call it; a new Lambda/ECS task must too, or it silently defaults to "Never Expire".
 
 <!--
 Template:
