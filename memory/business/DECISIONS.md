@@ -710,6 +710,31 @@ Implemented across 5 repos on branches `feature/structured-logger` (heediq-share
 `feature/structured-logging-py` (heediq-worker-transcription), `feature/observability-stack`
 (heediq-infra) — not yet merged to `develop`.
 
+### D-093 · Logger usage is mandatory; default log level `info`, `debug` opt-in via env var, no unbounded log retention (2026-07-05) — Locked
+**Area:** Architecture / Cost
+**Decision:** Every feature/Lambda/worker must log through `createLogger(service)` (TS) /
+`create_logger(service)` (Python) — never raw `console.log`/`print`. The logger gains a level
+threshold (`debug < info < warn < error`) read once at cold start from a `LOG_LEVEL` env var,
+**default `info`** in every environment (dev/staging/prod alike — not `warn`, because `info`-level
+lifecycle events are what the D-085 dashboard's job-stage funnel query depends on). `debug` is the
+only level that's silent by default; ops can flip `LOG_LEVEL=debug` on a single Lambda via
+CLI/console with no redeploy to get verbose detail during an incident, then flip back. X-Ray keeps
+AWS's built-in default sampling (1 req/sec + 5% of the rest) — no custom sampling rule for now.
+Every Lambda/log-producing resource must set an explicit CloudWatch Logs retention (recommended: 30
+days dev/staging, 90 days prod) — "Never Expire" (the CDK default when `logRetention`/`LogGroup` is
+omitted) is disallowed.
+**Why:** Keeps day-to-day log coverage (the thing D-085 was built for) always on at negligible
+cost, while giving a genuine, low-friction escape hatch (env var, not a redeploy) for deeper
+verbosity when actually debugging something — without ever defaulting to `warn`-only, which would
+silently break the observability dashboard's normal-operation queries. Explicit retention closes a
+real cost gap found while implementing this: `ApiFn`/`SummarizationFn` in `heediq-infra` currently
+have no retention set (unbounded storage growth); only `TranscriptionLogGroup` does today.
+**Supersedes:** — **Superseded by:** — (refines D-085; does not contradict it — same
+CloudWatch/X-Ray stack, no separate tool)
+**Related code:** `heediq-shared/src/logger.ts`, `heediq-worker-transcription/src/logger.py`
+(level-filtering + `LOG_LEVEL` support, to be added); `heediq-infra` — explicit `logRetention` on
+`ApiFn`, `SummarizationFn` (to be added; `TranscriptionLogGroup` already sets `ONE_MONTH`).
+
 ### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
 **Area:** Architecture
 **Decision:** Replicating a working pattern from Andrii's own prior implementation
