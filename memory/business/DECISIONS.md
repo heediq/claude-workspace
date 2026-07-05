@@ -916,6 +916,22 @@ already active.
 scoped to the caller's own `userId`), `heediq-web/src/routes/SettingsPage.tsx` (renders the active
 methods list read-only, plus inline "Set a password" using the D-089 shared component).
 
+### D-092 · `vars.AWS_REGION` is the sole region source everywhere except explicit per-service overrides (2026-07-05) — Locked
+**Area:** Infra
+**Decision:** The GitHub org-level `vars.AWS_REGION` (D-070) is the one source of truth for "current
+region" across every repo and every layer — CI deploy roles, CDK stacks, and now also client-bundle
+env vars like `heediq-web`'s `VITE_COGNITO_REGION` (forwarded from `vars.AWS_REGION` in `deploy.yml`,
+not a new SSM param or hardcoded literal). No second definition of "the region" is added anywhere.
+The only allowed deviations are explicit, named per-service overrides forced by an AWS API constraint
+— e.g. the CloudFront-facing ACM cert must be in `us-east-1` regardless of primary region (D-053/D-054)
+— and those stay scoped to exactly the resource that needs them, never promoted to a general default.
+**Why:** Found while fixing the `VITE_COGNITO_REGION` gap in `heediq-web/deploy.yml` (undefined region
+broke native sign-in/password-reset in every deployed environment) — Andrii flagged the risk of the
+region getting defined redundantly across services as more of these needs come up. Reusing the
+existing D-070 variable instead of inventing a new source keeps region resolution single-sourced.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/.github/workflows/deploy.yml` (`VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}`).
+
 ---
 
 ## Open / proposed (not yet locked)
