@@ -32,7 +32,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `SettingsLinkCallbackPage` for proactive linking). Still open: `POST /settings/link/add-provider`
   (proactive linking's backend half — not yet built). See `DECISIONS.md` for full decision text.
 
-- **Auth redesign built (D-089–D-091, 2026-07-04).** QA surfaced that Google/Microsoft
+- **Auth redesign built and merged (D-089–D-091, 2026-07-05).** QA surfaced that Google/Microsoft
   `attributeMapping` in `foundation-stack.ts` never mapped `email_verified`, so `auth-provision.ts`'s
   D-080 check always read false and silently skipped org auto-provisioning for every federated login —
   reproducing "Google login → log out → email/password shows plain signup, not linking." Rather than
@@ -46,10 +46,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   (`heediq-user-auth-methods` is the source of truth for `GET /auth/methods`, which `SettingsPage`
   reads to display currently-active methods read-only, not just add-buttons). Built end-to-end in
   `heediq-api` (63 tests) and `heediq-web` (95 tests); see `heediq-web/src/features/auth/README.md`,
-  `heediq-web/src/lib/auth/README.md`, `heediq-api/README.md`. **Not yet committed/PR'd** — verified
-  working on `feature/own-verification-auth-model` in both repos as of 2026-07-04. Uses a manual
-  dev-only `@heediq/shared` dist-copy workaround (no version bump/publish yet) — must be resolved
-  before either branch ships.
+  `heediq-web/src/lib/auth/README.md`, `heediq-api/README.md`. Merged to `develop` in all three repos:
+  `heediq-shared` PR #10 (schemas) + PR #11 (develop→main release, publishing `@heediq/shared@0.4.0`),
+  `heediq-api` PR #9, `heediq-web` PR #14. Both consuming repos bumped off the dev-only dist-copy
+  workaround onto the real published `0.4.0`.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
   README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-087, D-090 (supersedes D-080)
@@ -69,18 +69,20 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
   README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-023/D-059/D-065), WS push (D-061). `Recording`→`Source`, `recordingId`→`sourceId`, `+labels: string[]` (D-068).
-  - `@heediq/shared@0.3.0` published to GitHub Packages (adds `LookupEmailRequest/Response`,
-    `LinkStartRequest` for D-078 account linking) and consumed by `heediq-api`/`heediq-web`. 58 tests.
+  - `@heediq/shared@0.4.0` published to GitHub Packages (adds `AuthMethodSchema`/
+    `ListAuthMethodsResponseSchema` for D-091, on top of 0.3.0's `LookupEmailRequest/Response`,
+    `LinkStartRequest` for D-078 account linking) and consumed by `heediq-api`/`heediq-web`. 63 tests.
+    Publish only fires on push to `main`, not `develop` — a `develop`→`main` PR (e.g. #7, #11) is the
+    release mechanism; merging a feature PR into `develop` alone does not publish.
   - Gotcha: new consuming repos need manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
   README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-087, D-088, D-089, D-090, D-091
-  - **D-089/D-090/D-091 built (2026-07-04, not yet committed)**: `auth-provision.ts` drops the
+  - **D-089/D-090/D-091 built and merged (PR #9, 2026-07-05)**: `auth-provision.ts` drops the
     `email_verified` gate and resolves existing users by email first, falling back to `sub`; new
     `routes/auth-methods.ts` (`GET /auth/methods`, D-091); `routes/auth.ts`'s `request-otp`/`confirm`
     generalized to also serve native signup and Settings-linking (D-089), not just reactive linking.
-    63/63 tests green. Uses a dev-only manual `@heediq/shared` dist-copy (real version bump/publish
-    still needed before shipping).
+    63/63 tests green, now against the real published `@heediq/shared@0.4.0`.
   - **D-088 fixed (2026-07-04)**: `heediq-web` was calling `/auth/lookup-email` etc. with no version
     prefix against a backend that only serves `/api/v1/auth/lookup-email` — 404 in `dev.heediq.com`.
     Root cause: both sides' route tests mounted a sub-router/mocked the client in isolation, never
@@ -107,13 +109,14 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
   README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Features/auth README: `src/features/auth/README.md` · Layout README: `src/components/layout/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072, D-073, D-074, D-075, D-076, D-077, D-078, D-079, D-081, D-082, D-083, D-087, D-088, D-089, D-090, D-091
-  - **D-089/D-090/D-091 built (2026-07-04, not yet committed)**: new `src/features/auth/` — first
+  - **D-089/D-090/D-091 built and merged (PR #14, 2026-07-05)**: new `src/features/auth/` — first
     use of the `features/` layer in this codebase — holds `VerifyAndSetPasswordForm.tsx`, the one
     shared own-verification + set-password component, reused by `HomePage` (collapsed sign-up +
     reactive-linking `verify` step, replacing the old separate signup form) and `SettingsPage`
     (renders the D-091 active-methods list read-only + inline "Set a password"). `cognito-idp.ts` no
     longer exports `signUp`/`confirmSignUp` — the OTP round trip always goes through `heediq-api`'s
-    `POST /auth/link/request-otp`/`confirm` now. 95/95 tests green (23 test files).
+    `POST /auth/link/request-otp`/`confirm` now. 95/95 tests green (23 test files), now against the
+    real published `@heediq/shared@0.4.0`.
   - D-075/D-076 (2026-07-04): full i18n coverage via `react-i18next`, `src/i18n/` — all user text incl. errors goes through `t()`/translation keys.
   - `feature/web-scaffold` is an ongoing incrementally-merged branch (PR #1, #5, #6, #7 all merged to develop) — tooling + D-008 tokens + UI kit (Button, Spinner, Card, Badge, LoadingMark, ErrorState, Input) + dev-only `/dev/ui` gallery + CI/deploy workflows, most recently the i18n aria-label fix on `ProtectedRoute` (PR #7).
   - **Unified sign-in/sign-up screen built (D-078, D-081, D-082, D-087)**: `HomePage` replaces the old plain sign-in entry — email-first, branches into sign-up/sign-in/forgot-password/reactive-linking steps, calls Cognito directly via `lib/auth/cognito-idp.ts` (see auth README). Federated-only accounts now call the real `POST /auth/link/request-otp` + `POST /auth/link/confirm` endpoints (D-087; PR #9, #10), not a forgot-password placeholder. `AuthCallbackPage` still handles the Hosted UI OAuth PKCE code exchange for SSO login.
