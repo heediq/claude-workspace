@@ -1,7 +1,8 @@
 # WIP — Own-verification auth model (D-089/D-090/D-091)
 
 **Branches:** `feature/own-verification-auth-model` in both `heediq-api` and `heediq-web`.
-**State: implementation complete, fully tested, documented. Zero commits made yet in either repo.**
+**State: implementation complete, fully tested, documented, and committed (3 commits in
+`heediq-api`, 5 in `heediq-web`) as of 2026-07-05. No PR opened yet — pending Andrii's call.**
 
 ## Why
 QA found: log in with Google, log out, try email/password sign-in with the same address → got a
@@ -40,15 +41,17 @@ hand-copied into each repo's local pnpm store). This is not a real fix — a ver
 of `heediq-shared` is required before either branch can actually ship. Raise this explicitly at PR
 time, not before.
 
+## Commits made (2026-07-05)
+- **heediq-api**: `c39a70d` fix (D-090 email-first lookup + gate drop), `29bf2ea` feat (D-091
+  `GET /auth/methods`), `cfa29b8` docs.
+- **heediq-web**: `902e490` refactor (drop signUp/confirmSignUp), `5ad5060` feat (shared
+  `VerifyAndSetPasswordForm`), `e83fa91` refactor (`HomePage` collapse), `f3812ac` feat
+  (`SettingsPage` active methods), `b488431` docs.
+
 ## Not yet done
-- **No git commits in either repo.** Everything above is uncommitted working-tree state. Suggested
-  commit boundaries next session: (a) heediq-api — `auth-provision.ts` D-090 fix, (b) heediq-api —
-  `GET /auth/methods` D-091 route, (c) heediq-web — collapse signup/linking into shared
-  verify-and-set-password flow (D-089), (d) heediq-web — SettingsPage active-methods list (D-091),
-  (e) docs commit per repo. Conventional Commits, no AI co-author trailer (workspace rule).
-- **heediq-shared version bump + publish** (see above) — flag at PR time.
+- **heediq-shared version bump + publish** (see above) — flag at PR time, not before.
 - **End-of-session question still open**: ask Andrii "Open a PR now or keep working on this branch
-  in another session?" once commits are made — don't open a PR unprompted.
+  in another session?" — don't open a PR unprompted.
 
 ## Next immediate action
-Make the git commits above in `heediq-api` and `heediq-web`, then ask about opening a PR.
+Ask Andrii whether to open PRs for both branches now or keep working in another session.
