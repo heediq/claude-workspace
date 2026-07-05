@@ -59,7 +59,31 @@ Check contracts that span repos — a mismatch here causes silent runtime failur
 - `memory/codebase/MEMORY.md`: every README path pointed to actually exists on disk
 - `memory/codebase/feature_dependency_map.md`: upstream/downstream entries reflect current code (no removed deps, no new deps missing)
 
-### 5. Local dev setup completeness
+### 5. Size & staleness control (docs/memory compression)
+
+Memory and READMEs are a working reference, not a history log — they must stay short enough to scan
+and trusted enough to act on. Check every run, not just when things "feel" cluttered:
+
+- **`DECISIONS.md`** — any entry whose `Superseded by:` annotation shows the superseding entry now
+  fully restates it (nothing substantive left active) should be archived to
+  `memory/business/DECISIONS_ARCHIVE.md` per `rules/09-decisions.md` (Archiving fully-superseded
+  decisions). Partially-superseded entries (annotation says "mechanism only" / "X unchanged" and that
+  part isn't restated elsewhere) stay.
+- **`memory/codebase/MEMORY.md`** — flag any entry that has drifted from its own contract ("one-line
+  summary + pointer," `rules/08-memory.md`): PR numbers, exact test counts, or narrated bug-fix
+  history that duplicates a code README or a `DECISIONS.md` entry. Condense to a pointer.
+- **Per-repo README "Gotchas & Constraints" sections** — for each gotcha, check: is it non-obvious
+  (a hidden constraint, subtle invariant, or workaround for a specific bug), or does it (a) merely
+  restate something already in the same README's Data Flow/Contracts section, (b) describe a bug now
+  permanently fixed with no ongoing risk, or (c) reference a merged PR / resolved "until X" caveat?
+  Remove (a)–(c); keep everything genuinely non-obvious — never trim a real constraint for brevity.
+- **Report a rough size delta** (lines/entries removed) alongside the usual findings table so
+  Andrii can see the compression is holding, not just that it happened once.
+
+This is the same discipline as the one-off compression pass Andrii requested (2026-07-05) — it's now
+a standing part of every consistency check, not a special request.
+
+### 6. Local dev setup completeness
 
 For each repo, verify the README covers:
 - How to install dependencies (`pnpm install` / `pip install`)
@@ -68,7 +92,7 @@ For each repo, verify the README covers:
 - How to start the service locally if applicable
 - `NODE_AUTH_TOKEN` / GitHub PAT requirement if the repo consumes `@heediq/shared`
 
-### 6. Disaster recovery / initial setup completeness
+### 7. Disaster recovery / initial setup completeness
 
 For each repo, verify the README (or the infra README) covers:
 - What must exist before the first deploy (SSM params, secrets, CDK bootstrap)
