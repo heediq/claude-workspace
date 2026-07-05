@@ -701,9 +701,14 @@ requirement already stated in `07-engineering-standards.md` §3, rather than add
 Revisit only if CloudWatch's UX becomes a real bottleneck — Grafana can point at CloudWatch as a data
 source later without changing how anything logs, so this doesn't lock the door shut.
 **Supersedes:** — **Superseded by:** —
-**Related code:** `heediq-shared/src/logger.ts` (new — shared structured-logger + correlation ID
-helper, not yet built), `heediq-infra` (X-Ray IAM permissions + per-env CloudWatch Dashboard, not yet
-built)
+**Related code:** `heediq-shared/src/logger.ts` (structured-logger + correlation ID helper);
+`heediq-worker-transcription/src/logger.py` (Python mirror); `heediq-infra/lib/observability/observability-stack.ts`
+(per-env CloudWatch Dashboard) + `lib/api/api-stack.ts`/`lib/summarization/summarization-stack.ts`
+(X-Ray active tracing); `heediq-api/src/middleware/request-id.ts` (requestId correlation fallback).
+Implemented across 5 repos on branches `feature/structured-logger` (heediq-shared),
+`feature/structured-logging` (heediq-api, heediq-worker-summarization),
+`feature/structured-logging-py` (heediq-worker-transcription), `feature/observability-stack`
+(heediq-infra) — not yet merged to `develop`.
 
 ### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
 **Area:** Architecture
