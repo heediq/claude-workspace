@@ -698,7 +698,7 @@ container-level synthesis logic, not new pipeline architecture.
 **Area:** Architecture / Policy
 **Decision:** D-077's PreTokenGeneration trigger checks `email_verified` on every token it processes. If false (native user with an unconfirmed email, or a federated IdP asserting an unverified email — rare, but possible on some enterprise Microsoft tenants), the trigger does **not** auto-provision the org/user row. Instead it forces our own email-verification step before any org/user creation, since D-078's entire cross-provider linking model depends on email being trustworthy as the one true identity — an unverified email would let an attacker claim someone else's address as if it matched an existing account.
 **Why:** The linking model in D-078 only holds if "this email" reliably means "this person." Trusting an unverified email for org auto-provisioning or linking would undermine that invariant for an edge case (unverified IdP email) that's rare enough not to justify the risk.
-**Supersedes:** — **Superseded by:** —
+**Supersedes:** — **Superseded by:** D-090 (the `email_verified` gate on org/user provisioning is dropped entirely — trustworthy verification is enforced separately per D-089, not as a provisioning precondition)
 **Related code:** `heediq-infra/lib/foundation/foundation-stack.ts` (PreTokenGeneration trigger, D-077)
 
 ### D-081 · No separate marketing/landing page — "/" is always the sign-in/sign-up screen (2026-07-04) — Locked
@@ -712,7 +712,7 @@ container-level synthesis logic, not new pipeline architecture.
 **Area:** Architecture
 **Decision:** Native sign-up (`SignUp`/`ConfirmSignUp`) and native sign-in (`InitiateAuth` USER_PASSWORD_AUTH) call Cognito **directly from the browser** — these are public Cognito APIs needing only the User Pool Client ID, no IAM credentials, no secret, and no new backend code. This matches the app's existing Hosted-UI OAuth pattern (already browser-direct). The linking OTP request itself is **no longer** one of these client-direct calls — see D-087 (superseding D-086, which itself superseded the `ForgotPassword`-for-linking part of this decision after the spike proved it doesn't work for `EXTERNAL_PROVIDER` users). The backend endpoints for the whole D-078 account-linking feature are: (1) `POST /auth/lookup-email` (already built — needs our own DynamoDB `by-email` GSI, which Cognito has no concept of), (2) `POST /auth/link/request-otp` and (3) `POST /auth/link/confirm` (D-087 — `SignUp`/`ConfirmSignUp` reused for code delivery/verification, then `AdminSetUserPassword` + `AdminLinkProviderForUser` server-side, flipping our own `passwordSet=true` in the same request) — needed both because Cognito has no concept of `passwordSet` at all, and because `ForgotPassword` itself is unusable for this case. `AdminLinkProviderForUser` (D-079's proactive Settings linking) also stays backend-only since it's an Admin API requiring IAM credentials the browser can never hold.
 **Why:** Andrii wants maximum use of Cognito's own APIs and minimum custom backend code. Every operation Cognito can do unauthenticated from a public client should be called directly; backend code is added only where something is architecturally impossible client-side (our own DB bookkeeping, an Admin API needing IAM creds, or — per D-087 — a spike proving the public API doesn't support our case) — not for defense-in-depth on operations Cognito already secures itself.
-**Supersedes:** — **Superseded by:** — (the linking-OTP claim specifically is corrected by D-087; native sign-up/sign-in staying client-direct is unaffected and still stands)
+**Supersedes:** — **Superseded by:** D-089 (native sign-up no longer stays fully client-direct — it now goes through the same backend verify-then-password flow as linking; the linking-OTP claim was separately corrected by D-087; native sign-in and the `lookup-email`/Admin-API split are unaffected and still stand)
 **Related code:** `heediq-api/src/routes/auth.ts` (`lookup-email` done, `link/request-otp` + `link/confirm` pending per D-087), `heediq-web/src/lib/auth/` (native sign-up/sign-in — not yet built)
 
 ### D-083 · Proactive provider-linking uses a dedicated OAuth callback route (2026-07-04) — Locked
@@ -803,10 +803,12 @@ and `AdminLinkProviderForUser` still require IAM credentials the browser never h
 endpoints stay server-owned per D-082 — unaffected by this decision.
 **Supersedes:** D-086 (custom OTP+SES mechanism only — the problem statement, non-disclosing UX, and
 `passwordSet` semantics from D-078 are unchanged)
-**Superseded by:** —
-**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — not yet
-built, replaces D-086's design), `heediq-infra` (no new resources — no SES role needed by app code
-for this path; D-058's SES role stays for other transactional email)
+**Superseded by:** D-089 (scope only — generalized from linking-only to also cover native signup and
+proactive settings-linking, and split into two sequential screens instead of one combined form; the
+underlying SignUp/ConfirmSignUp-reuse mechanism defined here is kept)
+**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — built, see
+D-089's Related code for the generalized version), `heediq-infra` (no new resources — no SES role
+needed by app code for this path; D-058's SES role stays for other transactional email)
 
 ---
 
