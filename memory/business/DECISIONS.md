@@ -705,10 +705,10 @@ source later without changing how anything logs, so this doesn't lock the door s
 `heediq-worker-transcription/src/logger.py` (Python mirror); `heediq-infra/lib/observability/observability-stack.ts`
 (per-env CloudWatch Dashboard) + `lib/api/api-stack.ts`/`lib/summarization/summarization-stack.ts`
 (X-Ray active tracing); `heediq-api/src/middleware/request-id.ts` (requestId correlation fallback).
-Implemented across 5 repos on branches `feature/structured-logger` (heediq-shared),
-`feature/structured-logging` (heediq-api, heediq-worker-summarization),
-`feature/structured-logging-py` (heediq-worker-transcription), `feature/observability-stack`
-(heediq-infra) — not yet merged to `develop`.
+Implemented across 5 repos. Merged to `develop`: `heediq-shared` (PR #13), `heediq-worker-transcription`
+(PR #12, branch `feature/structured-logging-py`), `heediq-infra` (PR #41, branch
+`feature/observability-stack`) — see D-093 for retention details. Still open on unmerged branch
+`feature/structured-logging`: `heediq-api`, `heediq-worker-summarization`.
 
 ### D-093 · Logger usage is mandatory; default log level `info`, `debug` opt-in via env var, no unbounded log retention (2026-07-05) — Locked
 **Area:** Architecture / Cost
