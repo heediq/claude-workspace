@@ -284,17 +284,17 @@ Machine access (GitHub Actions) via OIDC: a `GitHubActionsDeployRole` IAM role i
 
 ### D-035 · Polyrepo structure — 7 repos (2026-06-16) — Locked
 **Area:** Architecture / Process
-**Decision:** Seven repos under the `admin-heediq` GitHub org:
-- `heediq-workspace` — rules, memory, plans (exists)
+**Decision:** Seven repos under the `heediq` GitHub org (renamed from `admin-heediq`, D-046):
+- `claude-workspace` — rules, memory, plans (renamed from `heediq-workspace`, D-046)
 - `heediq-shared` — `@heediq/shared`: Zod schemas + TypeScript types, private GitHub Package
 - `heediq-web` — Vite + React PWA
 - `heediq-api` — Hono on Lambda (all REST endpoints)
-- `heediq-worker-transcription` — Python Fargate (faster-whisper, per D-004/D-005)
+- `heediq-worker-transcription` — Python, EC2 GPU Spot (faster-whisper, per D-059/D-060 — supersedes the original Fargate CPU plan, D-004/D-005)
 - `heediq-worker-summarization` — Node Lambda (Claude API extraction, per D-032)
 - `heediq-infra` — AWS CDK (all stacks, all envs per D-036)
 **Why:** Microservice-level granularity — workers split because they have different runtimes (Python vs Node) and scaling/cost profiles; shared types in own package consumed across repos; infra separated from application code. Not feature-level (too many repos) and not monorepo (polyrepo locked).
-**Supersedes:** — **Superseded by:** D-046
-**Related code:** github.com/admin-heediq/
+**Supersedes:** — **Superseded by:** D-046 (org/repo names only — the 7-repo split itself stands)
+**Related code:** github.com/heediq/
 
 ### D-039 · Dev tooling — pnpm + Node 22 LTS (2026-06-16) — Locked
 **Area:** Architecture
