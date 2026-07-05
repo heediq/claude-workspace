@@ -867,11 +867,10 @@ goes through the same backend verify-then-password flow as linking), D-086/D-087
 generalized from "linking" to all three entry points, and split from one combined form into two
 sequential steps; the underlying SignUp/ConfirmSignUp-reuse mechanism from D-087 is kept)
 **Superseded by:** —
-**Related code:** `heediq-api/src/routes/auth.ts` (`request-otp`/`confirm` need generalizing
-beyond `/auth/link/*` to also serve native signup), `heediq-web/src/routes/HomePage.tsx`,
-`heediq-web/src/routes/SettingsPage.tsx` (needs the new shared verify+password component),
-`heediq-infra/lib/foundation/foundation-stack.ts` (PreTokenGeneration trigger — drops the
-`email_verified` check per D-090)
+**Related code:** Built. `heediq-api/src/routes/auth.ts` (`request-otp`/`confirm` generalized
+beyond `/auth/link/*` to also serve native signup and Settings), `heediq-web/src/features/auth/
+VerifyAndSetPasswordForm.tsx` (the shared two-step component, see its README), used from
+`heediq-web/src/routes/HomePage.tsx` and `heediq-web/src/routes/SettingsPage.tsx`.
 
 ### D-090 · Org/user auto-provisioning no longer gated on IdP-asserted email_verified (2026-07-04) — Locked
 **Area:** Architecture / Policy
@@ -890,8 +889,10 @@ it's brittle (this bug proves it) and redundant now that D-089 enforces our own 
 point where identity actually matters.
 **Supersedes:** D-080
 **Superseded by:** —
-**Related code:** `heediq-api/src/handlers/auth-provision.ts` (drop the `emailVerified` check),
-`heediq-infra/lib/foundation/foundation-stack.ts`
+**Related code:** Built. `heediq-api/src/handlers/auth-provision.ts` (drops the `emailVerified`
+check; also resolves the existing row by email first, falling back to `sub`, since a post-linking
+re-login presents the destination/native user's `sub` rather than the original federated `sub` —
+see the file's README for detail), `heediq-infra/lib/foundation/foundation-stack.ts`.
 
 ### D-091 · heediq-user-auth-methods is the source of truth for active login methods (2026-07-04) — Locked
 **Area:** Architecture
@@ -909,8 +910,9 @@ shift toward owning identity/verification logic ourselves rather than trusting C
 also closes a gap found during the same QA session: Settings had no way to see which methods were
 already active.
 **Supersedes:** — **Superseded by:** —
-**Related code:** `heediq-api/src/routes/auth.ts` (new `GET` endpoint for a user's methods — not yet
-built), `heediq-web/src/routes/SettingsPage.tsx` (needs list rendering — not yet built)
+**Related code:** Built. `heediq-api/src/routes/auth-methods.ts` (`GET /api/v1/auth/methods`,
+scoped to the caller's own `userId`), `heediq-web/src/routes/SettingsPage.tsx` (renders the active
+methods list read-only, plus inline "Set a password" using the D-089 shared component).
 
 ---
 
