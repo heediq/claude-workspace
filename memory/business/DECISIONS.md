@@ -731,12 +731,12 @@ real cost gap found while implementing this: `ApiFn`/`SummarizationFn` in `heedi
 have no retention set (unbounded storage growth); only `TranscriptionLogGroup` does today.
 **Supersedes:** — **Superseded by:** — (refines D-085; does not contradict it — same
 CloudWatch/X-Ray stack, no separate tool)
-**Related code:** `heediq-shared/src/logger.ts` (0.6.0, `feature/structured-logger`) and
-`heediq-worker-transcription/src/logger.py` (`feature/structured-logging-py`) — level filtering +
+**Related code:** `heediq-shared/src/logger.ts` (0.6.0) and
+`heediq-worker-transcription/src/logger.py` — level filtering +
 `LOG_LEVEL` support implemented. `heediq-infra/lib/config.ts` `logRetentionFor(workloadEnv)` (30
 days dev/staging, 90 days prod) applied to `ApiStack`, `SummarizationStack`, and
-`TranscriptionStack`'s log groups (`feature/observability-stack`) — none of these branches merged
-to `develop` yet.
+`TranscriptionStack`'s log groups. All three merged to `develop`
+(`heediq-shared` PR #13, `heediq-worker-transcription` PR #12, `heediq-infra` PR #41).
 
 ### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
 **Area:** Architecture
