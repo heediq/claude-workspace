@@ -67,7 +67,7 @@ Do not proceed with any task until this check is clean.
 **Files to scan every time:**
 | File | What to verify |
 |---|---|
-| `DECISIONS.md` | The reference — read what is Locked and what is Superseded. |
+| `DECISIONS.md` | The reference — read what is Locked and what is Superseded. Fully-superseded entries belong in `DECISIONS_ARCHIVE.md`, not here (see `rules/09-decisions.md`). |
 | `memory/business/architecture.md`, `product.md` | Must not describe superseded decisions as current. |
 | All `rules/*.md` | Must not label locked decisions as "proposed" or "confirm or change". |
 | `CLAUDE.md` | Must not duplicate content from DECISIONS.md or detail files — pointer only. |
@@ -104,8 +104,11 @@ do a consolidation pass. This is triggered by Andrii's request, not done silentl
 3. **Propose the consolidation** — show Andrii what would be merged, reworded, or removed and why.
    Do not rewrite memory without approval.
 4. **On approval, consolidate**: merge related entries, tighten wording, remove genuinely stale items.
-   For decisions, never delete — supersede instead (`rules/09-decisions.md`). For codebase memory,
-   deletion is fine when the fact is no longer true.
+   For decisions, never hard-delete — supersede, and once an entry is *fully* superseded (no
+   substantive content still active), move it verbatim to `memory/business/DECISIONS_ARCHIVE.md`
+   (see `rules/09-decisions.md` — Archiving fully-superseded decisions). Partially-superseded
+   decisions stay in `DECISIONS.md`. For codebase memory, deletion is fine when the fact is no
+   longer true.
 5. **Verify completeness after**: confirm nothing load-bearing was lost. The optimized memory must
    still cover every constraint, contract, and gotcha that a future session would need.
 

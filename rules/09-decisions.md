@@ -75,6 +75,22 @@ Decisions evolve. When a new decision changes an old one:
 - Add the new entry with **Supersedes: D-MMM**.
 Never delete a decision or silently edit its meaning; supersede it.
 
+## Archiving fully-superseded decisions
+`DECISIONS.md` stays lean by moving decisions to `memory/business/DECISIONS_ARCHIVE.md` once they
+carry no substantive active content — this is not deletion, the entry is preserved verbatim with
+its full rationale, just out of the main reading path.
+
+- **Archive** a decision when its superseding entry's text already restates whatever part of it is
+  still true (i.e. the old entry adds nothing beyond history).
+- **Keep in `DECISIONS.md`** a decision whose superseding annotation says only part changed (e.g.
+  "mechanism only", "compute only", "X unchanged") and that unchanged part isn't fully restated in
+  the superseding entry — it's still load-bearing, not just historical.
+- When archiving, move the entry as-is (same fields, same wording) into
+  `DECISIONS_ARCHIVE.md`; leave its `Superseded by:` reference intact so a reader following an ID
+  from `DECISIONS.md` into the archive can still see why.
+- This decision applies going forward as part of the periodic consistency check
+  (`rules/10-consistency-check.md`) — don't wait for memory to feel cluttered before archiving.
+
 ## Status lifecycle
 `Proposed` (optional, while under discussion) → `Locked` → `Superseded` / `Reversed`.
 
