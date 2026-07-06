@@ -437,7 +437,9 @@ DNS validation via Route 53 (D-051). No per-subdomain certs unless a specific re
 **Decision:** The `heediq.com` SES email identity lives in the shared-services account (alongside Route 53). DKIM CNAME records are created in the same CDK stack with no cross-stack dependency. Workload account Lambdas send email by assuming IAM role `heediq-ses-email-sending` (in shared-services account). Role ARN exported to workload accounts via SSM at `/heediq/api/ses-sending-role-arn`.
 **Why:** Avoids SharedServicesStack depending on FoundationStack outputs (reverse dependency). SES identity and its DNS records are self-contained in the one account that owns Route 53 — simpler, no two-step deploy dance. Cross-account role assumption is standard IAM; no SES-specific policy quirks.
 **Supersedes:** D-054 (extends — D-054's choice of SES still stands; this locks the placement)
-**Superseded by:** —
+**Superseded by:** D-095 (Cognito OTP email only — adds a per-workload-account SES identity solely for
+Cognito's native confirmation emails; this decision's cross-account role for app-initiated Lambda
+sends is otherwise unchanged)
 **Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`, `heediq-infra/lib/foundation/foundation-stack.ts`
 
 ---
@@ -916,6 +918,30 @@ existing D-070 variable instead of inventing a new source keeps region resolutio
 **Related code:** `heediq-web/.github/workflows/deploy.yml` (`VITE_COGNITO_REGION: ${{ vars.AWS_REGION }}`).
 
 ---
+
+### D-095 · Per-workload-account SES identity, narrowly, so Cognito can send its own OTP emails (2026-07-06) — Locked
+**Area:** Architecture / Infra
+**Decision:** Each workload account (dev/staging/prod) gets its own `heediq.com` SES email identity
+(with its own DKIM CNAMEs added to the shared-services Route 53 zone, one manual one-time step per
+environment — same pattern as the D-063 ACM cert). Cognito's User Pool `email:` config
+(`cognito.UserPoolEmail.withSES(...)`) points at that in-account identity so Cognito's native
+`SignUp`/`ConfirmSignUp` confirmation-code emails (D-087) actually deliver via real SES instead of
+Cognito's default built-in mailer. This is narrowly scoped to Cognito's own email sending — all other
+app-initiated transactional email continues to use the existing D-058 cross-account
+`heediq-ses-email-sending` role into the shared-services identity; nothing about that path changes.
+**Why:** Root-caused OTP non-delivery to Cognito silently using its default (non-SES) email service,
+since no `email:` config was set on the User Pool. AWS confirms Cognito's custom-SES email config is a
+hard same-account-only requirement — cross-account SES cannot be used by Cognito itself (unlike
+Lambda, which can assume a role cross-account). The existing D-058 constraint ("do NOT create SES
+identities in workload accounts") was written for app-initiated Lambda sends and didn't anticipate this
+Cognito-specific limitation; superseding it here for this one narrow case avoids a much larger
+architecture reversal (building custom OTP generation/storage/SES-sending to replace D-087's reuse of
+Cognito's native confirmation flow).
+**Supersedes:** D-058 (mechanism only — Cognito's own email sending gets its own per-account identity;
+D-058's cross-account role for Lambda-initiated app email is unchanged and still the only path for
+that traffic)
+**Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/foundation-stack.ts`, `heediq-infra/README.md` (SES gotcha)
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
