@@ -52,6 +52,7 @@ Check contracts that span repos — a mismatch here causes silent runtime failur
 | Secrets Manager paths | CDK IAM grants (`/heediq/…/*`) + README runbook | Lambda `config.ts` `CLAUDE_SECRET_NAME` + README runbook |
 | Claude model IDs | `handler.ts` `MODELS` map | `rules/07-engineering-standards.md` cost section, `DECISIONS.md` D-067 |
 | Tier values (`free`/`paid`) | `heediq-shared/src/enums.ts` `TierSchema` | All message producers (API, transcription worker) and consumers (summarization worker) |
+| Password policy rules | `heediq-shared/src/passwordPolicy.ts` `PASSWORD_POLICY` | `heediq-infra/lib/foundation/foundation-stack.ts` Cognito `passwordPolicy` (D-094 — deliberately not wired to `@heediq/shared`; check by hand that minLength/upper/lower/digit/symbol match) |
 
 ### 4. Memory index accuracy
 

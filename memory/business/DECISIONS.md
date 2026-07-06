@@ -738,6 +738,29 @@ days dev/staging, 90 days prod) applied to `ApiStack`, `SummarizationStack`, and
 `TranscriptionStack`'s log groups. All three merged to `develop`
 (`heediq-shared` PR #13, `heediq-worker-transcription` PR #12, `heediq-infra` PR #41).
 
+### D-094 · Password-policy visibility — checked-not-wired sync, dedicated weak-password error (2026-07-06) — Locked
+**Area:** Architecture / Design
+**Decision:** `@heediq/shared` gains `passwordPolicy.ts` (`PASSWORD_POLICY`, `PASSWORD_POLICY_RULES`,
+`isPasswordPolicyCompliant`) as the single source of truth for Cognito's password rules (D-020),
+consumed by both `heediq-api` and `heediq-web` (both already depend on the package). `heediq-infra`'s
+CDK `passwordPolicy` literal (`foundation-stack.ts`) stays a separate, independent definition — no new
+infra dependency on `@heediq/shared`, no publish-cycle coupling for a pure-CDK repo. Drift between the
+CDK literal and the shared constant is caught only by the periodic cross-repo consistency check
+(`rules/10-consistency-check.md`), not by a runtime import. `VerifyAndSetPasswordForm.tsx` (all three
+D-089 entry points) shows a live, per-rule checklist (new `PasswordRequirements` kit component) as the
+user types, and disables submit until every rule passes. Separately, a genuine backend rejection
+(Cognito `InvalidPasswordException` on `AdminSetUserPassword`) now returns a distinct `WEAK_PASSWORD`
+error code (previously collapsed into generic `BAD_REQUEST`), surfaced by a new frontend
+`ApiClientError` class as a specific, actionable message instead of the generic failure toast.
+**Why:** Wiring `heediq-infra` into `@heediq/shared` for full auto-sync would force a pure-CDK repo to
+adopt a package dependency and publish-cycle coupling it doesn't otherwise need, for a policy that
+rarely changes — a bigger architectural change than the feature warranted. The lighter check-not-wired
+option keeps the sync mechanism proportional to the actual drift risk. The weak-password error
+distinction closes a real gap observed live: a Cognito policy rejection was reaching the user as an
+unhelpful generic "Failed to set password" message.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/passwordPolicy.ts`, `heediq-web/src/components/ui/PasswordRequirements/README.md`, `heediq-web/src/features/auth/README.md`, `heediq-api/src/routes/auth.ts`
+
 ### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
 **Area:** Architecture
 **Decision:** Replicating a working pattern from Andrii's own prior implementation
