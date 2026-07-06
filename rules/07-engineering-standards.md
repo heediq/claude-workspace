@@ -35,6 +35,11 @@ serverless, privacy-sensitive transcription product. Treat as defaults to confir
 - **Tracing/logging**: structured logs + correlation IDs through the pipeline (API → SQS → ECS (EC2 GPU) →
   DynamoDB); CloudWatch + X-Ray (or equivalent). A failure in a long job must be traceable end to
   end.
+- **Every feature/fix/route/handler/worker logs through the shared logger** (`createLogger`/
+  `create_logger`), never raw `console.log`/`print` — no exceptions, no silent modules (D-093). At
+  minimum: entry/success/failure of the unit of work, with ids (not payloads) as context. `LOG_LEVEL`
+  gates verbosity (`debug` opt-in, `info` default) so this coverage is togglable per environment with
+  no redeploy — it doesn't need re-litigating per change, just applying.
 - **Frontend error reporting** (e.g. Sentry) for unhandled exceptions, scrubbed of PII.
 - Fail loudly in dev, gracefully in prod. No silent catch-and-ignore.
 
@@ -87,6 +92,8 @@ serverless, privacy-sensitive transcription product. Treat as defaults to confir
 - [ ] Types shared/validated at boundaries; `strict` clean
 - [ ] AuthZ + cross-org isolation enforced and tested (for any data path)
 - [ ] No PII/secrets in logs, client bundle, or git
+- [ ] Every new/changed route, handler, or worker unit logs through the shared logger (entry/success/
+      failure, ids not payloads) — no raw `console.log`/`print` left behind (D-093)
 - [ ] Errors structured; loading/feedback rules met; a11y satisfied
 - [ ] Cost impact considered & noted if relevant
 - [ ] Tests added (incl. regression for fixes); pre-PR gate green

@@ -52,6 +52,9 @@ Write a plan that explains the *why* behind each change. It must include:
 - **UI conformance** (any UI step) — confirm it uses existing UI-kit components and the loading/
   feedback rules; flag any *new* kit component or variant that must be added (see `03-ui-kit.md`,
   `04-loading-and-feedback.md`).
+- **Logging** — name the log points each step adds (via `createLogger`/`create_logger`, never raw
+  `console.log`/`print`), at what level, and what non-PII context they carry (ids, not payloads).
+  See `07-engineering-standards.md` §3 / D-093.
 - **Rollback note per step** — one line: "To undo: …".
 - **Risk & Regression** — *Change safety* (Low/Med/High + what could go wrong: data integrity,
   permission edges, races, cost, perf, cross-org isolation) and *Features to retest* (from the
