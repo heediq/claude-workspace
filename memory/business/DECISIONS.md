@@ -541,7 +541,7 @@ sends is otherwise unchanged)
 **Decision:** The summarization worker selects the Claude model based on the org's `tier` field carried in the `SummarizationJobMessage`: `free → claude-haiku-4-5-20251001`, `paid → claude-sonnet-4-6`. `tier` is added to `SummarizationJobMessageSchema` in `@heediq/shared` (mirroring `TranscriptionJobMessage`). The transcription worker passes `job.tier` when enqueuing the summarization message. Model is passed to `ClaudeProvider` at instantiation rather than hardcoded.
 **Why:** Mirrors the transcription tier model pattern (D-059: small/large-v3). Haiku is dramatically cheaper for free-tier jobs (~10–20× vs Sonnet); Sonnet provides higher extraction quality for paid users. Provider interface (D-032) already supports swapping the model without rewriting the worker.
 **Supersedes:** —         **Superseded by:** —
-**Related code:** `heediq-shared/src/messages.ts`, `heediq-worker-summarization/src/provider.ts`, `heediq-worker-transcription/src/models.py`
+**Related code:** `heediq-shared/src/messages.ts`, `heediq-worker-summarization/src/handler.ts` (`MODELS` map + selection), `heediq-worker-summarization/src/provider.ts` (consumes the resolved model), `heediq-worker-transcription/src/models.py`
 
 ### D-068 · Generic entity naming — Source / Container / multi-label (2026-07-02) — Locked
 **Area:** Architecture

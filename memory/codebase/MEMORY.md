@@ -52,13 +52,13 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: transcription-queue `SendMessageCommand` must set `MessageAttributes: { tier }` — without it both EventBridge Pipe filters fail and no job is ever processed.
 
 - **heediq-worker-transcription** — Python ECS worker: one RunTask = one job via SQS_MESSAGE_BODY container override (D-066). Two per-tier images (free/paid) with model weights baked in (D-062).
-  README: `../../heediq-worker-transcription/README.md` · Decisions: D-047, D-059, D-062, D-065, D-066, D-068, D-085, D-093
+  README: `../../heediq-worker-transcription/README.md` · Decisions: D-037, D-038, D-047, D-059, D-062, D-065, D-066, D-068, D-085, D-093
   - Transcript written to `heediq-sources[sourceId].transcript` in DynamoDB (task role has no S3 write grant); summarization worker reads it by sourceId.
   - `src/models.py` is hand-maintained (mirrors `@heediq/shared`, not generated).
   - `src/logger.py` (D-085/D-093) — Python mirror of `@heediq/shared`'s `logger.ts` (`print()`-based JSON logging + PII denylist + `LOG_LEVEL`-gated threshold, default `info`); no X-Ray sidecar on this worker (one-shot batch task, correlation via `source_id` in logs instead).
 
 - **heediq-worker-summarization** — Node.js Lambda: reads transcript from DynamoDB, extracts structured fields (requirements/decisions/openQuestions/actionItems) via Claude, writes back to DynamoDB.
-  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068, D-084, D-085
+  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068, D-084, D-085, D-093
   - `sourceType='text'` → `contentRef` IS the sourceId (reads `heediq-sources[sourceId].transcript`), not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
