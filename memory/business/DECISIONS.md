@@ -216,10 +216,10 @@ Machine access (GitHub Actions) via OIDC: a `GitHubActionsDeployRole` IAM role i
 
 ### D-038 · SSM + secrets path convention (2026-06-16) — Locked
 **Area:** Infra
-**Decision:** SSM Parameter Store paths: `/heediq/{service}/{param}` — e.g. `/heediq/api/cognito-user-pool-id`. Secrets Manager paths: `/heediq/{service}/{secret}` — e.g. `/heediq/api/stripe-secret-key`. No environment prefix in either (account-scoped). CDK injects non-secret config (table names, bucket names, Cognito IDs) as Lambda environment variables at deploy time. Actual secrets (Stripe key, Claude API key, Recall.ai key) are fetched from Secrets Manager at Lambda cold start via the AWS Parameters and Secrets Lambda Extension (no SDK call in hot path).
+**Decision:** SSM Parameter Store paths: `/heediq/{service}/{param}` — e.g. `/heediq/api/cognito-user-pool-id`. Secrets Manager paths: `/heediq/{service}/{secret}` — e.g. `/heediq/api/stripe-secret-key`. No environment prefix in either (account-scoped). CDK injects non-secret config (table names, bucket names, Cognito IDs) as Lambda environment variables at deploy time. Actual secrets (Stripe key, Claude API key, Recall.ai key) are fetched from Secrets Manager at Lambda cold start.
 **Why:** Account boundary makes env prefix redundant. Separating config (env vars, fast) from secrets (Secrets Manager, secure) avoids SSM latency on every config value while keeping secrets out of the Lambda console.
 **Supersedes:** —
-**Superseded by:** —
+**Superseded by:** D-100 (secret-fetch mechanism only — path convention unchanged)
 **Related code:** `heediq-infra/`, `heediq-api/`
 
 ---
@@ -744,7 +744,11 @@ days dev/staging, 90 days prod) applied to `ApiStack`, `SummarizationStack`, and
 **Area:** Architecture / Design
 **Decision:** `@heediq/shared` gains `passwordPolicy.ts` (`PASSWORD_POLICY`, `PASSWORD_POLICY_RULES`,
 `isPasswordPolicyCompliant`) as the single source of truth for Cognito's password rules (D-020),
-consumed by both `heediq-api` and `heediq-web` (both already depend on the package). `heediq-infra`'s
+consumed by both `heediq-api` and `heediq-web` (both already depend on the package). `heediq-api`'s
+`POST /auth/link/confirm` calls `isPasswordPolicyCompliant` before ever calling Cognito, returning
+the same `WEAK_PASSWORD` code as a genuine Cognito rejection — a fast, no-network-round-trip reject
+for the common case, with the Cognito-side `InvalidPasswordException` handler kept as the
+authoritative backstop (e.g. password-history reuse the shared check can't see). `heediq-infra`'s
 CDK `passwordPolicy` literal (`foundation-stack.ts`) stays a separate, independent definition — no new
 infra dependency on `@heediq/shared`, no publish-cycle coupling for a pure-CDK repo. Drift between the
 CDK literal and the shared constant is caught only by the periodic cross-repo consistency check
@@ -1025,6 +1029,23 @@ app-owned `accountId` sidesteps this permanently and was needed for multi-method
 **Related code:** `heediq-api/src/lib/accountIdentity.ts`, `heediq-api/src/handlers/auth-provision.ts`,
 `heediq-api/src/handlers/auth-trigger-*.ts`, `heediq-api/src/middleware/auth.ts`,
 `heediq-api/src/routes/auth.ts`, `heediq-infra/lib/foundation/foundation-stack.ts`
+
+### D-100 · Secrets fetched via direct SDK call, not the Lambda Extension (2026-07-07) — Locked
+**Area:** Infra
+**Decision:** Narrows D-038's secret-fetch mechanism: Lambdas that need a Secrets Manager value
+(currently only `heediq-summarization` fetching the Claude API key) call
+`SecretsManagerClient`/`GetSecretValueCommand` directly via the AWS SDK, cached at module scope so
+the fetch only happens once per cold start (not per invocation). No AWS Parameters and Secrets
+Lambda Extension layer is attached. The SSM/Secrets Manager path convention from D-038 is unchanged.
+**Why:** Consistency-check audit (2026-07-07) found the Extension was never actually wired into
+`summarization-stack.ts` or `heediq-worker-summarization/src/config.ts` — the direct-SDK
+implementation was already what shipped and is safe in practice (module-level caching keeps the SDK
+call out of the hot path, matching the original intent without the extra layer/config surface of the
+Extension). Updating the decision to match reality avoids an unnecessary infra change to a working
+prod Lambda.
+**Supersedes:** D-038 (mechanism only — path convention unchanged, see D-038)
+**Superseded by:** —
+**Related code:** `heediq-infra/lib/summarization/summarization-stack.ts`, `heediq-worker-summarization/src/config.ts`
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).

@@ -18,4 +18,9 @@ how `memory/business/DECISIONS_ARCHIVE.md` is handled for decisions.
 
 ## Entries
 
-_(none yet)_
+## 2026-07-07 · heediq-worker-summarization/README.md · redundant gotcha, merged into an adjacent non-obvious entry during consistency check
+- **Claude API key fetched at cold start** — any Secrets Manager error on init fails all warm invocations until the next cold start. Rotate secrets carefully.
+
+(This restated the already-documented "fetched at cold start" fact from the Contracts section; the
+genuinely non-obvious part — cold-start Secrets Manager errors poisoning all warm invocations — was
+kept and reworded into the README's Gotchas section, tied to D-100's module-level caching mechanism.)
