@@ -943,6 +943,27 @@ that traffic)
 **Superseded by:** —
 **Related code:** `heediq-infra/lib/foundation/foundation-stack.ts`, `heediq-infra/README.md` (SES gotcha)
 
+### D-096 · request-otp self-heals a stuck confirmed-but-unlinked native Cognito user (2026-07-07) — Locked
+**Area:** Architecture
+**Decision:** `POST /auth/link/request-otp` gains a check for the case where a native Cognito user
+already exists for the email, is `CONFIRMED` (i.e. `ConfirmSignUp` ran), but never completed
+`link/confirm` (no `passwordSet=true` / no `heediq-user-auth-methods` row) — an account abandoned
+between D-089's two screens. In that state, Cognito refuses both `SignUp` (`UsernameExistsException`)
+and `ResendConfirmationCode` (`InvalidParameterException: already confirmed`), so no further code can
+ever be delivered and the user is permanently stuck with no self-service way back in. The fix:
+detect this exact state and `AdminDeleteUser` the stale native user, then re-run `SignUp` fresh so a
+new code goes out. D-089's locked two-screen UX (enter code, then set password, separate screens) is
+unchanged — this is a backend-only fix inside `request-otp`, not a flow/screen-count change.
+**Why:** Found via live debugging (2026-07-06/07): CloudTrail showed every OTP retry for
+`admin@heediq.com` after the first successful signup hitting `UsernameExistsException` →
+`ResendConfirmationCode` → `InvalidParameterException`, silently swallowed into a generic `{sent:
+true}` response with no email actually sent (D-078's non-disclosing-response design working exactly
+as intended, but hiding a real stuck-state bug from both the user and our own logs). Combining the
+two screens into one call was considered (would shrink but not eliminate the same race) and rejected
+in favor of this narrower, lower-risk fix that touches only backend state-detection, not the UX.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`), `heediq-api/src/lib/cognito.ts`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
