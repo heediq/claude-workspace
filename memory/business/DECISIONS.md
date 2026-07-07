@@ -1006,6 +1006,25 @@ change, not a new deploy, when a campaign is scheduled.
 **Supersedes:** D-097 (WAF timing only) **Superseded by:** —
 **Related code:** `heediq-infra/lib/api/api-stack.ts` (WAF construct, gated off by default)
 
+### D-099 · Decouple internal accountId from Cognito `sub` via a `heediq-cognito-identities` mapping table (2026-07-07) — Locked
+**Area:** Architecture
+**Decision:** Heediq maintains its own internal `accountId`, generated and stored in DynamoDB,
+fully decoupled from Cognito's `sub`. A new table `heediq-cognito-identities` (pk = `sub`, attribute
+= `accountId`) maps every Cognito identity — native or federated — onto one `accountId`. The
+`accountId` is created once at first login and simply extended with new `sub → accountId` rows as
+further sign-in methods get linked; existing rows are never migrated or rewritten.
+**Why:** `AdminLinkProviderForUser` makes a newly-created native Cognito user the alias destination
+for a federated login's future `sub`, while the prior account-linking flow resolved the "canonical"
+DynamoDB row via an email-lookup-and-hope (`resolveCanonicalAccountId`) — these two notions of "the
+account" diverged permanently, causing a real production bug (`/me` 404, `/auth/methods` empty
+after linking Google + email on the same account). Cognito's `sub` is not a stable per-account
+identifier once linking can repoint it; migrating existing DynamoDB rows to follow a new `sub` is
+fragile and has unbounded blast radius (sources, jobs, everything keyed by user). A stable,
+app-owned `accountId` sidesteps this permanently and was needed for multi-method accounts anyway.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/src/handlers/auth-provision.ts`, `heediq-api/src/middleware/auth.ts`,
+`heediq-api/src/routes/auth.ts`, `heediq-infra/lib/foundation/foundation-stack.ts` (once implemented)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
