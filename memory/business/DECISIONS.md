@@ -986,8 +986,25 @@ throttling alone doesn't stop a low-and-slow attack against one victim email fro
 DynamoDB email+IP layer is necessary alongside the cheaper API Gateway/WAF layers, not instead of
 them. Rate-limiting keyed only on email risks letting an attacker lock out a real user by tripping
 their limit deliberately, so the email-side threshold is generous while the IP-side is tighter.
-**Supersedes:** — **Superseded by:** —
+**Supersedes:** — **Superseded by:** D-098 (WAF activation timing only — the other two layers are unchanged and still built now)
 **Related code:** `heediq-infra/lib/api/api-stack.ts` (throttling, WAF), `heediq-api/src/routes/auth.ts` (email+IP limiter) — implementation in progress
+
+### D-098 · Defer WAF activation until a marketing campaign is planned (2026-07-07) — Locked
+**Area:** Architecture / Cost
+**Decision:** The WAF rate-based rule from D-097 is written into `heediq-infra` now but shipped
+**disabled** (the `CfnWebACL`/`CfnWebACLAssociation` construct is present in code, gated behind a
+config flag defaulting to off) rather than actually deployed active in prod. Enable it before the
+first marketing campaign or any other expected traffic spike. API Gateway throttling and the
+DynamoDB email+IP app-level limiter — the other two D-097 layers — are unaffected and still built
+and active now in all environments.
+**Why:** WAF has a real fixed monthly cost (~$5/mo per Web ACL + ~$1/mo per rule + usage) that isn't
+justified before there's meaningful unauthenticated traffic to defend against; the DynamoDB
+email+IP layer already covers the attack this system cares most about (targeted email-bombing one
+victim), so WAF's edge-level flood protection can wait until volume actually warrants its cost.
+Scaffolding it now (rather than building it later from scratch) means flipping it on is a config
+change, not a new deploy, when a campaign is scheduled.
+**Supersedes:** D-097 (WAF timing only) **Superseded by:** —
+**Related code:** `heediq-infra/lib/api/api-stack.ts` (WAF construct, gated off by default)
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
