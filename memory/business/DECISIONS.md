@@ -964,6 +964,31 @@ in favor of this narrower, lower-risk fix that touches only backend state-detect
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`), `heediq-api/src/lib/cognito.ts`
 
+### D-097 · Layered abuse protection for the OTP endpoints (2026-07-07) — Locked
+**Area:** Architecture / Policy
+**Decision:** `POST /auth/link/request-otp` and `POST /auth/link/verify-otp` (unauthenticated,
+D-087/D-089) get three defense layers, built now: (1) **API Gateway throttling** (steady-state +
+burst limit on the route) in every environment — stops raw request floods before Lambda even runs.
+(2) **AWS WAF rate-based rule** (block an IP exceeding N requests per 5 min) attached to the HTTP
+API, **prod only** — edge-level protection against a single-IP flood; not built for dev/staging to
+keep local/CI testing unthrottled. (3) **App-level throttling keyed by email *and* IP**
+(DynamoDB, fixed/sliding window) inside `request-otp`/`verify-otp` specifically, in every
+environment — the only layer that stops a distributed attacker from email-bombing one victim
+address via rotating IPs, which (1) and (2) cannot catch. All three respond with the same generic
+`RATE_LIMITED` shape regardless of which key (email or IP) tripped, preserving D-078's
+non-disclosure guarantee. **CAPTCHA (e.g. Cloudflare Turnstile) is explicitly deferred** — kept in
+mind as a follow-up if the above prove insufficient, not built in this pass (needs a new UI-kit
+component and adds flow friction, D-089).
+**Why:** D-096's investigation surfaced that `request-otp` has no abuse protection at all today —
+an unauthenticated caller can loop it against any email (email-bombing via Cognito's own SES-backed
+delivery) or hammer it at high volume (SES quota/cost, pool-wide noisy-neighbor risk). Per-IP
+throttling alone doesn't stop a low-and-slow attack against one victim email from many IPs, so the
+DynamoDB email+IP layer is necessary alongside the cheaper API Gateway/WAF layers, not instead of
+them. Rate-limiting keyed only on email risks letting an attacker lock out a real user by tripping
+their limit deliberately, so the email-side threshold is generous while the IP-side is tighter.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-infra/lib/api/api-stack.ts` (throttling, WAF), `heediq-api/src/routes/auth.ts` (email+IP limiter) — implementation in progress
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
