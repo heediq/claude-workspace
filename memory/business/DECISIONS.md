@@ -1022,8 +1022,9 @@ identifier once linking can repoint it; migrating existing DynamoDB rows to foll
 fragile and has unbounded blast radius (sources, jobs, everything keyed by user). A stable,
 app-owned `accountId` sidesteps this permanently and was needed for multi-method accounts anyway.
 **Supersedes:** — **Superseded by:** —
-**Related code:** `heediq-api/src/handlers/auth-provision.ts`, `heediq-api/src/middleware/auth.ts`,
-`heediq-api/src/routes/auth.ts`, `heediq-infra/lib/foundation/foundation-stack.ts` (once implemented)
+**Related code:** `heediq-api/src/lib/accountIdentity.ts`, `heediq-api/src/handlers/auth-provision.ts`,
+`heediq-api/src/handlers/auth-trigger-*.ts`, `heediq-api/src/middleware/auth.ts`,
+`heediq-api/src/routes/auth.ts`, `heediq-infra/lib/foundation/foundation-stack.ts`
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
