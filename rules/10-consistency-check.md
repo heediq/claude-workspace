@@ -1,6 +1,6 @@
 # Periodic Consistency Check
 
-Run this check at the start of a new feature, after a multi-repo release, or when memory/docs feel stale. It catches drift between READMEs, memory, and actual code before it causes real bugs. Andrii triggers it by asking for a "consistency check" or "coherency check".
+Run this check at the start of a new feature, after a multi-repo release, or when memory/docs feel stale. It catches drift between READMEs, memory, and actual code before it causes real bugs. Andrii triggers it by asking for a "consistency check" or "coherency check", or by running `/consistency-check` (project slash command, `.claude/commands/consistency-check.md`, launches Claude from the workspace root and runs this rule end to end).
 
 This extends the per-session coherence check in `08-memory.md` (which covers only business memory files) to cover the full cross-repo surface: code, READMEs, memory indexes, and disaster recovery docs.
 
@@ -81,6 +81,16 @@ and trusted enough to act on. Check every run, not just when things "feel" clutt
 - **Report a rough size delta** (lines/entries removed) alongside the usual findings table so
   Andrii can see the compression is holding, not just that it happened once.
 
+**Never hard-delete removed content — archive it, but keep the archive out of normal context loads.**
+Anything trimmed under this section (stale gotchas, condensed MEMORY.md narration, superseded
+dependency-map entries) moves verbatim to `memory/codebase/STALE_ARCHIVE.md` with a one-line header
+(`## <date> · <source file> · <reason removed>`) rather than being deleted outright — history stays
+recoverable. `STALE_ARCHIVE.md` is deliberately **not** part of the Step 0c / session-start read set
+(`01-development-workflow.md`, `08-memory.md`) and not read by this check on future runs — it exists
+so nothing is silently lost, not so it gets re-loaded and burns context every session. Only open it
+when Andrii explicitly asks for removed/historical content (mirrors how `DECISIONS_ARCHIVE.md` is
+handled for decisions, `09-decisions.md`).
+
 This is the same discipline as the one-off compression pass Andrii requested (2026-07-05) — it's now
 a standing part of every consistency check, not a special request.
 
@@ -107,7 +117,7 @@ The canonical DR doc is `heediq-infra/README.md` §"Initial Setup" and §"Settin
 ## How to run
 
 1. Run the `08-memory.md` coherence check first. Fix any issues before continuing.
-2. For broad audits spanning all repos, spawn parallel agents — one per pair of repos — to read and compare without blowing the main context window. Each agent should return a structured PASS/FAIL/MISSING table.
+2. **Cover every real dependency edge, not an arbitrary repo-pairing.** Read `feature_dependency_map.md` first and build the actual dependency graph (upstream/downstream/shared-surface lines already state it). Spawn one parallel agent per repo that has any upstream or downstream dependency on another repo — an agent's job is to read its assigned repo *and every repo it depends on or is depended on by* (per §3's contract table plus the dependency map), not just one arbitrary partner. A repo with three dependency edges gets checked against all three, not one. Every repo in the monorepo must appear in at least one agent's scope; skipping a repo because it wasn't anyone's "pair" is the failure mode this replaces. Each agent returns a structured PASS/FAIL/MISSING table.
 3. Synthesize findings. Fix critical and high-severity issues immediately (operational bugs, wrong secret paths, stale env var names). Flag medium/low for Andrii to prioritize.
 4. Commit all README and memory fixes separately per repo with `docs:` or `docs(memory):` prefix.
 5. After fixes are committed, push each affected repo's branch (or ask Andrii if mid-session).
