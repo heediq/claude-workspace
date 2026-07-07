@@ -1,7 +1,7 @@
 # Heediq — Architecture & Infrastructure
 
-`DECISIONS.md` (D-001 through D-007, D-021–D-023) points here rather than duplicating this
-detail.
+`DECISIONS.md` (D-001, D-002, D-006, D-007, D-021, D-022) points here rather than duplicating
+this detail. (Earlier D-003–D-005 and D-023 are fully superseded and live in `DECISIONS_ARCHIVE.md`.)
 
 ## Stack
 Full AWS serverless: Lambda, API Gateway, EC2 GPU Spot/ECS (D-059), DynamoDB, S3, SQS, EventBridge,

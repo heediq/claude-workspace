@@ -1,6 +1,6 @@
 # Heediq — Product
 
-`DECISIONS.md` (D-010, D-017–D-020, D-022, D-024–D-026, D-068, D-069) points here rather than
+`DECISIONS.md` (D-017–D-020, D-022, D-024–D-026, D-068, D-069) points here rather than
 duplicating this detail.
 
 ## Vision (founding brief)
