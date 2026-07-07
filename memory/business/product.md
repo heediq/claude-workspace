@@ -145,8 +145,8 @@ Mobile-first, desktop-friendly. Installable on both mobile and desktop.
 ## Home / Listen screen UX
 One large "Listen" button (Shazam-style) is the primary CTA, centered. Secondary actions: upload
 an audio file, upload a text file (skips transcription, goes straight to summary), view
-recordings. A subtle usage/limit indicator sits in the top bar. The recordings library is a
-separate nav page, not embedded in home. See `branding.md` for the Listen button's three visual
+Sources. A subtle usage/limit indicator sits in the top bar. The Sources library is a
+separate nav page, not embedded in home (D-068). See `branding.md` for the Listen button's three visual
 states and empty-state copy.
 
 ## Meeting bot (paid tier)

@@ -166,7 +166,7 @@ loading; `LoadingMark` doesn't replace it.
 ## Empty states
 - Home screen: no separate empty screen — inline hint above the Listen button: *"Your first
   transcript will appear here after recording."*
-- Recordings library: dedicated empty state — *"No recordings yet — tap Listen to create your
+- Sources library: dedicated empty state — *"No sources yet — tap Listen to create your
   first one."*
 
 ## Wordmark usage
