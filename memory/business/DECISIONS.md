@@ -987,7 +987,7 @@ DynamoDB email+IP layer is necessary alongside the cheaper API Gateway/WAF layer
 them. Rate-limiting keyed only on email risks letting an attacker lock out a real user by tripping
 their limit deliberately, so the email-side threshold is generous while the IP-side is tighter.
 **Supersedes:** — **Superseded by:** D-098 (WAF activation timing only — the other two layers are unchanged and still built now)
-**Related code:** `heediq-infra/lib/api/api-stack.ts` (throttling, WAF), `heediq-api/src/routes/auth.ts` (email+IP limiter) — implementation in progress
+**Related code:** `heediq-infra/lib/api/api-stack.ts` (throttling, gated WAF), `heediq-infra/lib/foundation/foundation-stack.ts` (`heediq-rate-limits` table), `heediq-api/src/lib/rateLimit.ts` + `src/routes/auth.ts` (email+IP limiter), `heediq-web/src/features/auth/VerifyAndSetPasswordForm.tsx` (`RATE_LIMITED` handling)
 
 ### D-098 · Defer WAF activation until a marketing campaign is planned (2026-07-07) — Locked
 **Area:** Architecture / Cost

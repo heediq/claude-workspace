@@ -23,7 +23,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `heediq-api/README.md`, `heediq-infra/README.md`. Decision history: `DECISIONS.md` D-077–D-091.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095, D-097, D-098
   - **ObservabilityStack** (`lib/observability/observability-stack.ts`, D-085) — per-env CloudWatch Dashboard built from static resource-name strings (no cross-stack construct refs, per D-037); ApiStack/SummarizationStack Lambdas run with X-Ray active tracing.
   - `lib/config.ts` `logRetentionFor(workloadEnv)` (D-093) — 30 days dev/staging, 90 days prod; applied to ApiStack/SummarizationStack/TranscriptionStack log groups so none default to CDK's "Never Expire".
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062).
@@ -44,7 +44,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Published to GitHub Packages; publish only fires on push to `main`, not `develop` — a `develop`→`main` PR is the release mechanism. New consuming repos need a manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096, D-097, D-098
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves existing users by email first, falling back to `sub` — no `email_verified` gate (D-090).
   - `routes/auth-methods.ts` (`GET /auth/methods`, D-091); `routes/auth.ts`'s `request-otp`/`verify-otp`/`confirm` serve native signup, reactive linking, and Settings-linking alike (D-089), via Cognito `SignUp`/`ConfirmSignUp` reuse (D-087) — `verify-otp` confirms the code on its own before `confirm` ever sets a password, so the code is checked before the caller can proceed. A Cognito `InvalidPasswordException` on `AdminSetUserPassword` returns `WEAK_PASSWORD` (D-094) instead of the generic `BAD_REQUEST`.
   - `src/middleware/request-id.ts` (D-085) — per-request UUID correlation fallback for routes without a `sourceId` yet; logs via `@heediq/shared`'s `createLogger`.
@@ -62,7 +62,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → `contentRef` IS the sourceId (reads `heediq-sources[sourceId].transcript`), not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Features/auth README: `src/features/auth/README.md` · Layout README: `src/components/layout/README.md` · PasswordRequirements README: `src/components/ui/PasswordRequirements/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094
+  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Features/auth README: `src/features/auth/README.md` · Layout README: `src/components/layout/README.md` · PasswordRequirements README: `src/components/ui/PasswordRequirements/README.md` · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097
   - `src/features/auth/VerifyAndSetPasswordForm.tsx` is the one shared own-verification + set-password component, reused by `HomePage` (signup/reactive-linking) and `SettingsPage` (D-091 active-methods list + inline "Set a password"). `cognito-idp.ts` no longer exports `signUp`/`confirmSignUp` — that round trip always goes through `heediq-api`. It also shows a live password-requirements checklist (`PasswordRequirements`, D-094) and disables submit until compliant, via `api-client.ts`'s `ApiClientError` distinguishing `WEAK_PASSWORD` from other failures.
   - Full i18n coverage via `react-i18next`, `src/i18n/` — all user-facing text goes through `t()` (D-075/D-076).
   - `HomePage` is the unified sign-in/sign-up entry (email-first; sign-up/sign-in/forgot-password/reactive-linking steps), calling Cognito directly via `lib/auth/cognito-idp.ts` (see auth README). `AuthCallbackPage` handles Hosted UI OAuth PKCE code exchange for SSO login.
