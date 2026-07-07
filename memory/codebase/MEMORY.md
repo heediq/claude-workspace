@@ -13,7 +13,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **Account linking & auth (D-077–D-091), built end-to-end.** Email is the one true identity across
+- **Account linking & auth (D-077–D-091, D-096), built end-to-end.** Email is the one true identity across
   native + federated signup; own verify-then-password flow (Cognito `SignUp`/`ConfirmSignUp`
   confirmation-code reuse, not IdP-trust or custom OTP) backs signup, reactive login-time linking, and
   proactive Settings linking through one shared component. `heediq-user-auth-methods` is the source of
@@ -44,7 +44,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Published to GitHub Packages; publish only fires on push to `main`, not `develop` — a `develop`→`main` PR is the release mechanism. New consuming repos need a manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves existing users by email first, falling back to `sub` — no `email_verified` gate (D-090).
   - `routes/auth-methods.ts` (`GET /auth/methods`, D-091); `routes/auth.ts`'s `request-otp`/`verify-otp`/`confirm` serve native signup, reactive linking, and Settings-linking alike (D-089), via Cognito `SignUp`/`ConfirmSignUp` reuse (D-087) — `verify-otp` confirms the code on its own before `confirm` ever sets a password, so the code is checked before the caller can proceed. A Cognito `InvalidPasswordException` on `AdminSetUserPassword` returns `WEAK_PASSWORD` (D-094) instead of the generic `BAD_REQUEST`.
   - `src/middleware/request-id.ts` (D-085) — per-request UUID correlation fallback for routes without a `sourceId` yet; logs via `@heediq/shared`'s `createLogger`.

@@ -75,7 +75,7 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Downstream**: nothing — leaf consumer
 - **Shared surfaces**: `/heediq/web/url` SSM param (consumed by `heediq-api` for CORS origin config); `/heediq/web/cloudfront-distribution-id` SSM param (consumed by web CI for cache invalidation); S3 `heediq-web-assets` bucket (written by web CI, served by CloudFront via OAC); `/heediq/api/cognito-hosted-ui-domain` + `/heediq/api/cognito-client-id` SSM params (written by `heediq-infra` FoundationStack, consumed by web CI to inject `VITE_COGNITO_DOMAIN`/`VITE_COGNITO_CLIENT_ID` at build time, D-077); the `custom:orgId`/`custom:role` ID token claims contract — stamped by `heediq-api`'s auth-provision Lambda (D-077), consumed by heediq-web's AuthContext — a rename on either side breaks auth silently
 
-### Account linking (D-078–D-091)
+### Account linking (D-078–D-091, D-096)
 - **Upstream**: `heediq-infra` FoundationStack (`by-email` GSI on `heediq-users`; `heediq-user-auth-methods`/`heediq-auth-audit-log` tables; 3 Cognito triggers — pre-signup/post-confirmation/post-authentication; Cognito App Client `callbackUrls` incl. `/settings/link-callback`, D-083); `heediq-api` (`POST /auth/lookup-email`, `POST /auth/link/request-otp`, `POST /auth/link/verify-otp`, `POST /auth/link/confirm` — generalized under D-089 to also serve native signup and Settings-linking, not just reactive linking, and split so the code is verified (`verify-otp`) before any password is collected (`confirm`); `GET /auth/methods`, D-091); Cognito unauthenticated IdP JSON API + Hosted UI OAuth (D-082, D-083)
 - **Downstream**: nothing yet — leaf feature within heediq-web; `POST /settings/link/add-provider` (proactive linking's backend half) will reuse the same `heediq-api` `lib/cognito.ts` helpers once built
 - **Shared surfaces**:
@@ -86,6 +86,7 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
   - `heediq-web/src/features/auth/VerifyAndSetPasswordForm.tsx` (D-089) — the shared two-step own-verification component; a new shared surface consumed by both `HomePage.tsx` and `SettingsPage.tsx`, so a change here retests both entry points
   - `auth-provision.ts`'s email-first-then-`sub` lookup (D-090) — a post-linking re-login presents the destination/native user's `sub`, not the original federated `sub`; changing the lookup order risks re-provisioning a duplicate org
   - **Still open**: `POST /settings/link/add-provider` (proactive linking's backend call) — not yet built
+  - `heediq-api`'s `handleExistingNativeUser` in `routes/auth.ts` (D-096) — `request-otp`'s `AdminDeleteUser` self-heal for a native user stuck `CONFIRMED` with `passwordSet: false` (abandoned between `verify-otp` and `confirm`); reads the same `passwordSet` flag above to decide, so a change to how/when that flag is set must be checked against this heal condition too
 
 ### Observability (D-085, D-093)
 - **Upstream**: reads other stacks'/repos' static resource names only (Lambda function names, SQS queue/DLQ names, ECS cluster/ASG name) — no CDK construct props, so it deploys independently of every other stack's synth order (enabled by D-037: names carry no env prefix). `heediq-shared/src/logger.ts` (+ Python mirror `heediq-worker-transcription/src/logger.py`) is the structured-log shape every service writes to CloudWatch Logs.
