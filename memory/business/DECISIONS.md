@@ -1108,10 +1108,11 @@ the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
 **Related code:** Phase 1 in progress — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
-`lib/foundation/tables.ts`) built on `heediq-infra:feature/rbac-shared-catalog-and-tables`, not yet
-pushed/PR'd. Phases 2–5 (CRUD routes, token/middleware cutover, frontend UI, audit-log viewer) not
-started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture still in
-`memory/business/architecture.md` §"RBAC & Audit Trail".
+`lib/foundation/tables.ts`) on `heediq-infra:feature/rbac-shared-catalog-and-tables`,
+[PR #48](https://github.com/heediq/heediq-infra/pull/48) open awaiting review. Phases 2–5 (CRUD
+routes, token/middleware cutover, frontend UI, audit-log viewer) not started. Tracker:
+`plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
+§"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
