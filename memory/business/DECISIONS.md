@@ -1129,6 +1129,18 @@ split by concern as they grow rather than accumulating unrelated responsibilitie
 **Supersedes:** —         **Superseded by:** —
 **Related code:** `heediq-infra/lib/foundation/README.md` (once the foundation-stack split lands)
 
+### D-104 · No migration for `heediq-auth-audit-log` — drop the table (2026-07-08) — Locked
+**Area:** Architecture
+**Decision:** Resolves D-102's open migration question: `heediq-auth-audit-log` (D-087) is removed
+outright once the auth event write path cuts over to the unified `heediq-audit-log` (D-102) — no
+backfill of old rows, no read-only retention period. History in the old table is simply dropped.
+**Why:** Andrii doesn't need the old auth-audit history preserved, so the simplest path (cut over
+writes, then delete the table) beats a backfill migration with no product benefit.
+**Supersedes:** —         **Superseded by:** —
+**Related code:** — (the table removal happens later in the RBAC build-out, once the auth write path
+cuts over to `heediq-audit-log`; `memory/business/architecture.md` §"RBAC & Audit Trail" is updated
+at that point too, per Andrii — not now)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
