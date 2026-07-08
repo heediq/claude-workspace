@@ -1109,12 +1109,16 @@ the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
 `lib/foundation/tables.ts`, README: `heediq-infra/lib/foundation/README.md`) merged to `develop`
-via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phase 2 **implemented, PRs open** —
-`heediq-shared`'s 5 RBAC request schemas + `buildAuditLogEntry()` published as `@heediq/shared@0.10.0`
-([PR #26](https://github.com/heediq/heediq-shared/pull/26)); `heediq-infra` ApiStack grants
-([PR #49](https://github.com/heediq/heediq-infra/pull/49)); `heediq-api` `routes/roles.ts`,
-`routes/groups.ts`, `routes/role-assignments.ts`, `lib/audit.ts` ([PR #24](https://github.com/heediq/heediq-api/pull/24)),
-README: `heediq-api/README.md`. Phases 3–5 (token/middleware cutover, frontend UI, audit-log viewer)
+via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phase 2 **done** — role/group CRUD +
+audit write path in `heediq-api` (`routes/roles.ts`/`groups.ts`/`role-assignments.ts`, `lib/audit.ts`),
+backed by `heediq-shared`'s 5 RBAC request schemas + `buildAuditLogEntry()` (`@heediq/shared@0.10.0`)
+and `heediq-infra` ApiStack grants on the 4 tables — merged to `develop` via
+[heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) (`4f073d4`),
+[heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) (`5be8e07`),
+[heediq-api#24](https://github.com/heediq/heediq-api/pull/24) (`87a3528`), all 2026-07-08.
+README: `heediq-api/README.md` §"D-102 RBAC & audit trail". All writes still gated by the interim
+`requireAdmin()` (legacy `role==='admin'`, D-017) — Phase 3 replaces this with granular
+`Permission`-based enforcement. Phases 3–5 (token/middleware cutover, frontend UI, audit-log viewer)
 not started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture still in
 `memory/business/architecture.md` §"RBAC & Audit Trail".
 
