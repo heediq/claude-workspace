@@ -25,7 +25,71 @@ Resource naming: `heediq-{entity}` with no environment prefix — the account bo
 ## Multi-tenancy
 Single shared database, row-level tenant isolation via `org_id` on every tenant-scoped row (e.g.
 recordings carry `org_id` + `owner_user_id`). Query pattern:
-`WHERE org_id = :tenant AND (owner_user_id = :user OR :role = 'admin')`.
+`WHERE org_id = :tenant AND (owner_user_id = :user OR :role = 'admin')` — this `:role = 'admin'`
+shorthand is the pre-RBAC baseline; under D-102 it becomes a permission check
+(`sources:read` grants all-org visibility, `sources:read-own` restricts to `owner_user_id = :user`),
+see RBAC & Audit Trail below.
+
+## RBAC & Audit Trail (design locked, D-102 — not yet built)
+Supersedes D-017's fixed Admin/Member roles with dynamic, per-org RBAC, plus a unified audit trail
+raised to a GxP-quality bar (design-quality target, not a formal regulatory obligation today).
+`DECISIONS.md` D-102 points here rather than duplicating this detail.
+
+**Domain model:** User ↔ Role (direct) and User ↔ Group ↔ Role (via membership), many-to-many;
+effective permissions = union of all roles reached either way, no deny rules. Permissions are a
+static `@heediq/shared`-defined catalog of `resource:verb` strings (e.g. `sources:delete`,
+`org:manage-roles`, `audit:read`); what's dynamic per org is which permissions a role grants, not
+the catalog itself. Enforcement is resource-type granularity only (no per-record ACLs) — "own
+content only" stays a narrow ownership filter inside handlers, same shape as today's Member
+restriction, now expressed as the `sources:read-own` permission instead of a hardcoded role check.
+
+**Data model (new DynamoDB tables, `heediq-infra` FoundationStack):**
+- `heediq-roles` (`pk=ORG#<orgId>`, `sk=ROLE#<roleId>`) — `name`, `permissions[]`, `isSystemRole`.
+  Two non-deletable system roles (`admin`: all permissions, `member`: today's default set) are
+  seeded into every org at first-login provisioning via `@heediq/shared`'s `DEFAULT_ORG_RBAC_SEED`
+  — the direct migration path from D-017 — fully editable after creation; unlimited custom roles.
+- `heediq-groups` (`pk=ORG#<orgId>`, `sk=GROUP#<groupId>`) — `name`, `roleIds[]`. No default groups
+  seeded (pure org-admin convenience, starts empty).
+- `heediq-role-assignments` (`pk=USER#<accountId>`, `sk=ROLE#<roleId>|GROUP#<groupId>`) — the
+  join table resolved at token issuance; `by-role` GSI answers "who holds this role" for the
+  role-management UI and for the `rbacVersion` fan-out below.
+- `heediq-audit-log` (`pk=ORG#<orgId>`, `sk=<timestamp>#<eventId>`, `by-user` GSI) — supersedes the
+  auth-only `heediq-auth-audit-log` (D-087) into one general-purpose, org-scoped, write-once (no
+  update/delete code path) audit trail covering auth events and every RBAC-governed action.
+
+**Token strategy:** permissions resolve to `roleIds` + an `rbacVersion` integer stamped into the
+Cognito ID token by the existing `auth-provision.ts` PreTokenGeneration trigger (no extra DB read
+per request on the happy path). `heediq-api`'s auth middleware compares the token's `rbacVersion`
+against the live value on `heediq-users`; a mismatch returns `401 RBAC_STALE`, and `heediq-web`
+treats that as an expired session — full re-login, not a silent refresh (Andrii's explicit
+preference: any role/permission change takes effect within one request, at the cost of an
+unannounced forced logout for affected users).
+
+**Audit payloads:** `before`/`after` are resource-type-specific, human-readable snapshots (a
+`AuditPayloadMap` discriminated union in `@heediq/shared`, e.g. `{ roleId, name, permissions }` for
+a role change, `{ sourceId, title, ownerEmail }` for a source), resolved by the calling handler at
+write time — never a raw DB row. This keeps entries self-contained (readable without a live join,
+even after the referenced record is renamed/deleted) and structurally prevents transcript/PII from
+reaching the log, the same PII discipline `createLogger` already applies to CloudWatch logs
+(D-085/D-093).
+
+**Audit viewer:** org Admins get `/org/audit-log` (`heediq-web`) backed by `GET /org/audit-log`
+(`heediq-api`), cursor-paginated, filterable by date range (native `sk` range — cheapest), actor
+(`by-user` GSI when it's the only filter besides date), action type, and resource type (both as
+`FilterExpression`s over the date-range query, no dedicated GSI yet). Free-text search is
+explicitly deferred — no DynamoDB-native text search; would need a separate index (OpenSearch or
+similar) if a real need appears. Gated by a new `audit:read` permission, enforced server-side.
+
+**Frontend permission checks:** `heediq-web`'s `usePermissions`/`<Can>` (in `src/lib/auth/`, not
+the styled kit — no visual styling of its own) read a server-resolved `effectivePermissions` field
+added to `GET /me`, computed by the same `resolveEffectivePermissions(accountId)` function the
+enforcement middleware uses — one implementation of "what can this user do," never duplicated
+client-side. These wrappers are UX-only (hide/show); `requirePermission` middleware in `heediq-api`
+remains the only real authority.
+
+**Not yet resolved (implementation-time decisions):** the exact JWT claim payload shape (roleIds
+vs. expanded permission strings, and any in-Lambda role-catalog cache), and the
+`heediq-auth-audit-log` → `heediq-audit-log` data migration (backfill vs. leave old rows read-only).
 
 ## Database
 DynamoDB-only at launch (D-007). Design: **multi-table** — one table per service/entity domain, e.g. `heediq-sources`, `heediq-orgs` (D-031, table renamed from `heediq-recordings` per D-068). Aurora Serverless v2 (Postgres) deferred — open migration path per service if relational queries become necessary. At small scale, Aurora's ~$45/mo fixed floor dominates the bill disproportionately (see Cost baselines below).

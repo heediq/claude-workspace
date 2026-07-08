@@ -97,6 +97,7 @@ management, sees all org content) and Member (own content only). No per-recordin
 launch (deferred).
 **Why:** keeps the data model unified across personal and team accounts.
 **Related:** `memory/business/product.md`
+**Superseded by:** D-102
 
 ### D-018 · Free-tier usage limits — Locked (2026-06-11)
 **Area:** Pricing
@@ -1062,6 +1063,53 @@ day) while capping steady-state storage to roughly 5×(5GB+9GB) ≈ 70GB.
 **Supersedes:** D-047 (retention mechanism only — SHA-tag versioning strategy itself unchanged)
 **Superseded by:** —
 **Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`
+
+### D-102 · Dynamic per-org RBAC + unified GxP-quality audit trail — design locked (2026-07-08) — Locked
+**Area:** Architecture
+**Decision:** Replaces D-017's fixed Admin/Member roles with a dynamic, per-org RBAC framework:
+Users, Groups, Roles, and a static code-defined Permission catalog (`resource:verb`, e.g.
+`sources:delete`, `org:manage-roles`), enforced at resource-type granularity (not per-record ACLs)
+in `heediq-api`'s Hono middleware. Each org manages its own roles/groups (no cross-org visibility,
+no platform-wide super-admin tier yet). Two non-deletable system roles (`admin`, `member`) are
+seeded into every org at first-login provisioning via a shared `DEFAULT_ORG_RBAC_SEED` — the direct
+migration path from D-017 — fully editable afterward; unlimited custom roles per org. A user's
+effective permissions = union of their direct role assignments + every group's roles they belong to
+(no deny rules). Permissions are resolved and baked into the Cognito ID token at issuance (via the
+existing `auth-provision.ts` PreTokenGeneration trigger) alongside an `rbacVersion` claim; a
+per-request check in `heediq-api`'s auth middleware compares it against the live value on
+`heediq-users` and forces a full re-login (`401 RBAC_STALE`, no silent refresh) the moment a user's
+roles/permissions change — bounded staleness without a permission-set DB read on every request.
+`heediq-web` gets UX-only permission wrappers (`usePermissions`, `<Can>`) driven by a server-resolved
+`effectivePermissions` field on `GET /me` — never a client-side authority; server-side
+`requirePermission` middleware remains the only real enforcement.
+Audit trail: a single unified `heediq-audit-log` table (org-scoped partition, write-once by
+construction, no delete/update path in application code) supersedes the auth-only
+`heediq-auth-audit-log` (D-087), covering both auth events and every RBAC-governed action.
+`before`/`after` snapshots are resource-type-specific, human-readable, and resolved at write time by
+the calling handler (never a raw DB row) via a typed `AuditPayloadMap`/`writeAuditEvent` helper in
+`@heediq/shared` — keeps entries self-contained (readable without a live join, even after the
+referenced record is renamed/deleted) and structurally prevents PII (e.g. transcript text) from
+reaching the log. Org Admins get a dedicated `/org/audit-log` viewer (`GET /org/audit-log`,
+cursor-paginated, filterable by date range/actor/action/resource type, gated by a new `audit:read`
+permission); free-text search is explicitly deferred.
+**Why:** Andrii wants a comprehensive, dynamically configurable RBAC + audit framework ahead of
+building a lot of functionality on top of the current fixed two-role model, and wants the audit
+trail rigorous enough to meet a GxP-grade quality bar (immutable, complete who/what/when/before-after
+records) even though no formal regulatory (21 CFR Part 11-style) obligation exists today — confirmed
+as a design-quality target, not a compliance requirement to formally validate (no e-signatures or
+validation docs built now). Resource-type (not per-record) permission granularity and JWT-bake-in
+(not per-request DB lookup) were chosen to avoid a much heavier data model and extra request latency
+that no current product need justifies; the `rbacVersion` forced-re-login mechanism was Andrii's
+explicit preference over a silent-refresh alternative, trading an unannounced logout (rare,
+admin-initiated event) for immediate effect and simplicity/auditability.
+**Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
+the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
+**Superseded by:** —
+**Related code:** — (design only; not yet built — see `memory/business/architecture.md` §"RBAC &
+Audit Trail" for the full architecture: domain model, DynamoDB schema for
+`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, permission catalog,
+token/middleware design, default seed, frontend wrappers, audit payload typing, and the audit-log
+viewer UI)
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).

@@ -13,6 +13,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
+- **RBAC & audit trail (D-102, supersedes D-017)** — design locked, not yet built. Dynamic per-org
+  roles/groups/permissions + unified GxP-quality-bar audit trail. Full architecture:
+  `../business/architecture.md` §"RBAC & Audit Trail". Decision: `DECISIONS.md` D-102.
+
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
   signup, reactive login-time linking, and proactive Settings linking through one shared component.
