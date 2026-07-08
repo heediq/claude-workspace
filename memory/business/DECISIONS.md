@@ -1105,12 +1105,12 @@ admin-initiated event) for immediate effect and simplicity/auditability.
 **Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
 the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
 **Superseded by:** —
-**Related code:** Phase 1 in progress — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
+**Related code:** Phase 1 **done** — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
-`lib/foundation/tables.ts`) on `heediq-infra:feature/rbac-shared-catalog-and-tables`,
-[PR #48](https://github.com/heediq/heediq-infra/pull/48) open awaiting review. Phases 2–5 (CRUD
-routes, token/middleware cutover, frontend UI, audit-log viewer) not started. Tracker:
+`lib/foundation/tables.ts`, README: `heediq-infra/lib/foundation/README.md`) merged to `develop`
+via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phases 2–5 (CRUD routes,
+token/middleware cutover, frontend UI, audit-log viewer) not started. Tracker:
 `plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
 §"RBAC & Audit Trail".
 

@@ -14,7 +14,7 @@ code:` field has been updated to point at the built code READMEs.
 
 | # | Phase | Scope | Status | Branch / WIP file |
 |---|---|---|---|---|
-| 1 | Shared catalog + tables | `heediq-shared/src/permissions.ts`, `src/audit.ts`; `heediq-infra` FoundationStack tables (`heediq-roles`, `heediq-groups`, `heediq-role-assignments`, `heediq-audit-log`) + `defaultRoleId` on `heediq-orgs` | In progress — `heediq-shared` done & published (`@heediq/shared@0.9.0`); `heediq-infra` tables + foundation-stack split (D-103) done, PR open awaiting review | `heediq-infra:feature/rbac-shared-catalog-and-tables` · [PR #48](https://github.com/heediq/heediq-infra/pull/48) |
+| 1 | Shared catalog + tables | `heediq-shared/src/permissions.ts`, `src/audit.ts`; `heediq-infra` FoundationStack tables (`heediq-roles`, `heediq-groups`, `heediq-role-assignments`, `heediq-audit-log`) + `defaultRoleId` on `heediq-orgs` | **Done** — `heediq-shared@0.9.0` merged & published; `heediq-infra` tables + foundation-stack split (D-103) merged to `develop` via [PR #48](https://github.com/heediq/heediq-infra/pull/48) (`4d4eb64`, 2026-07-08) | — |
 | 2 | Role/group CRUD + audit write path | New `heediq-api` routes for roles/groups/assignments; `writeAuditEvent` helper; per-resource-type payload resolution | Not started | — |
 | 3 | Token/middleware + provisioning cutover | `auth-provision.ts` seeds `DEFAULT_ORG_RBAC_SEED` + stamps `custom:permissions`/`custom:rbacVersion`; `requirePermission` middleware; `RBAC_STALE` 401 | Not started | — |
 | 4 | Frontend RBAC UI | `heediq-web` role/group management screens; `usePermissions`/`<Can>` wrappers wired into existing screens | Not started | — |

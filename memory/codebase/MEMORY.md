@@ -13,13 +13,15 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **RBAC & audit trail (D-102, supersedes D-017)** — Phase 1 (of 5) in progress: `@heediq/shared@0.9.0`
-  permissions/audit schemas published; `heediq-infra` FoundationStack tables (`heediq-roles`,
-  `heediq-groups`, `heediq-role-assignments`, `heediq-audit-log`) built on
-  `heediq-infra:feature/rbac-shared-catalog-and-tables`, not yet PR'd. Dynamic per-org
-  roles/groups/permissions + unified GxP-quality-bar audit trail. Full architecture:
-  `../business/architecture.md` §"RBAC & Audit Trail". Phase tracker: `../../plans/wip-rbac-audit-trail.md`.
-  Decision: `DECISIONS.md` D-102.
+- **RBAC & audit trail (D-102, supersedes D-017; also D-104 — `heediq-auth-audit-log` to be dropped,
+  no migration, once the auth write path cuts over)** — Phase 1 of 5 done: `@heediq/shared@0.9.0`
+  permissions/audit schemas + `heediq-infra` FoundationStack tables (`heediq-roles`, `heediq-groups`,
+  `heediq-role-assignments`, `heediq-audit-log`) merged to `develop` (`heediq-infra` PR #48). Phases
+  2–5 (CRUD routes, token/middleware cutover, frontend UI, audit-log viewer) not started. Dynamic
+  per-org roles/groups/permissions + unified GxP-quality-bar audit trail. Full architecture:
+  `../business/architecture.md` §"RBAC & Audit Trail" (still describes design as "not yet built" —
+  intentionally left stale until the full feature is implemented, per Andrii). Phase tracker:
+  `../../plans/wip-rbac-audit-trail.md`. Decisions: `DECISIONS.md` D-102, D-104.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
