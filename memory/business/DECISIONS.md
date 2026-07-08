@@ -1047,6 +1047,22 @@ prod Lambda.
 **Superseded by:** —
 **Related code:** `heediq-infra/lib/summarization/summarization-stack.ts`, `heediq-worker-summarization/src/config.ts`
 
+### D-101 · ECR lifecycle rule fixed to actually expire old transcription-worker images (2026-07-08) — Locked
+**Area:** Infra / Cost
+**Decision:** `SharedServicesStack`'s ECR lifecycle rule for `heediq-worker-transcription` is corrected
+to match the tags CI actually pushes (`free-sha-<7chars>` / `paid-sha-<7chars>`, see
+`heediq-worker-transcription/.github/workflows/deploy.yml`) and retains the **last 5 images per
+tier** (free, paid), independently. Untagged-layer cleanup (1 day) is unchanged.
+**Why:** The original rule (D-047-era) used `tagPrefixList: ['sha-']`, which never matched either
+tag because both are prefixed with the tier name first (`free-`/`paid-`), not `sha-`. Every image
+ever built (5GB free + 9GB paid per commit) was being retained forever — this is the actual driver of
+ECR storage cost, not a need to shrink an already-working retention window. 5 per tier gives enough
+rollback headroom across dev/staging/prod (only the currently-promoted SHA per env matters day to
+day) while capping steady-state storage to roughly 5×(5GB+9GB) ≈ 70GB.
+**Supersedes:** D-047 (retention mechanism only — SHA-tag versioning strategy itself unchanged)
+**Superseded by:** —
+**Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
