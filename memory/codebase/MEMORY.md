@@ -86,15 +86,4 @@ _(none currently — see `heediq-infra` entry above for the one cross-stack CDK 
 ## In-progress (not yet doc-worthy)
 _(Short notes on things being worked out; promote to a README or decisions doc when settled.)_
 
-- **⚠️ CRITICAL — DynamoDB key mismatch across the whole pipeline (found 2026-07-07 consistency
-  check, fix direction not yet decided).** FoundationStack defines `heediq-sources` with composite
-  pk `orgId` + sk `sourceId`, and `heediq-jobs` with pk `sourceId` — but every consumer keys them
-  differently: `heediq-api/src/routes/sources.ts` uses `Key:{sourceId}` (5 sites) and queries a
-  non-existent `by-org` GSI (real GSIs: `by-org-created`/`by-user-created`);
-  `heediq-worker-transcription` `worker.py` writes sources with `{sourceId}` and
-  `status_writer.py` writes jobs with `{jobId}`; `heediq-worker-summarization` `writer.ts`/
-  `content-loader.ts` do the same. Every call throws `ValidationException` against the deployed
-  tables — the record→transcribe→summarize pipeline cannot have run end-to-end. Unit tests mock
-  DynamoDB, so all suites are green. Do not build on the sources/jobs data paths until Andrii
-  decides: fix consumers to match the deployed schema (recommended — no table migration) or change
-  the table keys (table replacement; dev has no real data).
+_(none currently)_
