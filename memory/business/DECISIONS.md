@@ -1111,6 +1111,22 @@ Audit Trail" for the full architecture: domain model, DynamoDB schema for
 token/middleware design, default seed, frontend wrappers, audit payload typing, and the audit-log
 viewer UI)
 
+### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
+**Area:** Architecture
+**Decision:** Any script/code file (not infra/CDK-specific — this applies workspace-wide: Lambda
+handlers, React components, CDK stacks, utilities, etc.) should stay focused on a single concern.
+When a file starts mixing multiple distinct responsibilities (e.g. one CDK stack file defining
+tables, Cognito, buckets, queues, and auth triggers all in one place), split it into focused
+files grouped by concern, composed back together by a slim top-level file. There is no strict line
+count — a long file that stays on one concern is fine, and a short file mixing concerns still needs
+splitting. Scope, not size, is the trigger.
+**Why:** Foundation stack (`heediq-infra/lib/foundation/foundation-stack.ts`) grew past 600 lines by
+mixing DynamoDB tables, S3, SQS, Cognito, and Lambda trigger wiring in one file, making it hard to
+scan. Andrii wants this as a general habit, not a one-off fix, so future files (in any repo) get
+split by concern as they grow rather than accumulating unrelated responsibilities.
+**Supersedes:** —         **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/README.md` (once the foundation-stack split lands)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

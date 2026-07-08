@@ -80,6 +80,12 @@ serverless, privacy-sensitive transcription product. Treat as defaults to confir
 - Branches/commits per `02-git-and-commits.md`. DynamoDB keys and event names follow a documented,
   consistent scheme (record once in the relevant README).
 - Feature flags / env config resolved per environment — never hardcoded.
+- **Every script file stays scoped to one concern** (D-103) — CDK stacks, Lambda handlers, React
+  files, utilities, all of it. No fixed line-count trigger: a long file that stays on one concern is
+  fine, a short file mixing concerns still needs splitting. When a file starts mixing distinct
+  responsibilities (e.g. one CDK stack defining tables, Cognito, buckets, and queues together),
+  split it into focused files by concern under a folder, composed by a slim top-level file, mirrored
+  in the test layout.
 
 ## 10. Dependencies
 - Add dependencies deliberately; prefer the platform/existing deps over a new library for small wins.
