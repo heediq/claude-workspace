@@ -1105,11 +1105,13 @@ admin-initiated event) for immediate effect and simplicity/auditability.
 **Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
 the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
 **Superseded by:** —
-**Related code:** — (design only; not yet built — see `memory/business/architecture.md` §"RBAC &
-Audit Trail" for the full architecture: domain model, DynamoDB schema for
-`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, permission catalog,
-token/middleware design, default seed, frontend wrappers, audit payload typing, and the audit-log
-viewer UI)
+**Related code:** Phase 1 in progress — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
+published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
+(`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
+`lib/foundation/tables.ts`) built on `heediq-infra:feature/rbac-shared-catalog-and-tables`, not yet
+pushed/PR'd. Phases 2–5 (CRUD routes, token/middleware cutover, frontend UI, audit-log viewer) not
+started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture still in
+`memory/business/architecture.md` §"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
