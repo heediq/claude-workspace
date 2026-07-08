@@ -13,9 +13,13 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **RBAC & audit trail (D-102, supersedes D-017)** — design locked, not yet built. Dynamic per-org
+- **RBAC & audit trail (D-102, supersedes D-017)** — Phase 1 (of 5) in progress: `@heediq/shared@0.9.0`
+  permissions/audit schemas published; `heediq-infra` FoundationStack tables (`heediq-roles`,
+  `heediq-groups`, `heediq-role-assignments`, `heediq-audit-log`) built on
+  `heediq-infra:feature/rbac-shared-catalog-and-tables`, not yet PR'd. Dynamic per-org
   roles/groups/permissions + unified GxP-quality-bar audit trail. Full architecture:
-  `../business/architecture.md` §"RBAC & Audit Trail". Decision: `DECISIONS.md` D-102.
+  `../business/architecture.md` §"RBAC & Audit Trail". Phase tracker: `../../plans/wip-rbac-audit-trail.md`.
+  Decision: `DECISIONS.md` D-102.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
@@ -29,11 +33,11 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `heediq-api/README.md`, `heediq-infra/README.md`. Decision history: `DECISIONS.md` D-077–D-091, D-099.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095, D-097, D-098, D-099
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095, D-097, D-098, D-099, D-102, D-103
   - **ObservabilityStack** (`lib/observability/observability-stack.ts`, D-085) — per-env CloudWatch Dashboard built from static resource-name strings (no cross-stack construct refs, per D-037); ApiStack/SummarizationStack Lambdas run with X-Ray active tracing.
   - `lib/config.ts` `logRetentionFor(workloadEnv)` (D-093) — 30 days dev/staging, 90 days prod; applied to ApiStack/SummarizationStack/TranscriptionStack log groups so none default to CDK's "Never Expire".
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062).
-  - **FoundationStack** — tables (sources, orgs, users, jobs w/ DDB Streams NEW_IMAGE, ws-connections w/ TTL + by-source GSI, user-auth-methods, auth-audit-log, cognito-identities pk=sub, D-099) + Cognito User Pool (custom:orgId/custom:role/custom:accountId, PreTokenGeneration + pre-signup/post-confirmation/post-authentication triggers) + ACM wildcard cert eu-west-1 (D-063) + SSM params.
+  - **FoundationStack** (`lib/foundation/`, split by concern per D-103 — see `lib/foundation/README.md`) — tables (sources, orgs, users, jobs w/ DDB Streams NEW_IMAGE, ws-connections w/ TTL + by-source GSI, user-auth-methods, auth-audit-log, cognito-identities pk=sub, D-099, plus RBAC/audit tables roles/groups/role-assignments/audit-log, D-102) + Cognito User Pool (custom:orgId/custom:role/custom:accountId, PreTokenGeneration + pre-signup/post-confirmation/post-authentication triggers) + ACM wildcard cert eu-west-1 (D-063) + SSM params.
   - **WebSocketStack** — WebSocket API + heediq-ws-connect + heediq-ws-status-pusher (DDB Streams trigger) + custom domain ws-{env}.heediq.com (D-064) + SSM params (D-061).
   - **ApiStack** — Lambda heediq-api (Node.js 22) + HTTP API + custom domain api-{env}.heediq.com + IAM grants (tables, S3, SQS transcription+summarization, SecretsManager, SES role).
   - **SummarizationStack** — SQS queue + DLQ + Lambda heediq-summarization + IAM (SecretsManager, DynamoDB jobs+sources, S3 read). Source-agnostic: audio (transcription worker) + direct path (API Lambda, text/PDF/email/Excel), D-065.
