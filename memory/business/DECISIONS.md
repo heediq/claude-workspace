@@ -1109,10 +1109,14 @@ the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
 `lib/foundation/tables.ts`, README: `heediq-infra/lib/foundation/README.md`) merged to `develop`
-via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phases 2–5 (CRUD routes,
-token/middleware cutover, frontend UI, audit-log viewer) not started. Tracker:
-`plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
-§"RBAC & Audit Trail".
+via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phase 2 **implemented, PRs open** —
+`heediq-shared`'s 5 RBAC request schemas + `buildAuditLogEntry()` published as `@heediq/shared@0.10.0`
+([PR #26](https://github.com/heediq/heediq-shared/pull/26)); `heediq-infra` ApiStack grants
+([PR #49](https://github.com/heediq/heediq-infra/pull/49)); `heediq-api` `routes/roles.ts`,
+`routes/groups.ts`, `routes/role-assignments.ts`, `lib/audit.ts` ([PR #24](https://github.com/heediq/heediq-api/pull/24)),
+README: `heediq-api/README.md`. Phases 3–5 (token/middleware cutover, frontend UI, audit-log viewer)
+not started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture still in
+`memory/business/architecture.md` §"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture

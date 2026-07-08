@@ -1,28 +1,40 @@
 # WIP — feature/rbac-role-group-crud (D-102 Phase 2)
 
 **Branch**: `feature/rbac-role-group-crud` — created in **three repos**: `heediq-shared`,
-`heediq-api`, `heediq-infra` (all off `develop`, all synced at branch time).
+`heediq-api`, `heediq-infra` (all off `develop`).
 
 **Goal**: Role/Group/Role-Assignment CRUD routes in `heediq-api` + the audit write path
 (`AuditPayloadMap`-driven, per D-102), wired to the Phase 1 tables/schemas. Standing index:
 `plans/wip-rbac-audit-trail.md`.
 
-**State**: Step 0 done (resume check, git sync, memory/decisions read, coherence check clean).
-Step 1/2 (questions + plan) in progress — plan not yet approved, no code written yet.
+**State**: Implementation complete across all three repos, PRs open, awaiting merge/review:
+- `heediq-shared`: `CreateRoleRequestSchema`/`UpdateRoleRequestSchema`/`CreateGroupRequestSchema`/
+  `UpdateGroupRequestSchema`/`CreateRoleAssignmentRequestSchema` + `buildAuditLogEntry()`. Published
+  as `0.10.0`. [PR #26](https://github.com/heediq/heediq-shared/pull/26).
+- `heediq-infra`: `ApiStack` granted read-write on `heediq-roles`/`heediq-groups`/
+  `heediq-role-assignments`, write-only on `heediq-audit-log`; 4 new env vars.
+  [PR #49](https://github.com/heediq/heediq-infra/pull/49).
+- `heediq-api`: `routes/roles.ts`, `routes/groups.ts`, `routes/role-assignments.ts`, `lib/audit.ts`
+  (`writeAuditEvent()`), mounted in `app.ts`. All writes gated by interim `requireAdmin()` (checks
+  legacy `role === 'admin'`, D-017) — full `Permission`-based enforcement is Phase 3.
+  [PR #24](https://github.com/heediq/heediq-api/pull/24).
 
-**Next**: Present the Step 2 plan (routes, audit-write-path split between `heediq-shared` and
-`heediq-api`, interim permission gating since Phase 3's `requirePermission`/`rbacVersion` doesn't
-exist yet) for approval before implementation.
+Gates green in all three repos: typecheck clean, full test suites passing (heediq-shared 128/128,
+heediq-infra 176/176, heediq-api 138/138 — verified against the real published `@heediq/shared@0.10.0`,
+no local symlink). READMEs updated in all three repos (Key Files, Contracts/endpoints, Dependencies,
+Testing, Gotchas).
 
-**Open questions / risks**:
-- Interim authz: Phase 3 (token/middleware cutover) hasn't shipped, so the JWT still only carries
-  the fixed `custom:role` claim (admin/member, D-017 legacy). Plan proposes gating all new
-  roles/groups/assignments routes behind `role === 'admin'` as a temporary check, replaced by
-  `requirePermission('org:manage-roles')` in Phase 3 — flagging for explicit approval since it's an
-  implementation judgment call, not a locked decision.
-- `writeAuditEvent` split: D-102/architecture.md says the helper lives in `@heediq/shared`, but
-  shared has zero AWS SDK dependencies today (schema/pure-function package only). Proposing
-  `@heediq/shared` owns a pure `buildAuditLogEntry()` (constructs + validates the entry via
-  `AuditLogEntrySchema`, keeps the PII-prevention typing), while `heediq-api` owns the actual
-  `PutCommand` (`writeAuditEvent()` wrapping it) — consistent with every other DynamoDB access
-  living in `heediq-api`. Flagging for approval rather than adding `@aws-sdk/*` as a new shared dep.
+**Next**: Once all 3 PRs are reviewed and merged to `develop`, update
+`plans/wip-rbac-audit-trail.md`'s Phase 2 row to `Done` (with merge commits) and delete this file.
+
+**Resolved implementation notes** (kept for the PR review / next-session context):
+- Interim authz: gated behind `role === 'admin'`, to be replaced by
+  `requirePermission('org:manage-roles')` in Phase 3 — approved as a temporary measure.
+- `writeAuditEvent` split: `@heediq/shared` owns the pure `buildAuditLogEntry()` (constructs +
+  validates via `AuditLogEntrySchema`, zero AWS SDK deps); `heediq-api` owns the actual `PutCommand`
+  (`lib/audit.ts`'s `writeAuditEvent()`) — consistent with every other DynamoDB access living in
+  `heediq-api`.
+- Hono routing gotcha: a sub-router mounted under a parent path segment (e.g. `:userId`) can't see
+  that param in its own type inference — `role-assignments.ts` declares its full path
+  (`/:userId/role-assignments...`) and is mounted at `/users` in `app.ts`, not at
+  `/users/:userId/role-assignments`.
