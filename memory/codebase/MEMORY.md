@@ -16,9 +16,9 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **RBAC & audit trail (D-102, supersedes D-017; D-105 supersedes D-102's staleness mechanism only;
   D-106 — permission key strings are append-only, never renamed in place; also D-104 —
   `heediq-auth-audit-log` to be dropped, no migration, once the auth write path cuts over)** —
-  Phases 1–3 of 5 merged to `develop`. Phase 4 (frontend RBAC UI in `heediq-web` + `GET /me`
-  `effectivePermissions`/`GET /api/v1/users` in `heediq-api`) code-complete, PRs open:
-  [heediq-api#26](https://github.com/heediq/heediq-api/pull/26),
+  Phases 1–4 of 5 merged to `develop`. Phase 4 (frontend RBAC UI in `heediq-web` + `GET /me`
+  `effectivePermissions`/`GET /api/v1/users` in `heediq-api`) merged via
+  [heediq-api#26](https://github.com/heediq/heediq-api/pull/26) and
   [heediq-web#26](https://github.com/heediq/heediq-web/pull/26). Permission catalog
   (`heediq-shared/src/permissions.ts`) drives the API gate (`requirePermission`), the frontend `<Can>`
   gate, and i18n key interpolation from one constant — see `heediq-api/README.md` §"D-102 RBAC & audit

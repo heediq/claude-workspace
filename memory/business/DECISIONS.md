@@ -1118,15 +1118,18 @@ and `heediq-infra` ApiStack grants on the 4 tables — merged to `develop` via
 [heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) (`4f073d4`),
 [heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) (`5be8e07`),
 [heediq-api#24](https://github.com/heediq/heediq-api/pull/24) (`87a3528`), all 2026-07-08.
-README: `heediq-api/README.md` §"D-102 RBAC & audit trail". Phase 4 **done** — frontend RBAC UI in
-`heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, server-resolved `effectivePermissions` off
-`GET /me`, D-105), `src/features/rbac/` (`RoleForm`/`GroupForm`/`RolesPanel`/`GroupsPanel`/
-`UsersPanel`/`AssignmentsModal`), `src/routes/RolesSettingsPage.tsx` (`/settings/roles`, tabbed
-Roles/Groups/Users). Backed by new `heediq-api` `GET /api/v1/users` (`src/routes/users.ts`,
-org-scoped) and `GET /me`'s `effectivePermissions` field. READMEs: `heediq-api/README.md`
-§"D-102 RBAC & audit trail", `heediq-web/README.md` (Key Files/Dependencies/Testing sections).
-Phase 5 (audit-log viewer) not started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture
-still in `memory/business/architecture.md` §"RBAC & Audit Trail".
+README: `heediq-api/README.md` §"D-102 RBAC & audit trail". Phase 4 **merged to `develop`** —
+frontend RBAC UI in `heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, server-resolved
+`effectivePermissions` off `GET /me`, D-105), `src/features/rbac/` (`RoleForm`/`GroupForm`/
+`RolesPanel`/`GroupsPanel`/`UsersPanel`/`AssignmentsModal`), `src/routes/RolesSettingsPage.tsx`
+(`/settings/roles`, tabbed Roles/Groups/Users). Backed by new `heediq-api` `GET /api/v1/users`
+(`src/routes/users.ts`, org-scoped) and `GET /me`'s `effectivePermissions` field. Merged via
+[heediq-api#26](https://github.com/heediq/heediq-api/pull/26) (`65b939f`),
+[heediq-web#26](https://github.com/heediq/heediq-web/pull/26) (`803fb44`), both 2026-07-09.
+READMEs: `heediq-api/README.md` §"D-102 RBAC & audit trail", `heediq-web/README.md`
+(Key Files/Dependencies/Testing sections). Phase 5 (audit-log viewer) not started. Tracker:
+`plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
+§"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
