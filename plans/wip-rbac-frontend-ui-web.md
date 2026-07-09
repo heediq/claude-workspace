@@ -22,10 +22,17 @@ this branch depends on its `GET /me` `effectivePermissions` field and new `GET /
 6. Tests per component/screen; `pnpm run test:pre-pr` green.
 7. Docs: `heediq-web/README.md` — new Key Files, route, dependency bump, test count.
 
-Not started yet — blocked on `feature/rbac-frontend-ui-api` landing `GET /me`'s
-`effectivePermissions` and `GET /api/v1/users` (can build kit primitives in parallel; screens need the
-API changes).
+Step 3 done and committed (`4cb290a`): `@heediq/shared` bumped to `0.10.0` (no type-shape drift —
+full suite green), `src/lib/rbac/` (`types.ts`, `usePermissions.ts`, `Can.tsx`, `README.md`, tests).
+`GetMeResponse` moved out of `SettingsPage.tsx` into the shared `types.ts`. Companion `heediq-api`
+branch's `GET /me` `effectivePermissions` + `GET /api/v1/users` are also done (`7c194bd`), so screens
+in Steps 5/6 are now unblocked.
+
+Step 4 done and committed (`8e031d3`): `Table`, `Modal`, `Checkbox`, `Select` kit primitives (Radix
+Dialog/Checkbox/Select-based), each with README + test + gallery entry in `DevUiGalleryPage.tsx`,
+exported from `src/components/ui/index.ts`. `pnpm run test:pre-pr` green (typecheck + 128/128 unit).
 
 ## Resume point
-Branch created, no commits yet. Next: start with Step 3 (kit primitives, no API dependency) while
-`feature/rbac-frontend-ui-api` Step 1 lands, then Steps 2/4/5.
+Step 4 committed on `feature/rbac-frontend-ui`, not pushed. Next: Step 5 (Roles & Groups management
+screens — `RolesSettingsPage.tsx`, `RoleForm.tsx`, `GroupForm.tsx`), then Step 6 (user assignment
+panel, `<Can>` nav wiring).
