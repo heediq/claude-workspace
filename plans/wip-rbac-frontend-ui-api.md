@@ -19,7 +19,12 @@ depends on this branch's `GET /me` + `GET /api/v1/users` changes.
 5. `pnpm run test:pre-pr` green.
 6. Docs: `heediq-api/README.md` — endpoints table + D-102/D-105 paragraph + test count.
 
-Not started yet.
+Steps 1–2 done and committed (`7c194bd`): `GET /me` `effectivePermissions`, new `GET /api/v1/users`,
+`sources.ts` migrated off `role === 'member'`, all with tests. `pnpm run test:pre-pr` green
+(typecheck + 160/160 unit).
 
 ## Resume point
-Branch created, no commits yet. Next: implement Step 1 (me.ts + users.ts).
+Steps 1–2 committed on `feature/rbac-frontend-ui-api`, not pushed. Remaining: Step 5 (README update,
+after `heediq-web` half lands and confirms the contract), Step 6 (test gate — already green, re-run
+before PR), then push + open PR. Companion `heediq-web` branch now unblocked for its screen work
+(Steps 4/5 there).
