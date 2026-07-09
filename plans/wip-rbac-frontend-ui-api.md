@@ -24,7 +24,6 @@ Steps 1–2 done and committed (`7c194bd`): `GET /me` `effectivePermissions`, ne
 (typecheck + 160/160 unit).
 
 ## Resume point
-Steps 1–2 committed (`7c194bd`). Step 6 README update done (endpoints table, `effectivePermissions`,
-`GET /api/v1/users`, test count 151→160) but **not yet committed** — only uncommitted change on this
-branch. `pnpm run test:pre-pr` green (typecheck + 160/160 unit). Remaining: commit the README change,
-then push + open PR (ask Andrii first, per `02-git-and-commits.md`).
+All done and committed: Steps 1–2 (`7c194bd`), README update (`5608311`). `pnpm run test:pre-pr`
+green (typecheck + 160/160 unit). Working tree clean, not pushed. Remaining: push + open PR (ask
+Andrii first, per `02-git-and-commits.md`).

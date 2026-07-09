@@ -42,8 +42,7 @@ Caught and fixed a real `Select` controlled/uncontrolled bug at the kit-primitiv
 (`heediq-web/README.md` — Key Files, Dependencies, Testing sections, test count 24/107→38/158).
 
 ## Resume point
-Steps 4–6 + the README update are complete but **none of it is committed yet** — everything since
-`8e031d3` (i18n keys, `Select.tsx` fix, `RolesPanel`/`GroupsPanel`/`UsersPanel`/`AssignmentsModal`
-+ their forms/tests, `RolesSettingsPage.tsx`, `README.md`) is uncommitted working-tree state on
-`feature/rbac-frontend-ui`. Next: commit (likely as 2–3 logical commits: kit primitives fix, RBAC
-screens, README), then push + open PR (ask Andrii first, per `02-git-and-commits.md`).
+All done and committed: Toast primitive + Select controlled/uncontrolled fix (`fb8f326`), RBAC
+screens (`aa75d3d`), README update (`4754e2c`) — on top of Step 3/4's `4cb290a`/`8e031d3`.
+`pnpm run test:pre-pr` green (typecheck + 158/158 unit, 38 files). Working tree clean, not pushed.
+Remaining: push + open PR (ask Andrii first, per `02-git-and-commits.md`).
