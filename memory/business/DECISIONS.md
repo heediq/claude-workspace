@@ -1104,7 +1104,9 @@ explicit preference over a silent-refresh alternative, trading an unannounced lo
 admin-initiated event) for immediate effect and simplicity/auditability.
 **Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
 the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
-**Superseded by:** —
+**Superseded by:** D-105 (invalidation mechanism only — `rbacVersion`/`RBAC_STALE`/per-request DB
+check dropped in favor of natural JWT expiry; Roles/Groups/Permissions catalog, effective-permission
+union model, resource-type granularity, and audit trail all unchanged)
 **Related code:** Phase 1 **done** — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
@@ -1149,6 +1151,26 @@ writes, then delete the table) beats a backfill migration with no product benefi
 **Related code:** — (the table removal happens later in the RBAC build-out, once the auth write path
 cuts over to `heediq-audit-log`; `memory/business/architecture.md` §"RBAC & Audit Trail" is updated
 at that point too, per Andrii — not now)
+
+### D-105 · RBAC permission invalidation rides the JWT, no per-request DB check (2026-07-09) — Locked
+**Area:** Architecture
+**Decision:** Drops D-102's `rbacVersion`/`RBAC_STALE` staleness-check mechanism. Effective
+permissions are still resolved and baked into `custom:permissions` on the Cognito ID token at
+issuance (`auth-provision.ts`, unchanged from D-102), but there is no `custom:rbacVersion` claim, no
+per-request comparison against `heediq-users`, and no forced `401 RBAC_STALE`. Staleness is instead
+bounded purely by the token's natural lifecycle: the ID token expires and the client refreshes it via
+the refresh token, which re-fires the same `PreTokenGeneration` trigger and picks up any role/
+permission change — identical to how `custom:role` already works today. `requirePermission`
+middleware becomes a pure in-token check (read the `permissions` claim already parsed by
+`authMiddleware`), no DynamoDB read on the request path at all.
+**Why:** Andrii questioned why RBAC needed a mechanism `custom:role` doesn't already use, and proposed
+applying the same principle — cache permissions in the token until natural expiry/refresh. A
+per-request DB read on every gated route adds latency and cost with no current product need; a rare,
+bounded delay before a permission change takes effect (one token lifetime) is an acceptable tradeoff
+for removing that read path entirely, consistent with how role changes already behave.
+**Supersedes:** D-102 (mechanism only — see D-102's `Superseded by` note for exactly what's unchanged)
+**Superseded by:** —
+**Related code:** heediq-api/README.md §"D-102 RBAC & audit trail" (once implemented, or —)
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
