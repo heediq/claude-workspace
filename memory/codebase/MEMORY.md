@@ -13,17 +13,19 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 ## Modules / Features (pointers)
 
-- **RBAC & audit trail (D-102, supersedes D-017; also D-104 — `heediq-auth-audit-log` to be dropped,
-  no migration, once the auth write path cuts over)** — Phases 1–2 of 5 done: `@heediq/shared@0.10.0`
-  permissions/audit/request schemas + `heediq-infra` FoundationStack tables (`heediq-roles`, `heediq-groups`,
-  `heediq-role-assignments`, `heediq-audit-log`) + `heediq-api` role/group/role-assignment CRUD with
-  audit write path, all merged to `develop` — see `heediq-api/README.md` §"D-102 RBAC & audit trail".
-  Phase 3 (token/middleware cutover — replaces the interim `requireAdmin()` gate with granular
-  `Permission`-based enforcement) is next. Phases 4–5 (frontend UI, audit-log viewer) not started.
-  Dynamic per-org roles/groups/permissions + unified GxP-quality-bar
-  audit trail. Full architecture: `../business/architecture.md` §"RBAC & Audit Trail" (still describes
-  design as "not yet built" — intentionally left stale until the full feature is implemented, per
-  Andrii). Phase tracker: `../../plans/wip-rbac-audit-trail.md`. Decisions: `DECISIONS.md` D-102, D-104.
+- **RBAC & audit trail (D-102, supersedes D-017; D-105 supersedes D-102's staleness mechanism only;
+  also D-104 — `heediq-auth-audit-log` to be dropped, no migration, once the auth write path cuts
+  over)** — Phases 1–3 of 5 done, on branch `feature/rbac-token-middleware-cutover` (not yet merged):
+  Phases 1–2 (`@heediq/shared@0.10.0` permissions/audit/request schemas + `heediq-infra` FoundationStack
+  tables + `heediq-api` role/group/role-assignment CRUD with audit write path) were on `develop`.
+  Phase 3 (token/middleware cutover) replaces the interim `requireAdmin()` gate with
+  `requirePermission()`, a pure in-token check against `custom:permissions` baked into the JWT at
+  issuance (D-105) — see `heediq-api/README.md` §"D-102/D-105 RBAC & audit trail". Phases 4–5
+  (frontend UI, audit-log viewer) not started. Dynamic per-org roles/groups/permissions + unified
+  GxP-quality-bar audit trail. Full architecture: `../business/architecture.md` §"RBAC & Audit Trail"
+  (still describes design as "not yet built" — intentionally left stale until the full feature is
+  implemented, per Andrii). Phase tracker: `../../plans/wip-rbac-audit-trail.md`,
+  `../../plans/wip-rbac-token-middleware-cutover.md`. Decisions: `DECISIONS.md` D-102, D-104, D-105.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
