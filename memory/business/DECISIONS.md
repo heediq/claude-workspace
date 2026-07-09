@@ -1178,6 +1178,28 @@ for removing that read path entirely, consistent with how role changes already b
 is the pure in-token check described here (no `rbacVersion`/DB read); see D-102's `Related code` for
 the full Phase 1–4 file list.
 
+### D-106 · Permission key strings are immutable once released — additive-only, never rename in place (2026-07-09) — Locked
+**Area:** Architecture
+**Decision:** Once a `Permission` literal in `heediq-shared/src/permissions.ts`'s `PERMISSIONS` catalog
+ships, its string value is never edited or removed in place. Adding a permission is fine. Retiring one
+requires: add the replacement key, leave the old key valid and marked deprecated in a comment, run an
+explicit one-off migration updating every stored `permissions` array in the `heediq-roles`/
+`heediq-groups` DynamoDB tables, then remove the old key only in a later release once no stored role
+references it. This is a strict rule — no exceptions for "just a rename."
+**Why:** `PERMISSIONS` is the single source of truth feeding the API gate (`requirePermission`, exact
+`Array.prototype.includes` string match — `heediq-api/src/middleware/rbac.ts`), the frontend `<Can>`
+gate, and i18n key interpolation (D-102's constants-drive-everything design) — but role/group
+`permissions` arrays are persisted as raw strings in DynamoDB (`heediq-api/src/routes/roles.ts`) with
+no live link back to the catalog, and already-issued JWTs carry `custom:permissions` baked in at
+issuance with no per-request DB re-check (D-105). Renaming a key in place silently breaks every
+existing role that granted it (stored string no longer matches anything) and every live session
+carrying the old string, with zero error surfaced — a same-request-cycle rename has no migration path
+today. Treat the catalog as append-only, same discipline as a DB enum.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-shared/src/permissions.ts`; `heediq-api/README.md` §"D-102 RBAC & audit
+trail"; `heediq-api/src/routes/roles.ts` (persistence); `heediq-api/src/middleware/rbac.ts` (exact-match
+gate); `heediq-api/src/handlers/auth-provision.ts` (JWT claim stamping, D-105).
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
