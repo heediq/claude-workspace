@@ -32,7 +32,18 @@ Step 4 done and committed (`8e031d3`): `Table`, `Modal`, `Checkbox`, `Select` ki
 Dialog/Checkbox/Select-based), each with README + test + gallery entry in `DevUiGalleryPage.tsx`,
 exported from `src/components/ui/index.ts`. `pnpm run test:pre-pr` green (typecheck + 128/128 unit).
 
+Step 5 done: `Toast` primitive, `RolesPanel`/`GroupsPanel`/`RoleForm`/`GroupForm`/
+`RolesSettingsPage.tsx` (`/settings/roles` route, `<Can permission="org:manage-roles">`-gated, nav
+link wired). Step 6 done: `UsersPanel`/`AssignmentsModal` (per-user lazy-fetched assignments,
+assign/remove flows), `rolesSettings.users.*`/`rolesSettings.tabs.users` i18n keys, tests for both.
+Caught and fixed a real `Select` controlled/uncontrolled bug at the kit-primitive level
+(`src/components/ui/Select/Select.tsx` — `value={value ?? ''}`) while writing the assign-flow tests.
+`pnpm run test:pre-pr` green (typecheck + 158/158 unit, 38 files). Step 7 README update done
+(`heediq-web/README.md` — Key Files, Dependencies, Testing sections, test count 24/107→38/158).
+
 ## Resume point
-Step 4 committed on `feature/rbac-frontend-ui`, not pushed. Next: Step 5 (Roles & Groups management
-screens — `RolesSettingsPage.tsx`, `RoleForm.tsx`, `GroupForm.tsx`), then Step 6 (user assignment
-panel, `<Can>` nav wiring).
+Steps 4–6 + the README update are complete but **none of it is committed yet** — everything since
+`8e031d3` (i18n keys, `Select.tsx` fix, `RolesPanel`/`GroupsPanel`/`UsersPanel`/`AssignmentsModal`
++ their forms/tests, `RolesSettingsPage.tsx`, `README.md`) is uncommitted working-tree state on
+`feature/rbac-frontend-ui`. Next: commit (likely as 2–3 logical commits: kit primitives fix, RBAC
+screens, README), then push + open PR (ask Andrii first, per `02-git-and-commits.md`).

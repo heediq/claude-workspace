@@ -1118,11 +1118,15 @@ and `heediq-infra` ApiStack grants on the 4 tables — merged to `develop` via
 [heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) (`4f073d4`),
 [heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) (`5be8e07`),
 [heediq-api#24](https://github.com/heediq/heediq-api/pull/24) (`87a3528`), all 2026-07-08.
-README: `heediq-api/README.md` §"D-102 RBAC & audit trail". All writes still gated by the interim
-`requireAdmin()` (legacy `role==='admin'`, D-017) — Phase 3 replaces this with granular
-`Permission`-based enforcement. Phases 3–5 (token/middleware cutover, frontend UI, audit-log viewer)
-not started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture still in
-`memory/business/architecture.md` §"RBAC & Audit Trail".
+README: `heediq-api/README.md` §"D-102 RBAC & audit trail". Phase 4 **done** — frontend RBAC UI in
+`heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, server-resolved `effectivePermissions` off
+`GET /me`, D-105), `src/features/rbac/` (`RoleForm`/`GroupForm`/`RolesPanel`/`GroupsPanel`/
+`UsersPanel`/`AssignmentsModal`), `src/routes/RolesSettingsPage.tsx` (`/settings/roles`, tabbed
+Roles/Groups/Users). Backed by new `heediq-api` `GET /api/v1/users` (`src/routes/users.ts`,
+org-scoped) and `GET /me`'s `effectivePermissions` field. READMEs: `heediq-api/README.md`
+§"D-102 RBAC & audit trail", `heediq-web/README.md` (Key Files/Dependencies/Testing sections).
+Phase 5 (audit-log viewer) not started. Tracker: `plans/wip-rbac-audit-trail.md`. Full architecture
+still in `memory/business/architecture.md` §"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
@@ -1170,7 +1174,9 @@ bounded delay before a permission change takes effect (one token lifetime) is an
 for removing that read path entirely, consistent with how role changes already behave.
 **Supersedes:** D-102 (mechanism only — see D-102's `Superseded by` note for exactly what's unchanged)
 **Superseded by:** —
-**Related code:** heediq-api/README.md §"D-102 RBAC & audit trail" (once implemented, or —)
+**Related code:** `heediq-api/README.md` §"D-102 RBAC & audit trail" — `requirePermission` middleware
+is the pure in-token check described here (no `rbacVersion`/DB read); see D-102's `Related code` for
+the full Phase 1–4 file list.
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
