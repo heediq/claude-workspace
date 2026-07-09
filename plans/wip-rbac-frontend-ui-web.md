@@ -42,7 +42,8 @@ Caught and fixed a real `Select` controlled/uncontrolled bug at the kit-primitiv
 (`heediq-web/README.md` — Key Files, Dependencies, Testing sections, test count 24/107→38/158).
 
 ## Resume point
-All done and committed: Toast primitive + Select controlled/uncontrolled fix (`fb8f326`), RBAC
-screens (`aa75d3d`), README update (`4754e2c`) — on top of Step 3/4's `4cb290a`/`8e031d3`.
-`pnpm run test:pre-pr` green (typecheck + 158/158 unit, 38 files). Working tree clean, not pushed.
-Remaining: push + open PR (ask Andrii first, per `02-git-and-commits.md`).
+Done, committed, pushed, PR open: Toast primitive + Select controlled/uncontrolled fix (`fb8f326`),
+RBAC screens (`aa75d3d`), README update (`4754e2c`) on top of Step 3/4's `4cb290a`/`8e031d3`, plus a
+follow-up permission↔i18n drift-coverage test (`76508dc`). `pnpm run test:pre-pr` green (typecheck +
+159/159 unit, 39 files). PR: https://github.com/heediq/heediq-web/pull/26 (base `develop`). Nothing
+remaining on this branch.

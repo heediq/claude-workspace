@@ -24,6 +24,6 @@ Steps 1–2 done and committed (`7c194bd`): `GET /me` `effectivePermissions`, ne
 (typecheck + 160/160 unit).
 
 ## Resume point
-All done and committed: Steps 1–2 (`7c194bd`), README update (`5608311`). `pnpm run test:pre-pr`
-green (typecheck + 160/160 unit). Working tree clean, not pushed. Remaining: push + open PR (ask
-Andrii first, per `02-git-and-commits.md`).
+Done, committed, pushed, PR open: Steps 1–2 (`7c194bd`), README update (`5608311`).
+`pnpm run test:pre-pr` green (typecheck + 160/160 unit). PR:
+https://github.com/heediq/heediq-api/pull/26 (base `develop`). Nothing remaining on this branch.
