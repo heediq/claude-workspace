@@ -7,7 +7,8 @@ index across phases so the sequence and status survive between sessions — upda
 phase starts, pauses, or merges. Delete only when all 5 phases are merged and D-102's `Related
 code:` field has been updated to point at the built code READMEs.
 
-**Design reference:** `memory/business/DECISIONS.md` D-102 · full architecture in
+**Design reference:** `memory/business/DECISIONS.md` D-102 (RBAC model) · D-105 (invalidation
+mechanism, supersedes D-102's `rbacVersion`/`RBAC_STALE`) · full architecture in
 `memory/business/architecture.md` §"RBAC & Audit Trail".
 
 ## Phase status
@@ -16,7 +17,7 @@ code:` field has been updated to point at the built code READMEs.
 |---|---|---|---|---|
 | 1 | Shared catalog + tables | `heediq-shared/src/permissions.ts`, `src/audit.ts`; `heediq-infra` FoundationStack tables (`heediq-roles`, `heediq-groups`, `heediq-role-assignments`, `heediq-audit-log`) + `defaultRoleId` on `heediq-orgs` | **Done** — `heediq-shared@0.9.0` merged & published; `heediq-infra` tables + foundation-stack split (D-103) merged to `develop` via [PR #48](https://github.com/heediq/heediq-infra/pull/48) (`4d4eb64`, 2026-07-08) | — |
 | 2 | Role/group CRUD + audit write path | New `heediq-api` routes for roles/groups/assignments; `writeAuditEvent` helper; per-resource-type payload resolution | **Done** — [heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) merged `4f073d4` (`0.10.0`, published), [heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) merged `5be8e07`, [heediq-api#24](https://github.com/heediq/heediq-api/pull/24) merged `87a3528` (all 2026-07-08) | — |
-| 3 | Token/middleware + provisioning cutover | `auth-provision.ts` seeds `DEFAULT_ORG_RBAC_SEED` + stamps `custom:permissions`/`custom:rbacVersion`; `requirePermission` middleware; `RBAC_STALE` 401 | In progress — see `wip-rbac-token-middleware-cutover.md` | `feature/rbac-token-middleware-cutover` (heediq-infra, heediq-api) |
+| 3 | Token/middleware + provisioning cutover | `auth-provision.ts` seeds `DEFAULT_ORG_RBAC_SEED` + stamps `custom:permissions` (D-105 — no `rbacVersion`); `requirePermission` middleware (pure token check) | In progress — see `wip-rbac-token-middleware-cutover.md` | `feature/rbac-token-middleware-cutover` (heediq-infra, heediq-api) |
 | 4 | Frontend RBAC UI | `heediq-web` role/group management screens; `usePermissions`/`<Can>` wrappers wired into existing screens | Not started | — |
 | 5 | Audit log viewer | `GET /org/audit-log` (cursor-paginated, filterable); `/org/audit-log` route in `heediq-web` | Not started | — |
 

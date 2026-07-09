@@ -3,34 +3,44 @@
 **Branches:** `feature/rbac-token-middleware-cutover` in both `heediq-infra` and `heediq-api` (no
 `heediq-shared` change needed — the Permission catalog/schemas already exist from Phase 1).
 
-**Design reference:** `memory/business/DECISIONS.md` D-102 · phase index
-`plans/wip-rbac-audit-trail.md` · full architecture in `memory/business/architecture.md` §"RBAC &
-Audit Trail" (intentionally left stale until all 5 phases ship).
+**Design reference:** `memory/business/DECISIONS.md` D-102 (RBAC model, unchanged) · D-105
+(invalidation mechanism — permissions ride the JWT, no per-request DB check, supersedes D-102's
+`rbacVersion`/`RBAC_STALE`) · phase index `plans/wip-rbac-audit-trail.md` · full architecture in
+`memory/business/architecture.md` §"RBAC & Audit Trail" (intentionally left stale until all 5 phases
+ship).
 
-## Plan (approved)
-1. `heediq-infra`: add `by-group` sparse GSI to `heediq-role-assignments`; add
-   `custom:permissions` (String)/`custom:rbacVersion` (Number) Cognito custom attributes. **Done** —
-   `tables.ts`, `cognito.ts`, tests in `test/foundation/tables.test.ts` +
-   `test/foundation/cognito.test.ts`, `test:pre-pr` green (177 tests).
+## Plan (revised for D-105 — simplified, no per-request DB check)
+1. `heediq-infra`: `custom:permissions` (String) Cognito custom attribute. **Done, being trimmed** —
+   `by-group` GSI and `custom:rbacVersion` attribute (added for the now-superseded mechanism) are
+   being reverted; `custom:permissions` and the existing `by-role` GSI stay.
 2. `heediq-api`: new `src/lib/rbac.ts` — `ensureOrgRbacSeeded`, `ensureUserRoleAssignment`,
-   `resolveEffectivePermissions`, `bumpRbacVersion(ForRole/ForGroup)`. **Not started.**
-3. `heediq-api`: `auth-provision.ts` stamps `custom:permissions`/`custom:rbacVersion` on every
-   claims-issuing branch; new-org path seeds roles + admin assignment. **Not started.**
-4. `heediq-api`: new `src/middleware/rbac.ts` — `requirePermission(permission)`, checks
-   `rbacVersion` freshness against `heediq-users`, 401 `RBAC_STALE` on mismatch. **Not started.**
-5. `heediq-api`: `roles.ts`/`groups.ts`/`role-assignments.ts` — swap `requireAdmin` for
-   `requirePermission('org:manage-roles')`; wire in rbacVersion bumps on every mutation.
+   `resolveEffectivePermissions`. No `bumpRbacVersion*` functions (D-105 — nothing to bump).
    **Not started.**
-6. `heediq-api`: `errors.ts` — add `RBAC_STALE` (401). **Not started.**
-7. Tests per plan (unit `rbac.ts`, integration `auth-provision`/`rbac middleware`/routes).
+3. `heediq-api`: `auth-provision.ts` resolves effective permissions and stamps `custom:permissions`
+   (JSON array) on every claims-issuing branch; new-org path seeds roles + admin assignment. No
+   `custom:rbacVersion` claim. **Not started.**
+4. `heediq-api`: `src/middleware/auth.ts` parses the `custom:permissions` claim into `AuthContext`
+   alongside the existing claims (pure token read, no DB call). New `src/middleware/rbac.ts` —
+   `requirePermission(permission)` checks the parsed `permissions` array from context; 403
+   `FORBIDDEN` on missing permission (existing error code — no new `RBAC_STALE` code needed).
+   **Not started.**
+5. `heediq-api`: `roles.ts`/`groups.ts`/`role-assignments.ts` — swap `requireAdmin` for
+   `requirePermission('org:manage-roles')`. No rbacVersion bump calls (nothing to invalidate
+   per-request; next token refresh picks up the change naturally). **Not started.**
+6. `heediq-api`: `errors.ts` — no change needed (D-105 drops `RBAC_STALE`).
+7. Tests per plan (unit `rbac.ts`, integration `auth-provision`/`rbac middleware`/routes — assert
+   `permissions` claim shape and `requirePermission` 403 behavior, not staleness).
    **Not started.**
 8. Docs: `heediq-api/README.md` §"D-102 RBAC & audit trail" update (Step 5, needs approval before
-   editing). `MEMORY.md` Phase 3 status flip. **Not started.**
+   editing) — document D-105's mechanism, note the bounded-staleness tradeoff (permission changes
+   take effect on next token refresh, not immediately). `MEMORY.md` Phase 3 status flip.
+   **Not started.**
 
 Not in scope for this phase (deferred to Phase 4): `GET /me`'s `effectivePermissions` field,
 `heediq-web` `usePermissions`/`<Can>`, migrating `sources.ts` off legacy `custom:role`.
 
 ## Resume point
-Infra changes committed locally on `feature/rbac-token-middleware-cutover` in `heediq-infra` (not
-yet pushed/PR'd — waiting until `heediq-api` side is done, per "one branch = one logical change but
-developer's call on when to PR"). Next: build `heediq-api/src/lib/rbac.ts`.
+`heediq-infra` changes (Cognito `custom:permissions` attribute) committed locally on
+`feature/rbac-token-middleware-cutover`; the `by-group` GSI and `custom:rbacVersion` attribute (added
+for the now-superseded mechanism) are being reverted in the same branch before it's pushed/PR'd. Not
+yet pushed — waiting until `heediq-api` side is done. Next: build `heediq-api/src/lib/rbac.ts`.
