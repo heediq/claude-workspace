@@ -17,15 +17,20 @@ API route → web page).
   IAM layer; write-once is an app-code guarantee only, not an IAM one). `npm run build` clean, full
   suite 177/177 green. Committed `9c8f27a`, pushed, PR:
   [heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51) (not yet merged).
-- **Step 2 (heediq-api) — not started.** Branch created off `develop`, no commits.
-- **Step 3 (heediq-web) — not started.** Branch created off `develop`, no commits.
+- **Step 2 (heediq-api) — done, PR open.** New `src/routes/audit-log.ts` (`GET /` gated by
+  `requirePermission('audit:read')`), mounted as `v1.route('/org/audit-log', auditLogRouter)` in
+  `src/app.ts`. Base-table query by default; `by-user` GSI + `orgId` re-assertion when `actorUserId`
+  filter given; cursor pagination matches `sources.ts`. 7 new tests in
+  `src/__tests__/audit-log.test.ts` (mocked `dynamo.send`). `npm run typecheck` clean, full suite
+  167/167 green. Committed `62a7012`, pushed, PR:
+  [heediq-api#27](https://github.com/heediq/heediq-api/pull/27) (not yet merged).
+- **Step 3 (heediq-web) — in progress.** Branch created off `develop`, no commits yet.
 
-**Next immediate action:** Build Step 2 — new `src/routes/audit-log.ts` (`GET /` gated by
-`requirePermission('audit:read')`, mounted as `v1.route('/org/audit-log', auditLogRouter)` in
-`src/app.ts`). See the plan file for the exact query strategy (base-table query vs. `by-user` GSI
-query when `actorUserId` filter present, cursor pagination matching `sources.ts`'s pattern) and test
-list (`src/__tests__/audit-log.test.ts`, mocked `dynamo.send`, same harness as `roles.test.ts`).
+**Next immediate action:** Build Step 3 — `src/routes/AuditLogPage.tsx` (table + filters +
+`useInfiniteQuery`, loading/error/empty branches matching `UsersPanel.tsx`), new `/org/audit-log`
+route in `App.tsx`, a `<Can permission="audit:read">` card in `SettingsPage.tsx`, i18n keys, and
+`AuditLogPage.test.tsx`. See the plan file for full detail.
 
-**Open questions / risks:** None currently — Step 1's design (narrow `Query` grant, no `Scan`) is
-confirmed working. Step 2 depends on nothing further from Step 1 merging (the grant only matters at
-deploy time, not for local dev against mocked DynamoDB).
+**Open questions / risks:** None currently — Steps 1 and 2's designs are confirmed working
+independently. Step 3 depends on nothing further from Steps 1/2 merging (it calls the API by path;
+the route works against a locally-run `heediq-api` regardless of PR-merge state).
