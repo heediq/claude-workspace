@@ -114,3 +114,8 @@ _(Short notes on things being worked out; promote to a README or decisions doc w
 - **Multitenancy feature flag control.** Need a way to enable/disable/config features per org/tenant
   (e.g. audit trail, RBAC) — possibly a new internal "tenants dashboard" repo for Heediq staff to
   manage per-org config. Not scoped or designed yet.
+- **E2E & stress testing framework/approach.** `05-testing.md` locks the stack (Playwright for E2E,
+  k6 for load) but there's no actual test infrastructure, coverage strategy, or CI wiring built yet —
+  need an approach that scales to cover both current features and future ones with comprehensive
+  automated coverage (critical journeys, load-sensitive surfaces like transcription throughput).
+  Not scoped or designed yet.
