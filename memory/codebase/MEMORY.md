@@ -101,4 +101,16 @@ _(none currently — see `heediq-infra` entry above for the one cross-stack CDK 
 ## In-progress (not yet doc-worthy)
 _(Short notes on things being worked out; promote to a README or decisions doc when settled.)_
 
-_(none currently)_
+**Backlog — not yet planned, don't forget:**
+- **Real-time WebSocket framework.** Every user connects on login; server pushes status/progress
+  events to user/org/broadcast scopes for interactive "what's happening now" UI (job stage updates,
+  etc.). `heediq-infra`'s `WebSocketStack` (ws-connections table + heediq-ws-status-pusher) already
+  exists for job status push — this backlog item is about generalizing it into a small reusable
+  framework (typed event/channel model) rather than one-off per-feature wiring. Needs a real plan
+  (Step 1–2) when picked up.
+- **Design precision.** Don't build features against an approximate/guessed design — get pixel-precise
+  design references (Figma or similar) before building UI, so `03-ui-kit.md` components are built
+  once, correctly, rather than re-styled later. No tooling/process decided yet.
+- **Multitenancy feature flag control.** Need a way to enable/disable/config features per org/tenant
+  (e.g. audit trail, RBAC) — possibly a new internal "tenants dashboard" repo for Heediq staff to
+  manage per-org config. Not scoped or designed yet.
