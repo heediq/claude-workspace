@@ -52,9 +52,9 @@ restriction, now expressed as the `sources:read-own` permission instead of a har
   — the direct migration path from D-017 — fully editable after creation; unlimited custom roles.
 - `heediq-groups` (`pk=ORG#<orgId>`, `sk=GROUP#<groupId>`) — `name`, `roleIds[]`. No default groups
   seeded (pure org-admin convenience, starts empty).
-- `heediq-role-assignments` (`pk=USER#<accountId>`, `sk=ROLE#<roleId>|GROUP#<groupId>`) — the
-  join table resolved at token issuance; `by-role` GSI answers "who holds this role" for the
-  role-management UI and for the `rbacVersion` fan-out below.
+- `heediq-role-assignments` (`pk=ORG#<orgId>#USER#<accountId>`, `sk=ROLE#<roleId>|GROUP#<groupId>`)
+  — the join table resolved at token issuance; `by-role` GSI (`roleId` partition key, no sort key)
+  answers "who holds this role" for the role-management UI, not currently queried by any consumer.
 - `heediq-audit-log` (`pk=ORG#<orgId>`, `sk=<timestamp>#<eventId>`, `by-user` GSI) — supersedes the
   auth-only `heediq-auth-audit-log` (D-087) into one general-purpose, org-scoped, write-once (no
   update/delete code path) audit trail covering auth events and every RBAC-governed action.

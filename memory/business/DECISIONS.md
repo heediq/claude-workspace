@@ -1135,8 +1135,8 @@ date range/actor/action/resource type, gated by `audit:read`) and the `/org/audi
 [heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51),
 [heediq-api#27](https://github.com/heediq/heediq-api/pull/27),
 [heediq-web#27](https://github.com/heediq/heediq-web/pull/27), all 2026-07-10.
-All 5 phases now merged. Full architecture still in `memory/business/architecture.md`
-§"RBAC & Audit Trail" (update pending — see consistency-check follow-up).
+All 5 phases now merged. Full architecture in `memory/business/architecture.md`
+§"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
