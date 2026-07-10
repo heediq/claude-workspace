@@ -1127,9 +1127,16 @@ frontend RBAC UI in `heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, ser
 [heediq-api#26](https://github.com/heediq/heediq-api/pull/26) (`65b939f`),
 [heediq-web#26](https://github.com/heediq/heediq-web/pull/26) (`803fb44`), both 2026-07-09.
 READMEs: `heediq-api/README.md` §"D-102 RBAC & audit trail", `heediq-web/README.md`
-(Key Files/Dependencies/Testing sections). Phase 5 (audit-log viewer) not started. Tracker:
-`plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
-§"RBAC & Audit Trail".
+(Key Files/Dependencies/Testing sections). Phase 5 **merged to `develop`** — audit-log viewer:
+`GET /api/v1/org/audit-log` (`heediq-api` `src/routes/audit-log.ts`, cursor-paginated, filterable by
+date range/actor/action/resource type, gated by `audit:read`) and the `/org/audit-log` page
+(`heediq-web` `src/routes/AuditLogPage.tsx`), backed by a narrowed `dynamodb:Query` IAM grant on
+`heediq-audit-log` (`heediq-infra` `lib/api/api-stack.ts`, `Scan`/`GetItem` still blocked). Merged via
+[heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51),
+[heediq-api#27](https://github.com/heediq/heediq-api/pull/27),
+[heediq-web#27](https://github.com/heediq/heediq-web/pull/27), all 2026-07-10.
+All 5 phases now merged. Full architecture still in `memory/business/architecture.md`
+§"RBAC & Audit Trail" (update pending — see consistency-check follow-up).
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture

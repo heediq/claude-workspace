@@ -16,17 +16,17 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **RBAC & audit trail (D-102, supersedes D-017; D-105 supersedes D-102's staleness mechanism only;
   D-106 — permission key strings are append-only, never renamed in place; also D-104 —
   `heediq-auth-audit-log` to be dropped, no migration, once the auth write path cuts over)** —
-  Phases 1–4 of 5 merged to `develop`. Phase 4 (frontend RBAC UI in `heediq-web` + `GET /me`
-  `effectivePermissions`/`GET /api/v1/users` in `heediq-api`) merged via
-  [heediq-api#26](https://github.com/heediq/heediq-api/pull/26) and
-  [heediq-web#26](https://github.com/heediq/heediq-web/pull/26). Permission catalog
+  All 5 phases merged to `develop`. Phase 5 (audit-log viewer — `GET /org/audit-log` in `heediq-api`,
+  `/org/audit-log` page in `heediq-web`) merged via
+  [heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51),
+  [heediq-api#27](https://github.com/heediq/heediq-api/pull/27), and
+  [heediq-web#27](https://github.com/heediq/heediq-web/pull/27). Permission catalog
   (`heediq-shared/src/permissions.ts`) drives the API gate (`requirePermission`), the frontend `<Can>`
   gate, and i18n key interpolation from one constant — see `heediq-api/README.md` §"D-102 RBAC & audit
-  trail". Phase 5 (audit-log viewer) not started. Dynamic per-org roles/groups/permissions + unified
+  trail" and its `GET /org/audit-log` entry. Dynamic per-org roles/groups/permissions + unified
   GxP-quality-bar audit trail. Full architecture: `../business/architecture.md` §"RBAC & Audit Trail"
   (still describes design as "not yet built" — intentionally left stale until the full feature is
-  implemented, per Andrii). Phase tracker: `../../plans/wip-rbac-audit-trail.md`. Decisions:
-  `DECISIONS.md` D-102, D-104, D-105, D-106.
+  implemented, per Andrii). Decisions: `DECISIONS.md` D-102, D-104, D-105, D-106.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs

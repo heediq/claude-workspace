@@ -30,10 +30,12 @@ shorthand is the pre-RBAC baseline; under D-102 it becomes a permission check
 (`sources:read` grants all-org visibility, `sources:read-own` restricts to `owner_user_id = :user`),
 see RBAC & Audit Trail below.
 
-## RBAC & Audit Trail (design locked, D-102 — not yet built)
+## RBAC & Audit Trail (D-102 — built, all 5 phases merged to `develop`, 2026-07-10)
 Supersedes D-017's fixed Admin/Member roles with dynamic, per-org RBAC, plus a unified audit trail
 raised to a GxP-quality bar (design-quality target, not a formal regulatory obligation today).
-`DECISIONS.md` D-102 points here rather than duplicating this detail.
+`DECISIONS.md` D-102 points here rather than duplicating this detail. D-105 supersedes the
+invalidation mechanism only (Token strategy, below); D-104 resolved the audit-log migration
+question (no migration — old table dropped outright, not backfilled).
 
 **Domain model:** User ↔ Role (direct) and User ↔ Group ↔ Role (via membership), many-to-many;
 effective permissions = union of all roles reached either way, no deny rules. Permissions are a
@@ -57,13 +59,14 @@ restriction, now expressed as the `sources:read-own` permission instead of a har
   auth-only `heediq-auth-audit-log` (D-087) into one general-purpose, org-scoped, write-once (no
   update/delete code path) audit trail covering auth events and every RBAC-governed action.
 
-**Token strategy:** permissions resolve to `roleIds` + an `rbacVersion` integer stamped into the
-Cognito ID token by the existing `auth-provision.ts` PreTokenGeneration trigger (no extra DB read
-per request on the happy path). `heediq-api`'s auth middleware compares the token's `rbacVersion`
-against the live value on `heediq-users`; a mismatch returns `401 RBAC_STALE`, and `heediq-web`
-treats that as an expired session — full re-login, not a silent refresh (Andrii's explicit
-preference: any role/permission change takes effect within one request, at the cost of an
-unannounced forced logout for affected users).
+**Token strategy (D-105, supersedes D-102's original design):** permissions are resolved once, at
+token issuance, by `resolveEffectivePermissions()` in `auth-provision.ts`'s PreTokenGeneration
+trigger, and baked into the Cognito ID token as an expanded `custom:permissions` claim
+(JSON-stringified `Permission[]`, not `roleIds` + a version counter). `heediq-api`'s
+`requirePermission` middleware is a pure in-token check — no DynamoDB read per request, and no
+`rbacVersion` comparison against `heediq-users`. A role/permission change takes effect for a given
+user only on their next token refresh (bounded by natural JWT expiry), not instantly — the
+deliberate tradeoff Andrii chose over D-102's original per-request DB check + forced-logout design.
 
 **Audit payloads:** `before`/`after` are resource-type-specific, human-readable snapshots (a
 `AuditPayloadMap` discriminated union in `@heediq/shared`, e.g. `{ roleId, name, permissions }` for
@@ -80,16 +83,12 @@ reaching the log, the same PII discipline `createLogger` already applies to Clou
 explicitly deferred — no DynamoDB-native text search; would need a separate index (OpenSearch or
 similar) if a real need appears. Gated by a new `audit:read` permission, enforced server-side.
 
-**Frontend permission checks:** `heediq-web`'s `usePermissions`/`<Can>` (in `src/lib/auth/`, not
+**Frontend permission checks:** `heediq-web`'s `usePermissions`/`<Can>` (in `src/lib/rbac/`, not
 the styled kit — no visual styling of its own) read a server-resolved `effectivePermissions` field
 added to `GET /me`, computed by the same `resolveEffectivePermissions(accountId)` function the
 enforcement middleware uses — one implementation of "what can this user do," never duplicated
 client-side. These wrappers are UX-only (hide/show); `requirePermission` middleware in `heediq-api`
-remains the only real authority.
-
-**Not yet resolved (implementation-time decisions):** the exact JWT claim payload shape (roleIds
-vs. expanded permission strings, and any in-Lambda role-catalog cache), and the
-`heediq-auth-audit-log` → `heediq-audit-log` data migration (backfill vs. leave old rows read-only).
+remains the only real authority. See `heediq-web/src/lib/rbac/README.md`.
 
 ## Database
 DynamoDB-only at launch (D-007). Design: **multi-table** — one table per service/entity domain, e.g. `heediq-sources`, `heediq-orgs` (D-031, table renamed from `heediq-recordings` per D-068). Aurora Serverless v2 (Postgres) deferred — open migration path per service if relational queries become necessary. At small scale, Aurora's ~$45/mo fixed floor dominates the bill disproportionately (see Cost baselines below).
