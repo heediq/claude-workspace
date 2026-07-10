@@ -1104,14 +1104,38 @@ explicit preference over a silent-refresh alternative, trading an unannounced lo
 admin-initiated event) for immediate effect and simplicity/auditability.
 **Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
 the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
-**Superseded by:** —
+**Superseded by:** D-105 (invalidation mechanism only — `rbacVersion`/`RBAC_STALE`/per-request DB
+check dropped in favor of natural JWT expiry; Roles/Groups/Permissions catalog, effective-permission
+union model, resource-type granularity, and audit trail all unchanged)
 **Related code:** Phase 1 **done** — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
 published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
 (`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
 `lib/foundation/tables.ts`, README: `heediq-infra/lib/foundation/README.md`) merged to `develop`
-via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phases 2–5 (CRUD routes,
-token/middleware cutover, frontend UI, audit-log viewer) not started. Tracker:
-`plans/wip-rbac-audit-trail.md`. Full architecture still in `memory/business/architecture.md`
+via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phase 2 **done** — role/group CRUD +
+audit write path in `heediq-api` (`routes/roles.ts`/`groups.ts`/`role-assignments.ts`, `lib/audit.ts`),
+backed by `heediq-shared`'s 5 RBAC request schemas + `buildAuditLogEntry()` (`@heediq/shared@0.10.0`)
+and `heediq-infra` ApiStack grants on the 4 tables — merged to `develop` via
+[heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) (`4f073d4`),
+[heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) (`5be8e07`),
+[heediq-api#24](https://github.com/heediq/heediq-api/pull/24) (`87a3528`), all 2026-07-08.
+README: `heediq-api/README.md` §"D-102 RBAC & audit trail". Phase 4 **merged to `develop`** —
+frontend RBAC UI in `heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, server-resolved
+`effectivePermissions` off `GET /me`, D-105), `src/features/rbac/` (`RoleForm`/`GroupForm`/
+`RolesPanel`/`GroupsPanel`/`UsersPanel`/`AssignmentsModal`), `src/routes/RolesSettingsPage.tsx`
+(`/settings/roles`, tabbed Roles/Groups/Users). Backed by new `heediq-api` `GET /api/v1/users`
+(`src/routes/users.ts`, org-scoped) and `GET /me`'s `effectivePermissions` field. Merged via
+[heediq-api#26](https://github.com/heediq/heediq-api/pull/26) (`65b939f`),
+[heediq-web#26](https://github.com/heediq/heediq-web/pull/26) (`803fb44`), both 2026-07-09.
+READMEs: `heediq-api/README.md` §"D-102 RBAC & audit trail", `heediq-web/README.md`
+(Key Files/Dependencies/Testing sections). Phase 5 **merged to `develop`** — audit-log viewer:
+`GET /api/v1/org/audit-log` (`heediq-api` `src/routes/audit-log.ts`, cursor-paginated, filterable by
+date range/actor/action/resource type, gated by `audit:read`) and the `/org/audit-log` page
+(`heediq-web` `src/routes/AuditLogPage.tsx`), backed by a narrowed `dynamodb:Query` IAM grant on
+`heediq-audit-log` (`heediq-infra` `lib/api/api-stack.ts`, `Scan`/`GetItem` still blocked). Merged via
+[heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51),
+[heediq-api#27](https://github.com/heediq/heediq-api/pull/27),
+[heediq-web#27](https://github.com/heediq/heediq-web/pull/27), all 2026-07-10.
+All 5 phases now merged. Full architecture in `memory/business/architecture.md`
 §"RBAC & Audit Trail".
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
@@ -1141,6 +1165,50 @@ writes, then delete the table) beats a backfill migration with no product benefi
 **Related code:** — (the table removal happens later in the RBAC build-out, once the auth write path
 cuts over to `heediq-audit-log`; `memory/business/architecture.md` §"RBAC & Audit Trail" is updated
 at that point too, per Andrii — not now)
+
+### D-105 · RBAC permission invalidation rides the JWT, no per-request DB check (2026-07-09) — Locked
+**Area:** Architecture
+**Decision:** Drops D-102's `rbacVersion`/`RBAC_STALE` staleness-check mechanism. Effective
+permissions are still resolved and baked into `custom:permissions` on the Cognito ID token at
+issuance (`auth-provision.ts`, unchanged from D-102), but there is no `custom:rbacVersion` claim, no
+per-request comparison against `heediq-users`, and no forced `401 RBAC_STALE`. Staleness is instead
+bounded purely by the token's natural lifecycle: the ID token expires and the client refreshes it via
+the refresh token, which re-fires the same `PreTokenGeneration` trigger and picks up any role/
+permission change — identical to how `custom:role` already works today. `requirePermission`
+middleware becomes a pure in-token check (read the `permissions` claim already parsed by
+`authMiddleware`), no DynamoDB read on the request path at all.
+**Why:** Andrii questioned why RBAC needed a mechanism `custom:role` doesn't already use, and proposed
+applying the same principle — cache permissions in the token until natural expiry/refresh. A
+per-request DB read on every gated route adds latency and cost with no current product need; a rare,
+bounded delay before a permission change takes effect (one token lifetime) is an acceptable tradeoff
+for removing that read path entirely, consistent with how role changes already behave.
+**Supersedes:** D-102 (mechanism only — see D-102's `Superseded by` note for exactly what's unchanged)
+**Superseded by:** —
+**Related code:** `heediq-api/README.md` §"D-102 RBAC & audit trail" — `requirePermission` middleware
+is the pure in-token check described here (no `rbacVersion`/DB read); see D-102's `Related code` for
+the full Phase 1–4 file list.
+
+### D-106 · Permission key strings are immutable once released — additive-only, never rename in place (2026-07-09) — Locked
+**Area:** Architecture
+**Decision:** Once a `Permission` literal in `heediq-shared/src/permissions.ts`'s `PERMISSIONS` catalog
+ships, its string value is never edited or removed in place. Adding a permission is fine. Retiring one
+requires: add the replacement key, leave the old key valid and marked deprecated in a comment, run an
+explicit one-off migration updating every stored `permissions` array in the `heediq-roles`/
+`heediq-groups` DynamoDB tables, then remove the old key only in a later release once no stored role
+references it. This is a strict rule — no exceptions for "just a rename."
+**Why:** `PERMISSIONS` is the single source of truth feeding the API gate (`requirePermission`, exact
+`Array.prototype.includes` string match — `heediq-api/src/middleware/rbac.ts`), the frontend `<Can>`
+gate, and i18n key interpolation (D-102's constants-drive-everything design) — but role/group
+`permissions` arrays are persisted as raw strings in DynamoDB (`heediq-api/src/routes/roles.ts`) with
+no live link back to the catalog, and already-issued JWTs carry `custom:permissions` baked in at
+issuance with no per-request DB re-check (D-105). Renaming a key in place silently breaks every
+existing role that granted it (stored string no longer matches anything) and every live session
+carrying the old string, with zero error surfaced — a same-request-cycle rename has no migration path
+today. Treat the catalog as append-only, same discipline as a DB enum.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-shared/src/permissions.ts`; `heediq-api/README.md` §"D-102 RBAC & audit
+trail"; `heediq-api/src/routes/roles.ts` (persistence); `heediq-api/src/middleware/rbac.ts` (exact-match
+gate); `heediq-api/src/handlers/auth-provision.ts` (JWT claim stamping, D-105).
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
