@@ -24,13 +24,20 @@ API route → web page).
   `src/__tests__/audit-log.test.ts` (mocked `dynamo.send`). `npm run typecheck` clean, full suite
   167/167 green. Committed `62a7012`, pushed, PR:
   [heediq-api#27](https://github.com/heediq/heediq-api/pull/27) (not yet merged).
-- **Step 3 (heediq-web) — in progress.** Branch created off `develop`, no commits yet.
+- **Step 3 (heediq-web) — done, PR open.** New `src/routes/AuditLogPage.tsx` (filterable/paginated
+  table gated by `<Can permission="audit:read">`, "Load more" driven by `nextCursor`), `/org/audit-log`
+  route in `App.tsx` (falls back to `/settings` if ungated), a matching card on `SettingsPage.tsx`,
+  new `auditLog.*`/`nav.auditLog` i18n keys. 5 new tests in
+  `src/routes/__tests__/AuditLogPage.test.tsx` (mocked `apiClient`). `npm run test:pre-pr` 164/164
+  green. Committed `24d92b1`, pushed, PR:
+  [heediq-web#27](https://github.com/heediq/heediq-web/pull/27) (not yet merged).
 
-**Next immediate action:** Build Step 3 — `src/routes/AuditLogPage.tsx` (table + filters +
-`useInfiniteQuery`, loading/error/empty branches matching `UsersPanel.tsx`), new `/org/audit-log`
-route in `App.tsx`, a `<Can permission="audit:read">` card in `SettingsPage.tsx`, i18n keys, and
-`AuditLogPage.test.tsx`. See the plan file for full detail.
+**All 3 steps done — PRs open, none merged yet.** Next actions once merged (in dependency order:
+infra#51 → api#27 → web#27): run the manual QA scenarios from the plan file (org admin
+filter/pagination, org member sees no entry point + gets redirected, cross-org isolation via
+`actorUserId`), then Step 5 (README updates — `heediq-api/README.md`'s stale "write-only, no route
+reads it back yet" gotcha, `heediq-web/README.md`) and Step 6 (memory actualization: mark this
+phase `Done` in `wip-rbac-audit-trail.md`, delete this file, update D-102's `Related code` pointer).
 
-**Open questions / risks:** None currently — Steps 1 and 2's designs are confirmed working
-independently. Step 3 depends on nothing further from Steps 1/2 merging (it calls the API by path;
-the route works against a locally-run `heediq-api` regardless of PR-merge state).
+**Open questions / risks:** None currently. Manual QA and the write-only-gotcha README fix are
+blocked on all three PRs merging and a deploy to `dev`, not on any further local work.
