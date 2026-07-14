@@ -27,10 +27,11 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Downstream**: `heediq-worker-transcription` (two per-tier images, D-062; deployed by that repo's CI via register-task-definition + pipes update-pipe); SummarizationStack (indirectly triggered after worker enqueues to heediq-summarization); WebSocket status push via Status Pusher Lambda + DDB Streams on `heediq-jobs` (D-061)
 - **Shared surfaces**: `heediq-jobs` table (written by EC2 GPU task, read by Status Pusher Lambda + API); `heediq-sources` table (written by EC2 GPU task with transcript text); ECR repo (shared pull path per D-045)
 
-### WebSocket real-time status (WebSocketStack)
-- **Upstream**: FoundationStack (heediq-jobs DDB Streams stream ARN; heediq-ws-connections table; wildcardCert — ACM wildcard cert eu-west-1, D-063); Cognito (JWKS for JWT validation in Connection Lambda)
-- **Downstream**: heediq-web (connects via wss://ws-{env}.heediq.com; receives status push events); heediq-api (Connection Lambda code deployed by heediq-api CI per D-050)
-- **Shared surfaces**: heediq-ws-connections table (written by Connect Lambda, read by Status Pusher Lambda); heediq-jobs DDB Streams (read-only by Status Pusher Lambda); SSM /heediq/api/ws-endpoint-url (read by heediq-web and heediq-api)
+### Real-time WebSocket framework (WebSocketStack, D-061 generalized D-109)
+- **Upstream**: FoundationStack (heediq-jobs DDB Streams stream ARN; heediq-ws-connections table w/ by-user/by-org/by-broadcast GSIs; wildcardCert — ACM wildcard cert eu-west-1, D-063); Cognito (JWKS for JWT validation in Connection Lambda); `@heediq/shared`'s `ws.ts` (`WsScopeSchema`, `WsEventPayloadMap`, `buildWsEvent()` — the cross-repo contract)
+- **Downstream**: heediq-web (connects via wss://ws-{env}.heediq.com; receives push events); heediq-api (ws-connect.ts/ws-pusher.ts/wsPush.ts code deployed by heediq-api CI per D-050); any future feature that calls `wsPush.ts`'s `pushToUser`/`pushToOrg`/`pushBroadcast` directly (no DDB Streams round trip required)
+- **Shared surfaces**: heediq-ws-connections table (written by ws-connect.ts, read by wsPush.ts via GSI); heediq-jobs DDB Streams (read-only by ws-pusher.ts); `WebSocketStack.grantPush()` — IAM helper any Lambda in any stack can call to get push rights; SSM /heediq/api/ws-endpoint-url + /ws-management-endpoint (read by heediq-web and heediq-api)
+- **Known gap**: no DynamoDB Local/LocalStack integration test scaffolding exists anywhere in the monorepo yet — `wsPush`/`ws-connect`/`ws-pusher` are unit-tested only (mocked `dynamo.send`), not against a real table per the `05-testing.md` contract.
 
 ### Summarization pipeline (SummarizationStack)
 - **Upstream**: FoundationStack (heediq-jobs + heediq-sources DynamoDB tables; heediq-audio-uploads S3 bucket); SummarizationStack (heediq-summarization SQS queue — created here, consumed by Lambda event source)

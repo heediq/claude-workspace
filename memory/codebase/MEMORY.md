@@ -44,8 +44,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - **ObservabilityStack** (`lib/observability/observability-stack.ts`, D-085) — per-env CloudWatch Dashboard built from static resource-name strings (no cross-stack construct refs, per D-037); ApiStack/SummarizationStack Lambdas run with X-Ray active tracing.
   - `lib/config.ts` `logRetentionFor(workloadEnv)` (D-093) — 30 days dev/staging, 90 days prod; applied to ApiStack/SummarizationStack/TranscriptionStack log groups so none default to CDK's "Never Expire".
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062).
-  - **FoundationStack** (`lib/foundation/`, split by concern per D-103 — see `lib/foundation/README.md`) — tables (sources, orgs, users, jobs w/ DDB Streams NEW_IMAGE, ws-connections w/ TTL + by-source GSI, user-auth-methods, auth-audit-log, cognito-identities pk=sub, D-099, plus RBAC/audit tables roles/groups/role-assignments/audit-log, D-102) + Cognito User Pool (custom:orgId/custom:role/custom:accountId, PreTokenGeneration + pre-signup/post-confirmation/post-authentication triggers) + ACM wildcard cert eu-west-1 (D-063) + SSM params.
-  - **WebSocketStack** — WebSocket API + heediq-ws-connect + heediq-ws-status-pusher (DDB Streams trigger) + custom domain ws-{env}.heediq.com (D-064) + SSM params (D-061).
+  - **FoundationStack** (`lib/foundation/`, split by concern per D-103 — see `lib/foundation/README.md`) — tables (sources, orgs, users, jobs w/ DDB Streams NEW_IMAGE, ws-connections w/ TTL + by-user/by-org/by-broadcast GSIs (D-109), user-auth-methods, auth-audit-log, cognito-identities pk=sub, D-099, plus RBAC/audit tables roles/groups/role-assignments/audit-log, D-102) + Cognito User Pool (custom:orgId/custom:role/custom:accountId, PreTokenGeneration + pre-signup/post-confirmation/post-authentication triggers) + ACM wildcard cert eu-west-1 (D-063) + SSM params.
+  - **WebSocketStack** — generalized real-time push framework (D-061, generalized D-109): WebSocket API + heediq-ws-connect + heediq-ws-status-pusher (DDB Streams trigger) + `grantPush()` IAM helper + custom domain ws-{env}.heediq.com (D-064) + SSM params. See `heediq-infra/README.md` §WebSocketStack, `heediq-shared/README.md` (`ws.ts`), `heediq-api/README.md` (`wsPush.ts`/`ws-connect.ts`/`ws-pusher.ts`).
   - **ApiStack** — Lambda heediq-api (Node.js 22) + HTTP API + custom domain api-{env}.heediq.com + IAM grants (tables, S3, SQS transcription+summarization, SecretsManager, SES role).
   - **SummarizationStack** — SQS queue + DLQ + Lambda heediq-summarization + IAM (SecretsManager, DynamoDB jobs+sources, S3 read). Source-agnostic: audio (transcription worker) + direct path (API Lambda, text/PDF/email/Excel), D-065.
   - **WorkloadCfCertStack** — ACM wildcard cert (`*.heediq.com`) in us-east-1 per workload account; passed to WebStack via `crossRegionReferences: true` (D-053).
@@ -102,14 +102,6 @@ _(none currently — see `heediq-infra` entry above for the one cross-stack CDK 
 _(Short notes on things being worked out; promote to a README or decisions doc when settled.)_
 
 **Backlog — not yet planned, don't forget:**
-- **Real-time WebSocket framework — NEXT UP (2026-07-14).** Andrii wants this built *before* the
-  first transcription flow, so the "what's happening now" UI is available from the very first
-  feature rather than bolted on after. Every user connects on login; server pushes status/progress
-  events to user/org/broadcast scopes. `heediq-infra`'s `WebSocketStack` (ws-connections table +
-  heediq-ws-status-pusher) already exists for job status push (D-061) — this item generalizes it
-  into a small reusable framework (typed event/channel model) any future feature can emit into,
-  instead of one-off per-feature wiring. Needs a real plan (Step 1–2) — this is the next thing to
-  scope when picked up.
 - **Design precision.** Don't build features against an approximate/guessed design — get pixel-precise
   design references (Figma or similar) before building UI, so `03-ui-kit.md` components are built
   once, correctly, rather than re-styled later. No tooling/process decided yet.
