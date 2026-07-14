@@ -1061,8 +1061,32 @@ ECR storage cost, not a need to shrink an already-working retention window. 5 pe
 rollback headroom across dev/staging/prod (only the currently-promoted SHA per env matters day to
 day) while capping steady-state storage to roughly 5×(5GB+9GB) ≈ 70GB.
 **Supersedes:** D-047 (retention mechanism only — SHA-tag versioning strategy itself unchanged)
-**Superseded by:** —
+**Superseded by:** D-108 (keep-count only, 5→3 per tier — tag-prefix fix and untagged-cleanup rule unchanged)
 **Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`
+
+### D-108 · ECR cost cleanup: keep-count lowered to 3/tier, build attestations disabled (2026-07-14) — Locked
+**Area:** Infra / Cost
+**Decision:** Two changes to `heediq-worker-transcription`'s ECR footprint: (1) `SharedServicesStack`'s
+lifecycle rule keep-count drops from 5 to **3 images per tier** (free/paid) — current + 1 rollback is
+enough per environment; dev/staging/prod all pull from the same shared-services repo by tag, so 3
+covers the worst case of all three envs mid-promotion at once without needing per-env tracking
+automation. (2) `docker/build-push-action@v6`'s default `provenance`/`sbom` attestations are disabled
+(`provenance: false`, `sbom: false`) on both build steps in `deploy.yml` — these were pushing extra
+untagged manifest images per build that D-101's "expire untagged after 1 day" rule never actually
+cleaned up (confirmed via `start-lifecycle-policy-preview`: 0 images ever matched), because they
+stay index-referenced by the tag. This was the real driver of unbounded growth, not the keep-count.
+One-time cleanup also ran: manually deleted 4 stale, unreferenced SHA generations (8 tagged +
+14 orphaned untagged images) confirmed unused via each workload account's live ECS task definitions,
+freeing ~97.7 GB (139.5 GB → 41.9 GB).
+**Why:** Repo had grown to 139.5 GB / 30 images while only 1 SHA generation was actually live anywhere
+(staging/prod have no ECS deployment yet). Attestations aren't consumed anywhere in the pipeline today
+(no supply-chain verification step), so disabling them has no functional cost. A custom
+"pin what's live per env" script was considered and rejected in favor of a slightly larger static
+keep-count — avoids building/maintaining new automation for a marginal storage saving.
+**Supersedes:** D-101 (keep-count only)
+**Superseded by:** —
+**Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`,
+`heediq-worker-transcription/.github/workflows/deploy.yml`
 
 ### D-102 · Dynamic per-org RBAC + unified GxP-quality audit trail — design locked (2026-07-08) — Locked
 **Area:** Architecture
