@@ -26,7 +26,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   trail" and its `GET /org/audit-log` entry. Dynamic per-org roles/groups/permissions + unified
   GxP-quality-bar audit trail. Full architecture: `../business/architecture.md` §"RBAC & Audit Trail"
   (still describes design as "not yet built" — intentionally left stale until the full feature is
-  implemented, per Andrii). Decisions: `DECISIONS.md` D-102, D-104, D-105, D-106.
+  implemented, per Andrii). `auditWriter(c)` (`heediq-api/src/lib/audit.ts`) centralizes actor/org
+  context (incl. `actorRole`) for every audit write; permission gating + audit trail is now a standing
+  rule for all future mutating endpoints/actions, not just this feature (D-107). Decisions:
+  `DECISIONS.md` D-102, D-104, D-105, D-106, D-107.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
