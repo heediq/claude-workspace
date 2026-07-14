@@ -102,12 +102,14 @@ _(none currently — see `heediq-infra` entry above for the one cross-stack CDK 
 _(Short notes on things being worked out; promote to a README or decisions doc when settled.)_
 
 **Backlog — not yet planned, don't forget:**
-- **Real-time WebSocket framework.** Every user connects on login; server pushes status/progress
-  events to user/org/broadcast scopes for interactive "what's happening now" UI (job stage updates,
-  etc.). `heediq-infra`'s `WebSocketStack` (ws-connections table + heediq-ws-status-pusher) already
-  exists for job status push — this backlog item is about generalizing it into a small reusable
-  framework (typed event/channel model) rather than one-off per-feature wiring. Needs a real plan
-  (Step 1–2) when picked up.
+- **Real-time WebSocket framework — NEXT UP (2026-07-14).** Andrii wants this built *before* the
+  first transcription flow, so the "what's happening now" UI is available from the very first
+  feature rather than bolted on after. Every user connects on login; server pushes status/progress
+  events to user/org/broadcast scopes. `heediq-infra`'s `WebSocketStack` (ws-connections table +
+  heediq-ws-status-pusher) already exists for job status push (D-061) — this item generalizes it
+  into a small reusable framework (typed event/channel model) any future feature can emit into,
+  instead of one-off per-feature wiring. Needs a real plan (Step 1–2) — this is the next thing to
+  scope when picked up.
 - **Design precision.** Don't build features against an approximate/guessed design — get pixel-precise
   design references (Figma or similar) before building UI, so `03-ui-kit.md` components are built
   once, correctly, rather than re-styled later. No tooling/process decided yet.
@@ -119,3 +121,15 @@ _(Short notes on things being worked out; promote to a README or decisions doc w
   need an approach that scales to cover both current features and future ones with comprehensive
   automated coverage (critical journeys, load-sensitive surfaces like transcription throughput).
   Not scoped or designed yet.
+- **Rate limiting / abuse protection.** No throttling at the Hono/API-Gateway layer yet. Worth
+  deciding before public signup traffic. Not scoped or designed yet.
+- **Dependency vulnerability scanning.** Renovate (D-048) only auto-bumps `@heediq/shared`; no
+  `npm audit`/`pip audit`/container-image scanning gate exists in any repo's CI. Not scoped yet.
+- **Secrets rotation policy.** D-038 defines where secrets live, not how/when they rotate. Not
+  scoped yet.
+- **Alerting thresholds / on-call.** D-085's ObservabilityStack gives per-env CloudWatch dashboards,
+  but nothing defines what triggers a page vs. a Slack message vs. nothing. Not scoped yet.
+- **Backup/DR restore drills.** Retention is defined (D-022) but nobody has tested actually
+  restoring a DynamoDB point-in-time snapshot. Not scoped yet.
+- **Bundle-size budget enforcement.** `07-engineering-standards.md` §6 states the principle; no CI
+  gate (e.g. `size-limit`) enforces it. Not scoped yet.
