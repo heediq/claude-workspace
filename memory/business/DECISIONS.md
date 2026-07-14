@@ -1261,6 +1261,38 @@ add either.
 `groups.ts`, `role-assignments.ts` (reference implementations); `heediq-api/README.md` §"D-102 RBAC &
 audit trail".
 
+### D-109 · Generalized real-time WebSocket framework (2026-07-14) — Locked
+**Area:** Architecture
+**Decision:** `HeediqWebSocketStack` (D-061) is generalized from a job-status-only pusher into a
+reusable event framework any feature can push into, ahead of the first transcription flow feature.
+`heediq-ws-connections` rows grow from `{connectionId}` to `{connectionId, userId, orgId,
+broadcastKey: 'ALL'}`, with new GSIs `by-user`/`by-org`/`by-broadcast` (the old `by-source` GSI is
+retired — unused, and superseded by org-scoped targeting). `heediq-shared` replaces the one-off
+`WsStatusMessageSchema` with a generic envelope (`WsEventEnvelopeSchema`: `{scope, type, payload,
+occurredAt}`, `scope` = `user`/`org`/`broadcast`) plus an extensible `WsEventPayloadSchemas` registry
+keyed by event `type` — `job_status` becomes its first entry, now pushed at **org scope** (not
+per-source) to match the org-shared sources library. `heediq-api` gets the first real Lambda code
+(connect/disconnect + pusher were inline CDK placeholders): `src/lib/wsPush.ts` exports
+`pushToUser`/`pushToOrg`/`pushBroadcast`, callable directly by any Lambda with the new
+`WebSocketStack.grantPush(fn)` IAM helper — this is the framework's one push mechanism.
+**Job-status keeps its existing DDB Streams trigger on `heediq-jobs`** (mechanism unchanged for
+table-backed state changes — decouples "state changed" from "push succeeded," and avoids porting a
+push client into the Python transcription worker); its stream-triggered handler now just calls the
+same shared `wsPush` library instead of bespoke code. A new SSM param
+`/heediq/api/ws-management-endpoint` (built in `WebSocketStack` from `wsApi.ref` + region + stage —
+no new resource) exposes the endpoint any push-calling Lambda needs for `ApiGatewayManagementApiClient`,
+distinct from the public `wss://` client URL.
+**Why:** Andrii wants "what's happening now" UI available from day one, not bolted onto the first
+feature. Direct-call push is right for events with no natural backing table row; DDB Streams stays for
+events that already write durable state (job status) because retry/decoupling comes for free and
+Python-worker changes are avoided. Org-scoped job-status matches the org-shared library model instead
+of a per-viewer scope that was never actually implemented.
+**Supersedes:** D-061 (mechanism only — WS push instead of polling stays; connection-scoping model,
+event schema, and push-trigger reusability are what changed)          **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/tables.ts`, `heediq-infra/lib/websocket/websocket-stack.ts`,
+`heediq-shared/src/messages.ts` (or new `src/ws.ts`), `heediq-api/src/lib/wsPush.ts`,
+`heediq-api/src/handlers/ws-connect.ts`, `heediq-api/src/handlers/ws-pusher.ts`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
