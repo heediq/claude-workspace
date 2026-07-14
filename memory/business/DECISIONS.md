@@ -1210,6 +1210,33 @@ today. Treat the catalog as append-only, same discipline as a DB enum.
 trail"; `heediq-api/src/routes/roles.ts` (persistence); `heediq-api/src/middleware/rbac.ts` (exact-match
 gate); `heediq-api/src/handlers/auth-provision.ts` (JWT claim stamping, D-105).
 
+### D-107 · Every mutating endpoint/UI action requires permission gating + audit trail — standing rule (2026-07-14) — Locked
+**Area:** Architecture
+**Decision:** Every future create/update/delete API route gates on `requirePermission` (backend) and
+every corresponding frontend action gates on `<Can>`; every create/update/delete route writes an audit
+event via the `auditWriter(c)` helper (`heediq-api/src/lib/audit.ts`) — create writes `after` only,
+delete writes `before` only, update writes both — using a resource-type-specific, human-readable
+payload (never a raw DB row), extending `AuditPayloadMap` in `heediq-shared/src/audit.ts` per new
+resource type. `auditWriter(c)` centralizes only actor/org context extraction (`orgId`, `actorUserId`,
+`actorEmail`, `actorRole` — pulled from the verified `AuthContext`); payload construction stays
+explicit per route. This was previously only implemented for the RBAC/roles feature (D-102) and not
+codified as a standing rule for all future endpoints — this decision closes that gap.
+**Why:** Andrii asked whether the rules mandate observability logging, `<Can>` gating, and a
+human-readable audit trail (create=after-only, delete=before-only) for every new endpoint/UI action —
+they didn't, only the one-off RBAC build followed the pattern. Locking it as a standing rule prevents
+future features from silently skipping permission gating or audit coverage. `auditWriter(c)` avoids
+repeating `orgId`/`actorUserId`/`actorEmail`/`actorRole` boilerplate at every call site without
+centralizing payload construction, which would conflict with D-102's human-readable/resource-specific
+design principle. `actorRole` is included because it's already on the verified JWT/`AuthContext` at
+zero extra cost; `actorGroups` is deferred — group membership isn't in the JWT today and would require
+either a DB read at write time or a JWT claim addition, and Andrii chose to skip it for now rather than
+add either.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-api/src/lib/audit.ts` (`auditWriter`, `writeAuditEvent`);
+`heediq-shared/src/audit.ts` (`actorRole` on the envelope); `heediq-api/src/routes/roles.ts`,
+`groups.ts`, `role-assignments.ts` (reference implementations); `heediq-api/README.md` §"D-102 RBAC &
+audit trail".
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

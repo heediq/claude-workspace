@@ -26,6 +26,15 @@ serverless, privacy-sensitive transcription product. Treat as defaults to confir
 - **Least privilege** on IAM roles, Lambda permissions, and S3 buckets. Default-deny.
 - **Data lifecycle**: define retention/deletion for recordings & transcripts; honor user deletion
   requests fully (audio, transcript, derived summaries, search indexes).
+- **Permission gating + audit trail on every mutating endpoint/action (D-107).** Every new
+  create/update/delete API route gates on `requirePermission`; every corresponding frontend action
+  gates on `<Can>`. Every create/update/delete route writes an audit event via the `auditWriter(c)`
+  helper (`heediq-api/src/lib/audit.ts`) — create writes `after` only, delete writes `before` only,
+  update writes both — using a resource-type-specific, human-readable payload (never a raw DB row),
+  extending `AuditPayloadMap` in `heediq-shared/src/audit.ts` for the new resource type.
+  `auditWriter(c)` centralizes only actor/org context (`orgId`/`actorUserId`/`actorEmail`/
+  `actorRole`, pulled from `AuthContext`) — payload construction stays explicit per route. See
+  `heediq-api/src/routes/roles.ts`/`groups.ts`/`role-assignments.ts` for the reference pattern.
 
 ## 3. Error handling & observability
 - **Structured errors** with a consistent shape across the API (code, message, optional details);
@@ -97,6 +106,9 @@ serverless, privacy-sensitive transcription product. Treat as defaults to confir
 - [ ] Workflow steps followed (or low-risk exception justified)
 - [ ] Types shared/validated at boundaries; `strict` clean
 - [ ] AuthZ + cross-org isolation enforced and tested (for any data path)
+- [ ] Every new mutating endpoint gates on `requirePermission`; every corresponding frontend action
+      gates on `<Can>`; every create/update/delete writes an audit event via `auditWriter(c)`
+      (create=after-only, delete=before-only, update=both) with a human-readable payload (D-107)
 - [ ] No PII/secrets in logs, client bundle, or git
 - [ ] Every new/changed route, handler, or worker unit logs through the shared logger (entry/success/
       failure, ids not payloads) — no raw `console.log`/`print` left behind (D-093)
