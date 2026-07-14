@@ -1293,6 +1293,30 @@ event schema, and push-trigger reusability are what changed)          **Supersed
 `heediq-shared/src/messages.ts` (or new `src/ws.ts`), `heediq-api/src/lib/wsPush.ts`,
 `heediq-api/src/handlers/ws-connect.ts`, `heediq-api/src/handlers/ws-pusher.ts`
 
+### D-110 · heediq-web centralized WebSocket client — Context + typed hook, no new cross-repo push access (2026-07-14) — Locked
+**Area:** Architecture
+**Decision:** `heediq-web` gets a single `WsProvider` (React Context) owning the entire WebSocket
+connection lifecycle: connects once the user is authenticated (`wss://ws-{env}.heediq.com?token=<JWT>`,
+the same query-param JWT pattern `ws-connect.ts` already expects per D-109), reconnects with backoff,
+and parses every inbound message through `@heediq/shared`'s `WsEventEnvelopeSchema`. It exposes a typed
+`useWsEvent(type, handler)` hook — features subscribe only to the event `type`s they care about (e.g.
+`job_status`) rather than one central switch/reducer enumerating every feature's reaction. This is the
+first real consumer of the D-061/D-109 push pipeline; nothing in `heediq-web` read from the socket
+before this.
+Separately: no other backend repo (`heediq-worker-transcription`, `heediq-worker-summarization`) gets
+direct WS push access beyond what D-109 already built. `wsPush.ts`/`grantPush()` stay `heediq-api`-only,
+triggered only by the existing `heediq-jobs` DDB Streams path — holding off on a generalized outbox
+(e.g. SQS) until a concrete feature needs direct, non-DDB-backed push. This isn't a new decision, just
+confirming D-109's scope stands as-is.
+**Why:** A context+hook keeps event-handling ownership with the feature that cares about an event
+(job-status UI updates, future event types) instead of a growing god-file every feature has to touch.
+Matches `07-engineering-standards.md` §7 (server state via TanStack Query) — handlers typically call
+`queryClient.invalidateQueries`/`setQueryData` rather than duplicating server state in a store. Holding
+off on cross-repo push access is YAGNI: today only `job_status` exists and DDB Streams already covers
+it; building an outbox now would be speculative infra with no consumer.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/ws/` (new — `WsProvider`, `useWsEvent`), `heediq-shared/src/ws.ts`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
