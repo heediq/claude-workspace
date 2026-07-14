@@ -1317,6 +1317,23 @@ it; building an outbox now would be speculative infra with no consumer.
 **Supersedes:** —          **Superseded by:** —
 **Related code:** `heediq-web/src/lib/ws/` (new — `WsProvider`, `useWsEvent`), `heediq-shared/src/ws.ts`
 
+### D-111 · Every feature with async backend work must use the WS framework for responsiveness (2026-07-14) — Locked
+**Area:** Product
+**Decision:** Any feature involving async or long-running backend work (transcription, diarization,
+summarization, and future job types) must push real-time progress through the WS framework
+(D-061/D-109/D-110) — never a silent wait or a bare indeterminate spinner, and never polling instead
+of the push. Planning a feature with backend job work (Step 2, `01-development-workflow.md`) must name
+the `WsEventPayloadMap` event type(s) it needs (reuse `job_status` or add a new payload to
+`heediq-shared/src/ws.ts`) and which `useWsEvent` handler the frontend registers to reflect
+stage/progress/outcome. This applies to every future feature, not just the ones already built.
+**Why:** The framework already exists and cost real build effort (D-061/D-109/D-110); skipping it
+feature-by-feature would silently regress `04-loading-and-feedback.md`'s "every wait is visible"
+principle back to polling or blind spinners on a case-by-case basis. Locking this in as a planning
+requirement makes it structural instead of something that has to be re-argued per feature.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/ws/README.md`, `heediq-api/src/lib/wsPush.ts`,
+`heediq-shared/src/ws.ts`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

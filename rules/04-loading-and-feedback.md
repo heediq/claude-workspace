@@ -29,11 +29,14 @@ disabled + **width preserved** (no layout jump), with label like "Saving…". Th
 while pending so the action can't be **double-submitted**. The three-state Listen button (idle →
 recording → processing) is the reference pattern.
 
-## 5. Long-running jobs → determinate progress with stages
+## 5. Long-running jobs → determinate progress with stages, via the WS framework (D-111)
 Transcription/summarization are long. Show **real progress**, not an endless indeterminate spinner:
 a stage indicator (`queued → transcribing → diarizing → summarizing → ready`) and a percentage/bar
 where the backend can report it. Surface the current stage in plain language. Reflect the actual
-pipeline state from SQS/Fargate, polled or streamed — don't fake it.
+pipeline state **pushed over the WebSocket framework** (`heediq-web/src/lib/ws/`, `useWsEvent`,
+D-061/D-109/D-110) — not polling, not faked. Every feature with async backend work registers a
+`useWsEvent` handler (reusing `job_status` or adding a new `WsEventPayloadMap` event) to drive this;
+this is a planning requirement (D-111, `01-development-workflow.md` Step 2), not a per-feature choice.
 
 ## 6. Optimistic UI where safe
 For low-risk mutations (rename, toggle, reorder), update the UI immediately and **roll back on error**

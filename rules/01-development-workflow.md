@@ -55,6 +55,12 @@ Write a plan that explains the *why* behind each change. It must include:
 - **Logging** — name the log points each step adds (via `createLogger`/`create_logger`, never raw
   `console.log`/`print`), at what level, and what non-PII context they carry (ids, not payloads).
   See `07-engineering-standards.md` §3 / D-093.
+- **Realtime/WS** (any step with async or long-running backend work, D-111) — name the
+  `WsEventPayloadMap` event type(s) it needs (reuse `job_status` or add a new payload to
+  `heediq-shared/src/ws.ts`) and which `useWsEvent` handler the frontend registers to reflect
+  stage/progress/outcome (`heediq-web/src/lib/ws/README.md`). Never plan a silent wait, a bare
+  indeterminate spinner, or polling in place of the WS push. If the step has no async backend work,
+  say so.
 - **Rollback note per step** — one line: "To undo: …".
 - **Risk & Regression** — *Change safety* (Low/Med/High + what could go wrong: data integrity,
   permission edges, races, cost, perf, cross-org isolation) and *Features to retest* (from the
