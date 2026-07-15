@@ -35,8 +35,9 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   /auth/methods`). Identity is keyed by an app-owned `accountId` (D-099, not Cognito's `sub`), resolved
   deterministically via `heediq-cognito-identities` (`sub → accountId`) and carried end-to-end as the
   `custom:accountId` JWT claim — email is now only a fallback self-heal lookup, not the primary
-  identity. Still open: `POST /settings/link/add-provider` (proactive linking's backend half). Full
-  contracts/gotchas: `heediq-web/src/lib/auth/README.md`, `heediq-web/src/features/auth/README.md`,
+  identity. `POST /settings/link/add-provider` (proactive linking's backend half,
+  `heediq-api/src/routes/settings.ts`) is now built. Full contracts/gotchas:
+  `heediq-web/src/lib/auth/README.md`, `heediq-web/src/features/auth/README.md`,
   `heediq-api/README.md`, `heediq-infra/README.md`. Decision history: `DECISIONS.md` D-077–D-091, D-099.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.

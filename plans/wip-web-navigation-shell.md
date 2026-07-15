@@ -45,10 +45,10 @@ confirmed, this WIP file can be deleted (nothing left to resume).
 All backend + frontend work for unified email-first sign-in/sign-up and cross-provider account
 linking is **built and merged** across `heediq-infra`, `heediq-api`, `heediq-shared`, `heediq-web`.
 Docs and memory are in sync (rule-10 consistency check run and clean as of 2026-07-04 — see
-`memory/codebase/MEMORY.md`). Still genuinely open from that work: `POST /settings/link/add-provider`
-backend endpoint (D-084 unblocked the dependency install, not yet built) — needed before the
-*proactive* linking flow's server half works; the client-side `startProviderLink()` round trip is
-ready and waiting on it.
+`memory/codebase/MEMORY.md`). `POST /settings/link/add-provider` backend endpoint (D-083) is now
+built (`heediq-api/src/routes/settings.ts`, branch `feature/settings-link-add-provider`, pre-PR gate
+green) — the *proactive* linking flow's server half is complete. What's still open: the manual QA
+round trip against a real Cognito login (test scenario 2 below) has not yet been executed by Andrii.
 
 ## MVP build order reminder (D-069)
 auth/onboarding → home/Listen → **sources library** → source detail/summary → multi-source upload +
