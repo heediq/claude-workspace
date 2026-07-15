@@ -67,6 +67,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `src/middleware/request-id.ts` (D-085) — per-request UUID correlation fallback for routes without a `sourceId` yet; logs via `@heediq/shared`'s `createLogger`.
   - The `/api/v1` prefix is centralized in exactly one place per side (this repo's `app.ts` route mounts; `heediq-web`'s `api-client.ts` `request()`) — don't hardcode it elsewhere (D-088 root cause).
   - Gotcha: transcription-queue `SendMessageCommand` must set `MessageAttributes: { tier }` — without it both EventBridge Pipe filters fail and no job is ever processed.
+  - DynamoDB Local integration test layer (D-030) — `tests/integration/`, real-table Vitest suite (not mocked), catches DynamoDB-syntax bugs mocked unit tests can't (found and fixed a reserved-keyword bug in `routes/audit-log.ts`). See `heediq-api/README.md` §Testing/§Gotchas. `scripts/integration/create-tables.ts` hand-mirrors `heediq-infra/lib/foundation/tables.ts` — drift-risk item in `10-consistency-check.md`.
 
 - **heediq-worker-transcription** — Python ECS worker: one RunTask = one job via SQS_MESSAGE_BODY container override (D-066). Two per-tier images (free/paid) with model weights baked in (D-062).
   README: `../../heediq-worker-transcription/README.md` · Decisions: D-037, D-038, D-047, D-059, D-062, D-065, D-066, D-068, D-085, D-093

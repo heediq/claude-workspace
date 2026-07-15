@@ -1,7 +1,12 @@
-# WIP — heediq-api integration test layer + centralized seeding
+# DONE — heediq-api integration test layer + centralized seeding
 
-**Branch:** `feature/api-integration-test-infra` (not yet created — plan approved in discussion,
-no code written yet)
+**Branch:** `feature/api-integration-test-infra`
+
+**Status:** Implemented and merged into this branch's work — all 6 plan steps built, tested green
+(`test:pre-pr` + `test:integration`), README (`heediq-api/README.md`) and memory
+(`feature_dependency_map.md`, `MEMORY.md`, `10-consistency-check.md`) synced. Found and fixed a real
+reserved-keyword bug in `routes/audit-log.ts` along the way (see `heediq-api/README.md` Gotchas).
+PR not yet opened.
 
 **Goal:** Build the integration test layer that `05-testing.md` locks (D-030: Vitest + DynamoDB
 Local/LocalStack) but that doesn't exist yet in `heediq-api` — no `tests/integration/`, no

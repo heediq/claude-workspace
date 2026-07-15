@@ -36,6 +36,7 @@ For every repo (`heediq-infra`, `heediq-api`, `heediq-shared`, `heediq-web`, `he
 | SQS message schema fields in README match `@heediq/shared` `messages.ts` and Python `models.py` | Read both; compare |
 | Test count / test commands in README match `package.json` / `pyproject.toml` | Grep |
 | DynamoDB table names, GSIs, and key design in README match `foundation-stack.ts` | Read stack; compare |
+| `heediq-api/scripts/integration/create-tables.ts` table/GSI defs match `heediq-infra/lib/foundation/tables.ts` (hand-mirrored, not imported — can silently drift, D-030) | Read both; compare |
 | Account IDs, domain names, and ARNs in README match `lib/config.ts` | Compare |
 | Stale "TODO" or "until PR #N merges" gotchas | Grep for "until", "file:", "to be added after", "PR #" |
 
