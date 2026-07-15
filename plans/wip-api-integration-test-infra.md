@@ -11,8 +11,10 @@ DynamoDB/Cognito and wanting the same checks automated + reusable for future str
 generation.
 
 ## State
-Plan drafted and walked through with Andrii; not yet approved to start building. Open question below
-is blocking Step 1.
+Plan drafted and walked through with Andrii; scope question resolved (2026-07-15) — DynamoDB Local
+only, LocalStack (SQS/S3) deferred to a follow-up. E2E (Playwright) and stress (k6) scaffolding are
+explicitly out of scope for this WIP — separate unscoped efforts tracked in
+`memory/codebase/MEMORY.md`'s backlog. Ready to branch and start Step 1.
 
 ## Plan (from the last session)
 
@@ -55,11 +57,10 @@ no production code touched.
 **Risk & Regression:** Low — additive only. Ongoing cost is the schema-mirroring drift risk noted in
 item 2.
 
-## Open question (blocking)
-Andrii hasn't yet said whether to scope this to DynamoDB Local only, or use full LocalStack so SQS/S3
-are covered by the same harness in the same pass (relevant since transcription job flow uses SQS/S3
-too, and the user separately wants stress-testing reuse). Resolve this before Step 1.
+## Resolved (2026-07-15)
+DynamoDB Local only for this pass — matches the original plan exactly. Full LocalStack (SQS/S3) stays
+open as a future follow-up once a concrete need for SQS/S3 integration coverage (e.g. transcription
+job flow) or stress-test data generation reuse is scoped.
 
 ## Next
-Ask/confirm DynamoDB-Local-only vs LocalStack scope, then start Step 1 (docker-compose + table
-bootstrap script) on the new branch.
+Create the branch, then start Step 1 (docker-compose + table bootstrap script).
