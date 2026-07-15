@@ -1369,6 +1369,26 @@ Both pages share the defect; a backend-only patch would have left it in place.
 **Related code:** `heediq-web/src/routes/SettingsLinkCallbackPage.tsx`,
 `heediq-web/src/routes/AuthCallbackPage.tsx`
 
+### D-114 · `requirePermission` writes a denial audit entry on every 403 (2026-07-15) — Locked
+**Area:** Architecture
+**Decision:** The RBAC/audit framework (D-102) is a single check-and-record mechanism, not two
+independently-wired ones. `requirePermission` (`heediq-api/src/middleware/rbac.ts`) itself writes a
+minimal `resourceType: 'permission'`, `effect: 'denied'` audit entry on every 403, in addition to
+route handlers writing `effect: 'permitted'` entries via `auditWriter` on success. `AuditLogEntrySchema`
+gains an `effect: 'permitted' | 'denied'` field (default `permitted`, backward-compatible with every
+already-stored row) and a new `permission` resourceType carrying just the attempted permission (no
+resource instance exists for a denied check). Implemented as an O(1) middleware-level change — a
+single file — not a per-route retrofit, since every gated route already calls `requirePermission`.
+**Why:** Andrii identified that the framework was meant to check permission AND record the outcome
+(permitted or denied) in one call; the actual code only ever recorded successful mutations via
+`auditWriter`, leaving denied attempts with zero trace anywhere. Confirmed by reading `rbac.ts`: the
+FORBIDDEN branch had no logger call and no audit write. Implementing now (rather than deferring)
+costs the same regardless of endpoint count, since the fix lives in the single centralized
+enforcement point every route already calls — waiting only creates a permanent gap in denial history
+on the write-once audit table, with no way to backfill it later.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-shared/src/audit.ts`, `heediq-api/src/middleware/rbac.ts` (pending)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
