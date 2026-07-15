@@ -11,6 +11,12 @@ faster, **or the change is low-risk** (defined below).
 For low-risk changes: skip Steps 1–2, implement directly, then still do Steps 5–6 if a code README or
 memory is affected (usually not for pure style fixes).
 
+**Root cause over symptom (D-113).** Every bug fix targets the actual defect, not the point where it
+happens to surface — even if that means redoing prior work or widening the fix beyond the file that
+raised the error. Before proposing a fix, ask "why does this defect exist" one level past "where did
+it throw." A fix that only special-cases the symptom (e.g. reclassifying an error code at the call
+site) without addressing the structural cause is not done.
+
 ---
 
 ## Step 0 — Resume check + git sync + memory lookup (first thing, before anything else)

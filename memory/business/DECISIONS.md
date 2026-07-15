@@ -1351,6 +1351,24 @@ mechanism existed to force a redeploy without a throwaway commit.
 **Supersedes:** —          **Superseded by:** —
 **Related code:** `heediq-infra/.github/workflows/deploy.yml`, `heediq-infra/README.md` (Gotchas)
 
+### D-113 · Fix root causes, not symptoms (2026-07-15) — Locked
+**Area:** Policy
+**Decision:** When a bug is found, diagnose and fix the actual root cause, not the point where it
+happens to surface — even if that means redoing prior work. A fix that only patches the visible
+symptom (e.g. reclassifying an error code, adding a special case at the point of failure) without
+addressing why the defect exists is not an acceptable fix.
+**Why:** Prompted by the Settings provider-linking bug (2026-07-15): the account actually linked
+successfully server-side, but the frontend showed a false error. The proximate fix (reclassify a
+Cognito `AliasExistsException` as idempotent success in `heediq-api/src/routes/settings.ts`) would
+have patched only where the defect surfaced. The actual root cause is structural: OAuth callback
+pages (`SettingsLinkCallbackPage.tsx`, `AuthCallbackPage.tsx`) perform a one-time side effect
+(exchanging a single-use authorization code, then a linking/login call) with no guard against the
+effect running more than once — vulnerable to reload, browser back/forward, or duplicate navigation.
+Both pages share the defect; a backend-only patch would have left it in place.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/routes/SettingsLinkCallbackPage.tsx`,
+`heediq-web/src/routes/AuthCallbackPage.tsx`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
