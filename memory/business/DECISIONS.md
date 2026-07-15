@@ -1334,6 +1334,23 @@ requirement makes it structural instead of something that has to be re-argued pe
 **Related code:** `heediq-web/src/lib/ws/README.md`, `heediq-api/src/lib/wsPush.ts`,
 `heediq-shared/src/ws.ts`
 
+### D-112 · Manual `workflow_dispatch` trigger on infra deploy pipeline (2026-07-15) — Locked
+**Area:** Infra
+**Decision:** `heediq-infra`'s `deploy.yml` gained a `workflow_dispatch` trigger (`inputs.environment`:
+dev/staging/prod) so any environment can be manually redeployed at the current tip of `develop`/`main`,
+independent of a push event. Wired into the existing `deploy-dev`/`deploy-staging`/`approve-prod`/
+`deploy-prod` job `if:` conditions alongside the push triggers, without weakening the staging→prod
+manual-approval gate (`approve-prod` still requires `deploy-staging` to have succeeded on the push-to-
+`main` path; the `workflow_dispatch` path to `prod` still goes through the same `approve-prod` gate).
+**Why:** Root-caused a live incident (2026-07-15): a push-triggered `HeediqApiStack` deploy failed on
+an unrelated, since-fixed test; the fix commit only touched a `paths-ignore`'d path so it never
+re-triggered a deploy. `HeediqApiStack` in dev then silently ran 5 days behind `develop`, missing the
+`WS_MANAGEMENT_ENDPOINT` env var (D-109) and 500'ing on every request — surfaced to the user as a
+CORS error on `dev.heediq.com` since browsers report a non-2xx preflight as a CORS failure. No
+mechanism existed to force a redeploy without a throwaway commit.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-infra/.github/workflows/deploy.yml`, `heediq-infra/README.md` (Gotchas)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
