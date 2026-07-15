@@ -25,8 +25,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   (still describes design as "not yet built" — intentionally left stale until the full feature is
   implemented, per Andrii). `auditWriter(c)` (`heediq-api/src/lib/audit.ts`) centralizes actor/org
   context (incl. `actorRole`) for every audit write; permission gating + audit trail is now a standing
-  rule for all future mutating endpoints/actions, not just this feature (D-107). Decisions:
-  `DECISIONS.md` D-102, D-104, D-105, D-106, D-107.
+  rule for all future mutating endpoints/actions, not just this feature (D-107). `requirePermission`
+  (`heediq-api/src/middleware/rbac.ts`) also writes a denial audit entry on every 403 (D-114), so the
+  framework checks and records in one call. Decisions: `DECISIONS.md` D-102, D-104, D-105, D-106,
+  D-107, D-114.
 
 - **Account linking & auth (D-077–D-091, D-096, D-099), built end-to-end.** Own verify-then-password
   flow (Cognito `SignUp`/`ConfirmSignUp` confirmation-code reuse, not IdP-trust or custom OTP) backs
