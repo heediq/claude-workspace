@@ -1387,6 +1387,21 @@ on the write-once audit table, with no way to backfill it later.
 **Supersedes:** —          **Superseded by:** —
 **Related code:** `heediq-shared/src/audit.ts`, `heediq-api/src/middleware/rbac.ts` (pending)
 
+### D-115 · Docs-only changes never trigger CI or deploy pipelines (2026-07-16) — Locked
+**Area:** Infra
+**Decision:** Every repo's `ci.yml` (pull_request trigger) and `deploy.yml`/equivalent (push trigger)
+carries a `paths-ignore: ['**/*.md']` (or equivalent scoped `paths:` allowlist that already excludes
+markdown) so a README/docs-only change never burns a typecheck/test run or a real deploy
+(build+S3-sync+CloudFront-invalidation, Lambda `update-function-code`, or CDK deploy). Applies to all
+6 app repos (`heediq-shared`, `heediq-web`, `heediq-api`, `heediq-worker-summarization`,
+`heediq-worker-transcription`, `heediq-infra`). New workflows must include this guard from the start.
+**Why:** Andrii requested it explicitly while merging a batch of consistency-check README fixes —
+routine doc corrections shouldn't cost CI minutes or risk an unnecessary redeploy. Caught a real gap
+in the process: `heediq-infra`'s existing `paths-ignore` only excluded the root `README.md`, missing
+`lib/foundation/README.md` (and any future nested README) — broadened to `**/*.md`.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `.github/workflows/ci.yml` and `.github/workflows/deploy.yml` in each app repo.
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
