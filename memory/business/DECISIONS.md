@@ -1460,6 +1460,23 @@ recording) keeps this pass frontend-shell-only, no recording-pipeline risk.
 **Supersedes:** —          **Superseded by:** —
 **Related code:** `heediq-web/vite.config.ts`, `heediq-web/public/icons/`
 
+### D-120 · App-wide double-submit guard + animated stroke/shadow transitions (2026-07-16) — Locked
+**Area:** Design
+**Decision:** The double-submit guard (`04-loading-and-feedback.md` §4) is a general frontend rule,
+not a per-button opt-in — any interactive element triggering async work (button, form submit,
+link-triggered mutation) must ignore a re-entrant trigger while pending, implemented via the shared
+`useAsyncAction` hook (`heediq-web/src/lib/useAsyncAction.ts`). Separately, every appearing/
+disappearing visual state (focus rings, error rings, borders, shadows) must animate rather than snap:
+components must list `box-shadow`/`opacity` explicitly in their transition classes (Tailwind's
+`transition-colors` omits both) using the shared `duration-base`/`ease-brand` tokens.
+**Why:** Found via a login-page UX pass — rapid double-clicks on OTP/password submit buttons could
+double-fire requests, and the focus/error ring on `Input` was snapping instantly instead of animating
+because `transition-colors` doesn't cover `box-shadow`. Both are common oversights worth codifying as
+standing rules rather than fixing ad hoc per component.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/useAsyncAction.ts`, `heediq-web/src/components/ui/Button/Button.tsx`,
+`heediq-web/src/components/ui/Input/Input.tsx`, `heediq-web/src/features/auth/VerifyAndSetPasswordForm.tsx`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

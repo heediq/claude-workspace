@@ -23,7 +23,7 @@ route transitions.
 For partial updates, load only the affected region (a card, a panel) with its own skeleton or inline
 spinner — never block the whole screen for a local fetch.
 
-## 4. Button & action loading state — and the double-submit guard, everywhere
+## 4. Button & action loading state — and the double-submit guard, everywhere (D-120)
 On any action that triggers async work, the trigger control enters its **loading state**: spinner +
 disabled + **width preserved** (no layout jump), with label like "Saving…". The control is disabled
 while pending so the action can't be **double-submitted**. The three-state Listen button (idle →

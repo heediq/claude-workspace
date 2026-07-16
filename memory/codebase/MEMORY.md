@@ -83,7 +83,14 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `sourceType='text'` → `contentRef` IS the sourceId (reads `heediq-sources[sourceId].transcript`), not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).
-  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Features/auth README: `src/features/auth/README.md` · Layout README: `src/components/layout/README.md` · PasswordRequirements README: `src/components/ui/PasswordRequirements/README.md` · WS client README: `src/lib/ws/README.md` (D-110) · PWA README: `src/lib/pwa/README.md` (D-119) · IdentityProviderButton README: `src/components/ui/IdentityProviderButton/README.md` (D-118) · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097, D-110, D-116, D-117, D-118, D-119
+  README: `../../heediq-web/README.md` · Auth README: `src/lib/auth/README.md` · Features/auth README: `src/features/auth/README.md` · Layout README: `src/components/layout/README.md` · PasswordRequirements README: `src/components/ui/PasswordRequirements/README.md` · Logo README: `src/components/ui/Logo/README.md` · WS client README: `src/lib/ws/README.md` (D-110) · PWA README: `src/lib/pwa/README.md` (D-119) · IdentityProviderButton README: `src/components/ui/IdentityProviderButton/README.md` (D-118) · Decisions: D-008, D-020, D-024, D-028, D-029, D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097, D-110, D-116, D-117, D-118, D-119, D-120
+  - App-wide double-submit guard: `src/lib/useAsyncAction.ts` (ref-guarded `run()` + `pending` state) is
+    now the standard way any button/form submit prevents a rapid double-click from firing its handler
+    twice — codified as a general rule (not per-button opt-in) in `04-loading-and-feedback.md` §4.
+    Paired with an explicit `transition-[...]` property list (not bare `transition-colors`, which
+    misses `box-shadow`/`opacity`) on `Button`/`Input` so focus/error/disabled visual states animate.
+  - `Logo` (`src/components/ui/Logo/`) — brand mark shown next to the "heediq" wordmark on `HomePage`
+    and `TopBar`; sizes `sm`/`md`/`lg`.
   - Installable PWA baseline built (D-119): `vite-plugin-pwa` (manifest + service worker, app-shell-only precache — no runtime caching for API calls), `public/icons/` favicon set, `src/lib/pwa/useInstallPrompt.ts` hook + Settings "Install app" card. Offline recording/queued-upload/Wake-Lock remain backlog (see below).
   - Shared motion system (D-117): `src/lib/motion.ts` centralizes Framer Motion variants/tokens — any mount/unmount, page-transition, or appear/disappear animation must reuse a variant from here (never a bespoke inline `motion.div`), per `03-ui-kit.md` §1b.
   - `LoadingMark` (D-116, supersedes D-074's animation only) — waveform pulse (4 bars scaling height, staggered phase) replacing the old rotation animation; component contract/props unchanged.
