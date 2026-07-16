@@ -24,3 +24,13 @@ how `memory/business/DECISIONS_ARCHIVE.md` is handled for decisions.
 (This restated the already-documented "fetched at cold start" fact from the Contracts section; the
 genuinely non-obvious part — cold-start Secrets Manager errors poisoning all warm invocations — was
 kept and reworded into the README's Gotchas section, tied to D-100's module-level caching mechanism.)
+
+## 2026-07-16 · memory/business/DECISIONS.md (D-085) · stale PR/branch tracking, both repos confirmed merged during consistency check
+Implemented across 5 repos. Merged to `develop`: `heediq-shared` (PR #13), `heediq-worker-transcription`
+(PR #12, branch `feature/structured-logging-py`), `heediq-infra` (PR #41, branch
+`feature/observability-stack`) — see D-093 for retention details. Still open on unmerged branch
+`feature/structured-logging`: `heediq-api`, `heediq-worker-summarization`.
+
+(The 10-consistency-check.md agents for both heediq-api and heediq-worker-summarization independently
+confirmed `createLogger`/structured logging is fully wired in both repos with zero raw `console.log`
+calls outside logger implementations — the "still open" branch reference was stale.)

@@ -47,7 +47,11 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Downstream**: heediq-web (React SPA — served from CloudFront; CI does S3 sync + `aws cloudfront create-invalidation` using `/heediq/web/cloudfront-distribution-id` SSM param); heediq-api (reads `/heediq/web/url` SSM param for CORS origin)
 - **Shared surfaces**:
   - `heediq-web-assets-{accountId}` S3 bucket — written by heediq-web CI; served by CloudFront via OAC (source-account policy in FoundationStack)
-  - `/heediq/web/url` SSM param — consumed by heediq-api (CORS) and heediq-web (runtime config)
+  - `/heediq/web/url` SSM param — consumed by heediq-web (runtime config). NOT read by heediq-api —
+    API Gateway CORS is a compile-time constant (`DOMAINS.web[env]`) baked into `api-stack.ts`'s
+    `corsConfiguration`; `heediq-api`'s own `CORS_ORIGINS` env var is never set by the CDK stack, so
+    the app-level CORS array in `app.ts` is always empty (flagged in the 2026-07-16 consistency check
+    as an undocumented dead/misconfigured code path — Andrii to decide whether to wire it or remove it)
   - `/heediq/web/cloudfront-distribution-id` SSM param — consumed by heediq-web CI for cache invalidation
   - **Key CDK constraint**: OAC bucket policy must live in FoundationStack (source-account condition), not WebStack — avoids circular cross-stack reference. `s3.Bucket.fromBucketName()` in WebStack prevents CDK from adding a second bucket policy.
 
