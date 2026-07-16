@@ -130,3 +130,7 @@ _(Short notes on things being worked out; promote to a README or decisions doc w
   restoring a DynamoDB point-in-time snapshot. Not scoped yet.
 - **Bundle-size budget enforcement.** `07-engineering-standards.md` §6 states the principle; no CI
   gate (e.g. `size-limit`) enforces it. Not scoped yet.
+- **Offline audio recording + queued upload + Screen Wake Lock API.** Part of D-024's PWA scope;
+  D-119 explicitly deferred it when building the installable-PWA baseline (manifest/service
+  worker/icons). Touches the recording pipeline, not just the app shell — needs its own scoping
+  pass. Not scoped or designed yet.

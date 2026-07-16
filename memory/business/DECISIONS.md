@@ -1402,6 +1402,64 @@ in the process: `heediq-infra`'s existing `paths-ignore` only excluded the root 
 **Supersedes:** —          **Superseded by:** —
 **Related code:** `.github/workflows/ci.yml` and `.github/workflows/deploy.yml` in each app repo.
 
+### D-116 · Waveform loading mark (2026-07-16) — Locked
+**Area:** Design
+**Decision:** `LoadingMark` (`heediq-web/src/components/ui/LoadingMark/`) is redesigned as a 4-bar
+audio-waveform pulse — each bar animates height (scaleY) independently at a staggered phase, no
+group rotation. Same component API/props (`size`, `tone`, `aria-label`); honors
+`prefers-reduced-motion` as before.
+**Why:** Andrii found the existing ear-perk rotation (D-074) "a bit ugly" and asked for a waveform
+feel instead, matching Heediq's audio/transcription product identity.
+**Supersedes:** D-074 (animation only — component contract/props unchanged)
+**Superseded by:** —
+**Related code:** `heediq-web/src/components/ui/LoadingMark/`, `heediq-web/src/styles/globals.css`
+
+### D-117 · App-wide motion system (2026-07-16) — Locked
+**Area:** Design
+**Decision:** Page-to-page navigation uses a shared fade + slight y-axis transition (Framer Motion
+`AnimatePresence`, keyed on route path). Any UI element that mounts/unmounts (modal, toast,
+dropdown, form-step swap, validation message) animates in/out via fade + axis-shift — y-axis for
+vertically-stacked content (list items, wizard steps), x-axis for horizontally-implied content
+(side drawers, left↔right step navigation) — using one shared duration/easing token set
+(`heediq-web/src/lib/motion.ts`: fast 150ms / base 200ms / slow 300ms, standard ease-out curve).
+Applies to all kit "appears/disappears" components going forward, not just the ones touched in
+this pass. `framer-motion` added as the animation dependency.
+**Why:** Andrii asked for smooth, modern transitions between pages and consistent enter/exit
+animation for any appearing/disappearing UI element, calling out standard UX practice rather than
+specifying exact motion values.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/motion.ts`, `heediq-web/src/App.tsx`,
+`heediq-web/src/components/ui/Modal/`, `heediq-web/src/components/ui/Toast/`
+
+### D-118 · Login — separate branded IdP buttons, direct-to-provider (2026-07-16) — Locked
+**Area:** Design
+**Decision:** The login screen replaces the single "Continue with SSO" button with two separate
+buttons — one per federated provider (Google, Microsoft) — each using that provider's own official
+brand mark/style, not a Cognito-generic control. Each button passes `identity_provider` through to
+Cognito's `/oauth2/authorize` call directly (mirroring the existing `startProviderLink` pattern),
+so the user lands straight on that provider's own consent screen — Cognito's Hosted-UI provider
+picker is skipped entirely for primary login.
+**Why:** Andrii wants each IdP represented with its own recognizable button (reference: a
+Google/Microsoft-style auth screen), which also improves the flow by removing an extra picker step.
+Refines D-020's UI presentation only — the Cognito + federated-IdP auth backend is unchanged.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/auth/cognito-oauth.ts`, `heediq-web/src/lib/auth/AuthContext.tsx`,
+`heediq-web/src/components/ui/IdentityProviderButton/`, `heediq-web/src/routes/HomePage.tsx`
+
+### D-119 · PWA build tooling — vite-plugin-pwa (2026-07-16) — Locked
+**Area:** Architecture
+**Decision:** D-024's installable-PWA requirement is implemented via `vite-plugin-pwa`
+(Workbox-based): auto-generated manifest + service worker precaching the app shell only, `autoUpdate`
+registration. The service worker never caches `/api/v1/*` responses (transcripts/audio are sensitive
+per-org data, D-024/`07-engineering-standards.md` §2 — must always hit the network). Offline audio
+recording, queued upload, and the Screen Wake Lock API (also part of D-024) remain backlog — not
+built in this pass.
+**Why:** `vite-plugin-pwa` is the standard, well-maintained Vite-native PWA tool — avoids hand-rolling
+a service worker and manifest injection. Scoping to installable-baseline-only (vs. full offline
+recording) keeps this pass frontend-shell-only, no recording-pipeline risk.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/vite.config.ts`, `heediq-web/public/icons/`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
