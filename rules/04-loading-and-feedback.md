@@ -23,11 +23,30 @@ route transitions.
 For partial updates, load only the affected region (a card, a panel) with its own skeleton or inline
 spinner — never block the whole screen for a local fetch.
 
-## 4. Button & action loading state
+## 4. Button & action loading state — and the double-submit guard, everywhere
 On any action that triggers async work, the trigger control enters its **loading state**: spinner +
 disabled + **width preserved** (no layout jump), with label like "Saving…". The control is disabled
 while pending so the action can't be **double-submitted**. The three-state Listen button (idle →
 recording → processing) is the reference pattern.
+
+**This double-submit guard is a general frontend rule, not a per-button opt-in.** Any interactive
+element that triggers async work (button, form submit, link-triggered mutation) must ignore a
+re-entrant trigger while its action is still pending — a rapid double-click/double-tap/double-Enter
+never fires the handler twice. Use the shared `useAsyncAction` hook (`heediq-web/src/lib/useAsyncAction.ts`)
+to implement this: it combines a synchronous `useRef` guard (blocks a re-entrant call before React
+re-renders the disabled UI) with a `pending` state that drives the loading UI. For `<form>` submits,
+call `e.preventDefault()` in a plain synchronous handler *before* invoking the guarded action — never
+inside the guarded action itself, or a blocked re-entrant call skips `preventDefault()` and the
+browser submits the form natively.
+
+**Every appearing/disappearing visual state must animate, not snap.** Focus rings, error rings,
+borders, and shadows are common offenders: Tailwind's `transition-colors` utility does **not** include
+`box-shadow` or `opacity`, so a ring or a disabled-state dim will snap instantly unless the component's
+transition class explicitly lists the properties (e.g. `transition-[border-color,box-shadow,opacity]`)
+combined with the shared `duration-base`/`ease-brand` tokens (`tailwind.config.ts`, mirroring
+`src/lib/motion.ts`'s duration/easing so CSS transitions and Framer Motion motion feel like one
+system, D-117). Check this whenever a component's focus/error/disabled visual state is added or
+changed — it's a common oversight, not an edge case.
 
 ## 5. Long-running jobs → determinate progress with stages, via the WS framework (D-111)
 Transcription/summarization are long. Show **real progress**, not an endless indeterminate spinner:
