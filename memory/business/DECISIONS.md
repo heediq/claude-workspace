@@ -1477,6 +1477,19 @@ standing rules rather than fixing ad hoc per component.
 **Related code:** `heediq-web/src/lib/useAsyncAction.ts`, `heediq-web/src/components/ui/Button/Button.tsx`,
 `heediq-web/src/components/ui/Input/Input.tsx`, `heediq-web/src/features/auth/VerifyAndSetPasswordForm.tsx`
 
+### D-121 · PWA app name varies per environment (2026-07-16) — Locked
+**Area:** Design
+**Decision:** The installed PWA's manifest `name`/`short_name` varies by environment — `Heediq` in
+production, `Heediq (Staging)` / `Heediq (Dev)` otherwise, `Heediq (Local)` when `VITE_APP_ENV` is
+unset (`pnpm dev` / a local build). `VITE_APP_ENV` is injected in `deploy.yml`'s `Build` step per
+deploy job; icon/theme-color stay the same across environments (name only).
+**Why:** Installing the PWA from dev/staging alongside prod previously looked identical on the
+homescreen — no way to tell them apart at a glance. Mirrors D-039's existing non-prod-subdomain-
+prefix convention rather than inventing a new one.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/vite.config.ts`, `heediq-web/.github/workflows/deploy.yml`,
+`heediq-web/src/lib/pwa/README.md`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
