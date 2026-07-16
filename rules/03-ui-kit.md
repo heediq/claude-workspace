@@ -29,6 +29,17 @@ anywhere a user can see it (including screen-reader-only text) is a bug, exactly
 is a bug under the golden rule above. The `/dev/ui` component gallery is the one exception (dev-only,
 build-guarded out of prod) where demo copy may be literal.
 
+## 1b. Any UI work uses the kit + the motion system — no exceptions
+Before writing or editing any screen, component, or transition, use what already exists:
+**kit components** (`03-ui-kit.md`, this file) for every visual element, and the **shared motion
+system** (`heediq-web/src/lib/motion.ts`, D-117) for every mount/unmount, appear/disappear, or
+page-to-page transition. Never hand-roll a bespoke `motion.div` with inline `variants`/`transition`
+props in feature code — that is the motion-system equivalent of a raw `className="bg-amber-500 …"`
+button under the golden rule (§1), and the same fix applies: reuse an existing motion variant, or add
+a new one to `motion.ts` and use it. This check runs at the start of any UI task, before planning —
+confirm both the kit component and the motion variant needed exist (or must be added) as part of Step
+2's UI-conformance section (`01-development-workflow.md`).
+
 ## 2. Design tokens are the single source of truth
 All visual values live in one place (Tailwind theme config + CSS variables), never hardcoded in
 components:
