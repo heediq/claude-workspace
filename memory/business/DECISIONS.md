@@ -1512,6 +1512,27 @@ not the 1–3s originally floated.
 `heediq-web/src/components/ui/FullPageLoading/README.md` — used by `ProtectedRoute.tsx`,
 `HomePage.tsx`, `AuthCallbackPage.tsx`, `SettingsLinkCallbackPage.tsx` (page level, 150ms/600ms)
 
+### D-123 · Extract-on-second-duplication — standing DRY/SOLID architecture rule (2026-07-17) — Locked
+**Area:** Architecture
+**Decision:** Any UI or behavior pattern — loading/error/success sequencing, transition timing,
+async/callback handling, or any other repeated logic shape — that appears (or is about to appear) in
+**two or more places** must be extracted into one shared component/hook/utility and consumed by both,
+never hand-copied with a "see X" comment pointing at the other instance. This generalizes what
+D-117 (motion system), D-120 (double-submit guard), and D-122 (perceived-loading timing) already did
+for their specific surfaces into a standing rule that applies going forward to any pattern, not just
+those three. A second copy of the same logic is the trigger to extract — don't wait for a third.
+**Why:** Found via a concrete bug: `AuthCallbackPage.tsx` and `SettingsLinkCallbackPage.tsx` both
+hand-copied the same "loading vs. error" branching around `usePerceivedLoading`, and both copies
+carried the identical race (the error branch rendered whenever `showLoading` was `false`, without
+checking `failed` — true both when a fast failure hides the spinner *and* momentarily on mount before
+the delay timer fires) causing a real error-page flash right after a successful Google sign-in. Fixing
+each file separately treats the symptom; only extracting the shared logic into one place fixes the
+defect once and prevents the same class of bug recurring in a third callback page later (D-113 root-
+cause-over-symptom).
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/auth/README.md` (OAuth callback flow), the new shared
+OAuth-callback component/hook extracted to fix the flash (see task in progress)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
