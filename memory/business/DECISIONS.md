@@ -1507,8 +1507,10 @@ minimum well under a second specifically to avoid making fast operations feel sl
 small upward adjustment from that existing guidance for a slightly more deliberate, smoother feel,
 not the 1–3s originally floated.
 **Supersedes:** —          **Superseded by:** —
-**Related code:** `heediq-web/src/lib/useAsyncAction.ts`, `heediq-web/src/lib/motion.ts`,
-`heediq-web/src/App.tsx` (once implemented)
+**Related code:** `heediq-web/src/lib/usePerceivedLoading.ts` (the shared hook), wired into
+`heediq-web/src/lib/useAsyncAction.ts` (component level, 150ms/500ms) and
+`heediq-web/src/components/ui/FullPageLoading/README.md` — used by `ProtectedRoute.tsx`,
+`HomePage.tsx`, `AuthCallbackPage.tsx`, `SettingsLinkCallbackPage.tsx` (page level, 150ms/600ms)
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
