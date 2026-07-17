@@ -1490,6 +1490,26 @@ prefix convention rather than inventing a new one.
 **Related code:** `heediq-web/vite.config.ts`, `heediq-web/.github/workflows/deploy.yml`,
 `heediq-web/src/lib/pwa/README.md`
 
+### D-122 · Perceived-loading timing values — component vs page level (2026-07-17) — Locked
+**Area:** Design
+**Decision:** Every loading indicator app-wide (component/button-level via `useAsyncAction`, and
+page-level route/full-page loads) uses a **delay-before-show** (~150–200ms — an operation finishing
+before this shows nothing at all) followed by a **minimum display-once-shown** once it does appear,
+so nothing ever flickers for a single frame. Component-level minimum: **~500ms**. Page-level minimum:
+**~600ms**. This is centralized in one shared hook/mechanism (not per-screen ad hoc timers) and
+applied uniformly at both levels. Explicitly rejected: a flat 1–3s minimum applied everywhere — that
+would make fast interactions (an 80ms save) feel deliberately slowed down, the opposite of "the
+system is always responsive."
+**Why:** Andrii wanted to eliminate spinner flicker on very fast operations (50–100ms) and asked for
+smooth, always-present-for-a-beat loading animations; standard perceived-performance practice (and
+the existing `04-loading-and-feedback.md` §10 guidance of ~150–200ms delay / ~400ms minimum) caps the
+minimum well under a second specifically to avoid making fast operations feel slow — 500/600ms is a
+small upward adjustment from that existing guidance for a slightly more deliberate, smoother feel,
+not the 1–3s originally floated.
+**Supersedes:** —          **Superseded by:** —
+**Related code:** `heediq-web/src/lib/useAsyncAction.ts`, `heediq-web/src/lib/motion.ts`,
+`heediq-web/src/App.tsx` (once implemented)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
