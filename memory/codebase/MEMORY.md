@@ -14,10 +14,17 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   backlog below): **`../business/BACKLOG.md`**.
 
 ## In-progress product work
-- **Context Library** (D-124–D-126, generalizes D-068/D-069) — requirements-definition stage, no
-  code yet. Auto-first classification + chat-based output generation are locked; domain taxonomy
-  and retrieval-at-scale strategy are open. See `../business/product.md` north-star section and
-  `../business/BACKLOG.md`.
+- **Context Library** (D-124–D-137, generalizes D-068/D-069) — requirements-definition stage, no
+  code yet. Locked so far: generalized scope + auto-first classification + chat output (D-124–126);
+  Domain as predefined behavior-bearing type work/study/personal/other (D-127, D-131); one Context
+  per Source (D-128); Container→Context rename (D-129); combined classify+extract in the
+  summarization worker w/ confidence + `other` fallback (D-130); item-level `ExtractedItem` model
+  (D-135, supersedes D-132's flat arrays); `classification_ready` WS event + review-gate state
+  (D-133); nested Contexts in MVP (D-134); Context Decision Ledger — designed now, built fast-follow
+  (D-136); interactive 3-step review wizard (D-137). Data model: no RAG at MVP — chat assembles a
+  Context's kept `ExtractedItem`s (+ descendants) + ledger + full-source fallback at query time from
+  DynamoDB. Open: Context chat table/persistence shape, build-order sequencing. See
+  `../business/product.md` north-star section and `../business/BACKLOG.md`.
 
 ## Modules / Features (pointers)
 
