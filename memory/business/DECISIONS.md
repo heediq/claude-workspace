@@ -1747,7 +1747,45 @@ yes/no — which builds trust and produces cleaner curated memory.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/src/features/` (review wizard), `heediq-web/src/components/`
 
+### D-138 · Context Library — Context chat persistence model (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** Output generation (D-126) persists as **multiple named conversations per Context**
+(ChatGPT-style threads — e.g. "Tech spec draft", "Stakeholder deck"), not a single running thread.
+Two new tables: **`heediq-conversations`** (`conversationId` PK, `contextId`, `orgId`, `userId`,
+`title`, `createdAt`, `updatedAt`; GSI `by-context` PK=`contextId`) and **`heediq-chat-messages`**
+(PK=`conversationId`, SK=`ts#messageId`, `role` 'user'|'assistant', `content`, `model?`,
+`createdAt`). Conversations and messages are durable artifacts the user returns to (a generated test
+plan/deck), not ephemeral chat.
+**Why:** Users generate several distinct outputs from one Context; separate threads keep them
+organized and each output recoverable, versus one shared transcript.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/`, `heediq-api/`, `heediq-web/`
+
+### D-139 · Context Library — dedicated `heediq-chat` worker, streamed over WS with prompt caching (2026-07-20) — Locked
+**Area:** Architecture / Cost
+**Decision:** A chat turn runs as an **async job in a new dedicated `heediq-chat` worker Lambda**
+(300s, SQS-triggered — mirrors the summarization worker, D-065), never in the 30s `heediq-api`
+Lambda (a long generation would truncate and block a request thread, `07-engineering-standards.md`
+§6). Flow: `POST /conversations/:id/messages` persists the user message and enqueues a chat job →
+the worker assembles the Context's memory (kept `ExtractedItem`s + Decision Ledger + full-source
+fallback, D-135/D-136), calls `client.messages.stream()`, and **streams tokens live** to the user
+via the existing WS framework (`wsPush.ts` direct `PostToConnection`, D-109) — batched into a new
+`chat_delta` `WsEventPayloadMap` event (~100ms cadence), finalized by a `chat_complete` event; the
+final assistant message is written to `heediq-chat-messages`. The API Gateway HTTP API buffers
+responses so token streaming rides WS, not the REST path (D-111 — no silent wait, no polling).
+**Prompt caching (mandatory):** the assembled Context-memory block (system prompt + kept items +
+ledger) is a large stable prefix reused across every turn — place a `cache_control` breakpoint after
+it so only the new user turn is uncached; a Context's memory can be large and this is the primary
+cost lever for chat. Model follows the tier mapping (D-067): free→Haiku, paid→Sonnet, same as
+summarization.
+**Why:** Long generations need a >30s runtime and must not block the API; WS streaming keeps the
+system responsive token-by-token; prompt caching turns an otherwise expensive large-context
+per-turn cost into a ~0.1× cache read after the first turn.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-infra/lib/chat/` (new stack), `heediq-chat` worker repo, `heediq-shared/src/ws.ts` (`chat_delta`/`chat_complete`), `heediq-api/src/routes/`, `heediq-web/src/lib/ws/`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
+- **Context chat model tier for quality outputs** — D-139 reuses D-067's free→Haiku / paid→Sonnet mapping; revisit whether high-value generated deliverables (tech specs, slides) on the paid tier warrant a stronger model (e.g. Opus) against per-generation cost, once real output quality is observed.
 - **Context Library retrieval strategy at scale** — MVP assembles a Context's full accumulated content directly into the Claude chat prompt (no vector store, consistent with `product.md`'s existing RAG note). Revisit only if a single Context's content outgrows a practical context-window budget, or if cross-Context semantic search ("find where we discussed X across my whole library") becomes a prioritized feature — recommended default is to defer RAG/embeddings until one of those two triggers is real, not to build it speculatively now.
