@@ -42,16 +42,16 @@ contextual memory for their daily work and life.
 - **Universal ingestion**: any data a customer puts into the system (meetings, documents, notes,
   emails, whatever a future connector supports) is a candidate input — a **Source** (D-068), not
   just audio.
-- **Auto-categorization with human confirmation**: on ingest, the system proposes a Container
+- **Auto-categorization with human confirmation**: on ingest, the system proposes a Context
   match and labels, and asks a short confirmation questionnaire — "this looks related to Project
   X / Epic Y, and about auth/security — correct?" — rather than either fully automating
   classification or forcing manual filing. Keeps the human in the loop for a cheap trust-building
   check.
-- **Hierarchical structure + rich labels**: a **Container** (D-068; project, or any ongoing
-  user-defined activity) nests sub-containers (epics/stories) via `parentContainerId`; a Source
-  attaches to a Container *and* carries its own free-form `labels` — the container answers "which
-  activity is this part of," labels answer "what is this actually about" (topic, component, type)
-  — so matching isn't limited to a single container slot.
+- **Hierarchical structure + rich labels**: a **Context** (D-068 concept, renamed from "Container"
+  by D-129; project, or any ongoing user-defined activity) nests sub-Contexts (epics/stories) via
+  `parentContextId`; a Source attaches to a Context *and* carries its own free-form `labels` — the
+  Context answers "which activity is this part of," labels answer "what is this actually about"
+  (topic, component, type) — so matching isn't limited to a single Context slot.
 - **User-curated extraction**: after summarization, the user chooses which statements/decisions/
   actions/plans actually get persisted into the structured memory — extraction proposes, the user
   decides what's kept (consistent with the existing Item Detail / editable-before-export concept
@@ -72,12 +72,12 @@ contextual memory for their daily work and life.
   index built from this structured memory, usable to ground responses from AI models with that
   org's/user's own context. No vector-store infra is being added now. To keep this cheap to add
   later: Sources and extracted items already carry clean provenance (which Source, which
-  Container, labels, timestamps) under D-068/D-069 — that provenance is what a future embedding/
+  Context, labels, timestamps) under D-068/D-069 — that provenance is what a future embedding/
   indexing pass would need, so no extra prep work is required today beyond the D-068 naming.
 
-D-068's generic naming (Source/Container/labels) is what makes the MVP's source-matching and
-structured extraction the first real slice of this larger "auto-organizing memory" capability
-rather than a one-off feature, without a data-model rewrite later.
+D-068's generic naming (Source/Context [renamed from "Container" by D-129]/labels) is what makes the
+MVP's source-matching and structured extraction the first real slice of this larger "auto-organizing
+memory" capability rather than a one-off feature, without a data-model rewrite later.
 
 Original extraction categories envisioned: **Requirements, User Stories, Decisions, Open
 Questions, Action Items** — each tagged, source-linked back to the transcript (quote/timestamp),
