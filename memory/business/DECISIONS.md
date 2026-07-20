@@ -1682,6 +1682,18 @@ hard product requirement, not polish.
 **Related code:** `heediq-shared/src/ws.ts`, `heediq-shared/src/domain.ts` (Source fields),
 `heediq-web/src/lib/ws/`, `heediq-worker-summarization/`
 
+### D-134 · Context Library — nested Contexts (epic/story) are in MVP scope (2026-07-20) — Locked
+**Area:** Product
+**Decision:** The self-nesting `parentContextId` (D-129, from D-068) is **used at MVP**, not
+deferred: a Context can nest sub-Contexts (project → epic → story, or any user-meaningful depth).
+A Source files into a single Context at any level of the tree (D-128). Chat and context-memory
+assembly at a parent Context include its descendants' memory (a parent sees its children's Sources).
+**Why:** Andrii confirmed the epic/story hierarchy is core to how projects are organized; the
+self-nesting table already supports it at zero extra schema cost, so there's no reason to ship a
+flat-only v1 and retrofit nesting later.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/` (Context `parentContextId`), `heediq-web/` (context tree UI)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
