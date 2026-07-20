@@ -580,7 +580,7 @@ settings remain follow-on.
 from many source types, not months of clarification) at v1 instead of as a later fast-follow. The
 source-agnostic SQS entry point (D-065) already exists, so the marginal build is upload UI +
 container-level synthesis logic, not new pipeline architecture.
-**Supersedes:** D-010 (scope only — build order sequence unchanged) **Superseded by:** —
+**Supersedes:** D-010 (scope only — build order sequence unchanged) **Superseded by:** D-140 (synthesis-output mechanism + the final "synthesis view" build-order step only — the multi-source-ingestion scope and the critical path through source-detail are unchanged and still load-bearing).
 **Related code:** `memory/business/product.md`, `plans/wip-app-repos-scaffold.md`
 
 ---
@@ -1783,6 +1783,29 @@ system responsive token-by-token; prompt caching turns an otherwise expensive la
 per-turn cost into a ~0.1× cache read after the first turn.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-infra/lib/chat/` (new stack), `heediq-chat` worker repo, `heediq-shared/src/ws.ts` (`chat_delta`/`chat_complete`), `heediq-api/src/routes/`, `heediq-web/src/lib/ws/`
+
+### D-140 · MVP v1 synthesis step reconciled to the Context Library (2026-07-20) — Locked
+**Area:** Product
+**Decision:** D-069's "container-level synthesis" — a single one-shot structured
+technical-requirement output view over a Container — **is the Context Library** (D-124–D-139). The
+final build-order step of D-069 ("multi-source upload + container-level synthesis view") is replaced
+by the Context Library flow: multi-source ingest → combined classify+extract → interactive review
+wizard → file into a **Context** (renamed from Container, D-129) → **chat-based output generation**
+(D-126/D-139) over curated `ExtractedItem`s + the Decision Ledger. Synthesis is therefore no longer
+a single fixed tech-requirement output but any output the user asks for via chat, across any Domain
+(D-127/D-131), not just work/dev.
+**Unchanged from D-069:** multi-source ingestion (PDF/doc/image + audio) is in MVP v1; the critical
+path **auth/onboarding → home/Listen → recordings library → source detail/summary** is unchanged
+(source detail now surfaces curated `ExtractedItem`s); org/billing and calendar/meeting-bot settings
+remain follow-on. So the Context Library spec's build order (`plans/context-library-spec.md` §11)
+**is** the MVP v1 plan for everything from source-detail onward — not a separate track.
+**Why:** Andrii confirmed reconciling D-069 with the Context Library. The generalized chat-over-a-
+Context model (D-124–D-139) is a strict superset of D-069's synthesis intent; keeping D-069's
+narrower "single synthesis view" wording would be a stale constraint that contradicts the locked
+Context Library design.
+**Supersedes:** D-069 (synthesis-output mechanism + final build-order step only — multi-source scope
+and the sequence through source-detail unchanged) **Superseded by:** —
+**Related code:** `plans/context-library-spec.md`, `memory/business/product.md`
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).

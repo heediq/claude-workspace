@@ -56,11 +56,14 @@ contextual memory for their daily work and life.
   actions/plans actually get persisted into the structured memory — extraction proposes, the user
   decides what's kept (consistent with the existing Item Detail / editable-before-export concept
   above).
-- **Container-level synthesis (now in MVP v1, D-069)**: given several labeled Sources attached to
-  one Container — e.g. meeting transcripts + a rules PDF + design-standard screenshots for one
-  project — generate a single structured technical-requirement output ready to implement, instead
-  of the user manually reconciling separate per-source summaries. This is the proof-of-concept
-  slice of the platform vision, shipped as part of MVP v1 rather than deferred.
+- **Context-level output generation (MVP v1 — the Context Library, D-140 reconciles D-069)**: given
+  several labeled Sources attached to one **Context** (renamed from Container, D-129) — e.g. meeting
+  transcripts + a rules PDF + design-standard screenshots for one project — the user generates any
+  output through **chat over that Context** (D-126/D-139), backed by the Claude API over curated
+  `ExtractedItem`s + a Decision Ledger, instead of manually reconciling per-source summaries. This
+  supersedes D-069's original "single one-shot technical-requirement synthesis view": output is now
+  chat-driven and any type/any domain, not a fixed tech-requirement view. Full design:
+  `plans/context-library-spec.md`.
 - **End state (still north-star, not MVP)**: a comprehensive, structured memory of a user's
   ongoing activities (both professional and personal) that Heediq can reason over as an assistant
   — surfacing what's due, what was decided, and answering questions about past context, across
@@ -165,8 +168,10 @@ integration, rather than building a custom bot in-house — third-party agents a
 cross-platform call-joining reliably.
 
 ## MVP build order
-Critical path (D-069, supersedes D-010's scope; sequence unchanged): **auth/onboarding → home
-screen → recordings library → source detail/summary → multi-source upload + container-level
-synthesis view** (record/upload → transcribe/parse → summarize → view → synthesize across
-sources). Org/billing settings and calendar/meeting-bot settings are follow-on work, after the
-core loop is validated.
+Critical path (D-069 scope, D-140 reconciled the final step; sequence unchanged): **auth/onboarding →
+home screen → recordings library → source detail/summary → the Context Library** (multi-source
+ingest → auto-classify/extract → interactive review wizard → file into a Context → Context chat for
+output generation). The final step was originally D-069's "container-level synthesis view"; D-140
+replaced it with the Context Library (`plans/context-library-spec.md`) — chat over a Context rather
+than a single one-shot synthesis view. Org/billing settings and calendar/meeting-bot settings are
+follow-on work, after the core loop is validated.

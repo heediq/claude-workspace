@@ -208,7 +208,9 @@ D-135) · D-133 (`classification_ready` + review-gate state) · D-134 (nested Co
 (ExtractedItem) · D-136 (Decision Ledger, fast-follow) · D-137 (review wizard) · D-138 (chat
 persistence) · D-139 (chat worker + WS streaming + prompt caching).
 
-Extends D-068 (Source/Container naming) and D-069 (MVP multi-source + synthesis).
+Extends D-068 (Source/Container naming). **D-140 reconciles D-069**: the Context Library *is* D-069's
+MVP v1 synthesis step (chat-over-a-Context replaces the single one-shot synthesis view); D-069's
+multi-source scope and critical path through source-detail are unchanged.
 
 ---
 
@@ -222,8 +224,11 @@ Extends D-068 (Source/Container naming) and D-069 (MVP multi-source + synthesis)
 
 ## 11. Suggested build order (to refine in implementation planning)
 
-Reconcile against the D-069 critical path (auth → home/Listen → library → source detail → synthesis).
-The Context Library *is* the evolution of the D-069 synthesis step. Rough sequence:
+**This is the MVP v1 plan for everything from source-detail onward** (D-140 reconciled D-069: the
+Context Library *is* D-069's synthesis step, not a separate track). The earlier critical-path stages
+— auth/onboarding → home/Listen → recordings library → source detail/summary — are unchanged from
+D-069 and largely already built; source detail now surfaces curated `ExtractedItem`s. Rough sequence
+for the Context Library itself:
 
 1. **Shared contracts** (`@heediq/shared`): Domain enum + `DOMAIN_PROFILES`, Context/ExtractedItem
    schemas, Source field additions, new WS events, confidence-threshold constants.
