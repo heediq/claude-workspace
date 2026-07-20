@@ -1661,7 +1661,7 @@ drift. `transcript` and provenance fields are unchanged.
 **Why:** A fixed work-shaped Summary can't represent a study or personal (or `other`) extraction;
 domain-keyed storage lets one schema carry every Domain's output and lets chat (D-126) read it
 generically when assembling a Context's memory.
-**Supersedes:** — **Superseded by:** —
+**Supersedes:** — **Superseded by:** D-135 (extraction storage moves to item-level `ExtractedItem`; domain-keyed *categorization* survives as each item's `category`) — fully superseded, archive at next consistency check.
 **Related code:** `heediq-shared/src/domain.ts` (`SummarySchema`), `heediq-worker-summarization/src/writer.ts`
 
 ### D-133 · Context Library — `classification_ready` WS event + review-gate Source state (2026-07-20) — Locked
@@ -1693,6 +1693,59 @@ self-nesting table already supports it at zero extra schema cost, so there's no 
 flat-only v1 and retrofit nesting later.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-shared/src/` (Context `parentContextId`), `heediq-web/` (context tree UI)
+
+### D-135 · Context Library — item-level `ExtractedItem` model (supersedes D-132) (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** Structured extraction is stored as individually addressable **`ExtractedItem`** records,
+not flat arrays on `Summary`. Shape: `{ itemId, sourceId, contextId?, orgId, category, text,
+confidence, sourceQuote?, status: 'proposed'|'kept'|'discarded' }`, where `category` is one of the
+filed Domain's `extractionFields` (D-131). The review wizard (D-137) curates each item
+(keep/recategorize/edit/discard); only `kept` items become durable Context memory. `Summary` shrinks
+to `transcript` + a short prose gist. A Context's chat memory (D-126) = all `kept` items across the
+Context **and its descendants** (D-134), grouped by category, with **full Source content still
+stored and available** as a detail fallback so extraction is never lossy.
+**Why:** Item-level records are required for one-by-one review curation, per-item provenance back to
+the transcript quote, and the kept/discarded distinction — none of which a flat `Record<field,
+string[]>` (D-132) can persist. Realizes product.md's long-stated "extraction proposes, user decides
+what's kept."
+**Supersedes:** D-132 (extraction storage shape — domain-keyed categorization survives as `category`) **Superseded by:** —
+**Related code:** `heediq-shared/src/`, `heediq-worker-summarization/src/writer.ts`, `heediq-web/`
+
+### D-136 · Context Library — Context Decision Ledger (design now, build fast-follow) (2026-07-20) — Locked
+**Area:** Product / Architecture
+**Decision:** Each Context carries a **Decision Ledger** — a curated, deduplicated, context-level
+roll-up of key decisions and open questions across all its Sources (distinct from per-source
+`ExtractedItem`s). Entry shape: `{ entryId, contextId, topic, answer|null, status:
+'confirmed'|'needs_review'|'open', confidence, origin: 'auto'|'user'|'chat_prompted', sourceRefs[] }`.
+An auto-answer with **confidence < ~0.50** (a separate threshold from D-130's ~0.75 domain-fit) is
+flagged `needs_review`; a decision with no supporting data is `open` for the user to fill.
+**Chat-time gating:** before generating, chat checks which ledger entries are prerequisites for a
+quality answer; if required entries are `open`/`needs_review`, it asks the user to fill them first,
+then generates. **Scope:** the ledger fields/table are designed into the data model **now** (no later
+rewrite), but ledger generation + fill-in UI + chat-time gating **build as a fast-follow** after the
+core loop (ingest → classify/extract → review wizard → file → chat over extraction) ships. The core
+loop is MVP; the ledger is the immediate next phase.
+**Why:** The ledger is the "precise context" differentiator and generalizes Heediq's founding vision
+(turn discussion into specs without months of clarification) into a standing per-context artifact;
+staging it after the core loop de-risks MVP while keeping the model rewrite-free.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/`, `heediq-api/`, `heediq-web/`
+
+### D-137 · Context Library — interactive 3-step review wizard (2026-07-20) — Locked
+**Area:** Product / Design
+**Decision:** The post-ingest human gate (D-125/D-133) is a **step-by-step wizard**, not a single
+card, showing results progressively as the user answers: **(1) Placement** — confirm the proposed
+Context, pick a different one (context-tree picker), or create a new Context (name + Domain), incl.
+placing into a sub-Context (D-134); **(2) Extraction curation** — each `ExtractedItem` one by one
+(text + proposed category + source quote) → keep / recategorize / edit / discard (only `kept`
+persists, D-135); **(3) Ledger reconciliation** — new/changed ledger entries and any newly
+`open`/low-confidence ones to approve or fill (this step activates with the D-136 fast-follow; the
+core loop ships steps 1–2). All steps use kit components + the motion system; no silent auto-file.
+**Why:** Andrii wants the approval interactive and one-by-one — suggestions surfaced and confirmed
+step by step (placement, then labeling each extraction, then decisions) rather than a bulk
+yes/no — which builds trust and produces cleaner curated memory.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/features/` (review wizard), `heediq-web/src/components/`
 
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
