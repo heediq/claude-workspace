@@ -1533,6 +1533,49 @@ cause-over-symptom).
 **Related code:** `heediq-web/src/lib/auth/README.md` (OAuth callback flow), the new shared
 OAuth-callback component/hook extracted to fix the flash (see task in progress)
 
+### D-124 · Context Library generalizes north-star scope beyond dev-work to any life domain (2026-07-20) — Locked
+**Area:** Product
+**Decision:** The Container/Source north-star model (D-068/D-069, `product.md`) is generalized now,
+at requirements-design time, into a **Context Library** spanning any life domain a user organizes
+activity around — work/project contexts, study, personal/home (e.g. groceries, receipts) — not just
+dev-team technical requirements. The data model and UX are designed generically from this pass even
+though the build order still ships the dev-team use case first (D-069's MVP v1 scope/build order is
+unchanged). A coarse top-level "Domain" categorization (e.g. Work/Study/Personal) is under
+discussion, not yet locked — see Open section.
+**Why:** Avoids a data-model rewrite later, consistent with why D-068 already chose generic
+Source/Container naming over meeting-specific terms.
+**Supersedes:** — (extends D-069's framing; does not change its MVP build order) **Superseded by:** —
+**Related code:** `memory/business/product.md`, `memory/business/BACKLOG.md`
+
+### D-125 · Context Library — auto-first classification, no manual merge/split at MVP (2026-07-20) — Locked
+**Area:** Product
+**Decision:** On ingest, Heediq auto-classifies new source data against the user's existing Contexts
+(or proposes creating a new one), generates a summary + labels, and requires user approval of the
+auto-labeling/classification before the data is added to that Context's accumulated memory. No
+manual context merge/split UI at MVP — the auto-classification + approval step is the only
+correction mechanism.
+**Why:** Keeps the human-in-the-loop trust check (already the north-star design intent in
+`product.md`) while avoiding a heavier manual context-management UI before real usage shows whether
+auto-classification is accurate enough to need one.
+**Supersedes:** — **Superseded by:** —
+**Related code:** —
+
+### D-126 · Context Library — output generation via chat, not fixed one-shot templates (2026-07-20) — Locked
+**Area:** Product
+**Decision:** Generating an output from a Context (technical requirements, test plans, acceptance
+criteria, stakeholder slides, or anything else) happens through a chat interface scoped to that
+Context, backed by the Claude API: the assistant's context is the Context's accumulated
+labeled/summarized data, plus a system prompt, plus the user's own free-form prompt. Predefined
+starter prompts are offered as shortcuts, but the primary interaction is open chat, not a fixed set
+of one-shot generation templates.
+**Why:** A closed set of templates can't anticipate every output a user wants from their accumulated
+context (dev requirements today, slides or a grocery list tomorrow); chat generalizes to any output
+without predicting it up front.
+**Supersedes:** — **Superseded by:** —
+**Related code:** —
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
+- **Context Library domain taxonomy (D-124)** — predefined top-level Domain types (Work/Study/Personal/…) vs. fully open-ended user-defined domains; still being thought through (2026-07-20).
+- **Context Library retrieval strategy at scale** — MVP assembles a Context's full accumulated content directly into the Claude chat prompt (no vector store, consistent with `product.md`'s existing RAG note). Revisit only if a single Context's content outgrows a practical context-window budget, or if cross-Context semantic search ("find where we discussed X across my whole library") becomes a prioritized feature — recommended default is to defer RAG/embeddings until one of those two triggers is real, not to build it speculatively now.

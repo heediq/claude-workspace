@@ -10,6 +10,14 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 ## Decisions
 - Canonical locked decisions live in **`../business/DECISIONS.md`** (business memory). Reference
   decision IDs (e.g. D-007) from entries below; don't copy decision text here.
+- Product feature backlog (postponed/not-yet-scoped feature ideas, distinct from the engineering
+  backlog below): **`../business/BACKLOG.md`**.
+
+## In-progress product work
+- **Context Library** (D-124–D-126, generalizes D-068/D-069) — requirements-definition stage, no
+  code yet. Auto-first classification + chat-based output generation are locked; domain taxonomy
+  and retrieval-at-scale strategy are open. See `../business/product.md` north-star section and
+  `../business/BACKLOG.md`.
 
 ## Modules / Features (pointers)
 

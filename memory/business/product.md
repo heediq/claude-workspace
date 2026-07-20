@@ -17,12 +17,22 @@ turn discussions into actionable specs without manual note-taking.
 Long-term direction: Heediq doesn't just capture requirements — it eventually helps build the
 systems behind them (Heed → Define → Build; see `branding.md`).
 
-### Long-term platform vision — universal contextual memory
-Captured 2026-07-01, refined 2026-07-02. The long-term platform direction below is **not** fully
-in MVP scope, but a first slice of it now is — see D-069. Don't confuse the two: D-069 (multi-source
-ingestion + container-level synthesis) is locked and being built; everything else here (arbitrary
-connectors, full personal/professional memory, assistant reasoning over it, custom RAG) remains
-north-star context, not a spec to build toward yet.
+### Long-term platform vision — universal contextual memory ("Context Library")
+Captured 2026-07-01, refined 2026-07-02, generalized 2026-07-20 (D-124–D-126). The long-term platform
+direction below is **not** fully in MVP scope, but a first slice of it now is — see D-069. Don't
+confuse the two: D-069 (multi-source ingestion + container-level synthesis) is locked and being
+built; everything else here (arbitrary connectors, full personal/professional memory, assistant
+reasoning over it, custom RAG) remains north-star context, not a spec to build toward yet.
+
+As of D-124, the Container/Source model is being requirements-designed as a generalized **Context
+Library** — spanning any life domain (work/project, study, personal/home), not just dev-team
+technical requirements — even though D-069's build order still ships the dev-team use case first.
+Two mechanics are locked ahead of the rest of the requirements pass: **auto-first classification**
+(Heediq classifies/summarizes/labels new data against existing Contexts and asks for approval; no
+manual merge/split UI at MVP, D-125), and **chat-based output generation** (a Context-scoped chat
+backed by the Claude API — accumulated context + system prompt + user prompt — rather than fixed
+one-shot templates, D-126). Open questions (domain taxonomy, retrieval strategy at scale) and
+not-yet-scoped feature ideas live in `memory/business/BACKLOG.md`.
 
 The idea: Heediq grows from a meeting-transcription tool into a general **personal/organizational
 memory platform**. Users (individuals or companies) feed it data from many sources — not just
