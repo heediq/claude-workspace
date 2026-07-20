@@ -561,7 +561,7 @@ has no real data yet (cheapest point to rename).
 rename later once real data and more consumers exist. "Source" reads naturally as ingestion
 input regardless of type; "Container" generalizes project/epic/story into one flexible hierarchy
 instead of three narrowly-named tables.
-**Supersedes:** — **Superseded by:** —
+**Supersedes:** — **Superseded by:** D-129 (Container→Context naming), D-128 (multi-attach → one-per-source) — Source rename, self-nesting, and `labels[]` unchanged and still load-bearing.
 **Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/foundation-stack.ts`,
 `heediq-api/`, `heediq-worker-transcription/`, `heediq-worker-summarization/`, `heediq-web/`
 
@@ -1574,8 +1574,46 @@ without predicting it up front.
 **Supersedes:** — **Superseded by:** —
 **Related code:** —
 
+### D-127 · Context Library — Domain is a predefined, behavior-bearing type (2026-07-20) — Locked
+**Area:** Product / Architecture
+**Decision:** A **Domain** is a predefined system type (initial set: `work`, `study`, `personal`)
+that categorizes Contexts and, critically, is not a bare label but a **behavior profile** — each
+Domain carries an *extraction profile* (which structured fields the summarizer pulls), a set of
+*starter prompts* (chat-output shortcuts, D-126), and *classifier hints* (framing for the ingest
+auto-classifier). Domains live as a versioned constant in `@heediq/shared` (like the permission
+catalog), **not** per-org DynamoDB rows, and are not user-editable at MVP. Adding a Domain is a code
+change, not a schema migration. Every **Context** belongs to exactly one Domain. Fully user-defined
+domains are deferred (`BACKLOG.md`). This resolves D-124's open taxonomy question.
+**Why:** The ingest pipeline must know *what shape to extract* and *what outputs make sense* before
+it can file data — a freeform user string can't drive the summarizer, the classifier, or the output
+prompts. A small predefined set with behavior config is what makes auto-classification (D-125) and
+chat output (D-126) work; open-ended domains would leave those three surfaces undriven.
+**Supersedes:** — (resolves D-124's open item) **Superseded by:** —
+**Related code:** `heediq-shared/src/` (Domain enum + profile constant), `memory/business/product.md`
+
+### D-128 · Context Library — one Context per Source at MVP (2026-07-20) — Locked
+**Area:** Product / Architecture
+**Decision:** A Source attaches to **exactly one** Context (the auto-classified, user-approved one),
+narrowing D-068's "one or more Containers." The classifier proposes a single best Context (or a new
+one); the user approves or reassigns. `labels[]` (D-068) remains the mechanism for cross-cutting
+multi-tag. Multi-Context attach is deferred to `BACKLOG.md`.
+**Why:** Matches auto-first single classification (D-125) and drops significant model complexity —
+no multi-select review UI, no shared-source dedupe when assembling a Context's memory for chat.
+**Supersedes:** D-068 (source-multiplicity only — Source rename, self-nesting, `labels[]` unchanged) **Superseded by:** —
+**Related code:** `heediq-shared/src/domain.ts` (Source gains `contextId`), `memory/business/product.md`
+
+### D-129 · Context Library — rename Container entity to Context (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** D-068's "Container" entity is renamed **Context** everywhere: entity `Context`, table
+`heediq-contexts`, `contextId`, self-referencing `parentContextId`. Aligns the code/table name with
+the Context Library product language (D-124). Free to do now — the Container half of D-068 was never
+built (no `heediq-containers` table or schema exists; only the Source half shipped).
+**Why:** Keeps product vocabulary and code vocabulary in sync from the first line of the entity's
+implementation, instead of permanently splitting "Context" (UI) from "Container" (code).
+**Supersedes:** D-068 (entity naming only — Source naming and self-nesting concept unchanged) **Superseded by:** —
+**Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/`, all consumers (once built)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
-- **Context Library domain taxonomy (D-124)** — predefined top-level Domain types (Work/Study/Personal/…) vs. fully open-ended user-defined domains; still being thought through (2026-07-20).
 - **Context Library retrieval strategy at scale** — MVP assembles a Context's full accumulated content directly into the Claude chat prompt (no vector store, consistent with `product.md`'s existing RAG note). Revisit only if a single Context's content outgrows a practical context-window budget, or if cross-Context semantic search ("find where we discussed X across my whole library") becomes a prioritized feature — recommended default is to defer RAG/embeddings until one of those two triggers is real, not to build it speculatively now.

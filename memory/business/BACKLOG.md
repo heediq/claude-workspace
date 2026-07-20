@@ -26,9 +26,12 @@ here) rather than keeping it in both places.
 - **Repo/code access as a Context source.** Raised 2026-07-20 — letting a Context see a project's
   actual repo/code (not just meeting/doc sources) for tech-requirement generation. Explicitly
   post-MVP.
-- **Context domain taxonomy.** Predefined top-level Domain types (Work/Study/Personal/…) vs. a
-  fully open-ended user-defined domain — still being thought through (2026-07-20), see
-  `DECISIONS.md` Open section.
+- **User-defined domains.** D-127 locked a predefined behavior-bearing Domain enum
+  (work/study/personal, extensible by code). Fully user-defined/custom domains — where a user
+  authors their own extraction profile + starter prompts — are deferred here.
+- **Multi-Context attach for a Source.** D-128 locked one Context per Source at MVP. Letting a
+  Source belong to several Contexts (D-068's original "one or more") is deferred — needs multi-select
+  review UI and shared-source dedupe in context-memory assembly.
 - **Manual context management** (rename/merge/split, override auto-classification beyond the
   approval step). D-125 chose auto-first + approval-only for MVP; revisit if auto-classification
   accuracy in practice turns out to need it.
