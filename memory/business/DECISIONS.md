@@ -1613,6 +1613,75 @@ implementation, instead of permanently splitting "Context" (UI) from "Container"
 **Supersedes:** D-068 (entity naming only — Source naming and self-nesting concept unchanged) **Superseded by:** —
 **Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/`, all consumers (once built)
 
+### D-130 · Context Library — combined classify+extract in the summarization worker (2026-07-20) — Locked
+**Area:** Architecture / Cost
+**Decision:** Ingest classification and structured extraction run as **one combined Claude call**
+inside the existing summarization worker (`heediq-worker-summarization`) — no separate classifier
+Lambda. Given the content + the user's existing Contexts (name/desc/domain) + the Domain profiles
+(D-131), the call returns *both* a **classification proposal** (proposed Context or new-context
+name, Domain, `labels[]`) *and* the extraction in the proposed Domain's shape (D-132). The proposal
+carries a **domain-fit confidence score** (0–1); below a configurable threshold (~0.75, one constant
+in `@heediq/shared`) the Source is filed to the catch-all **`other`** Domain (D-131) instead of a
+low-confidence guess, and the review card flags it for the user to place. **Cross-domain
+reassignment** during review (user moves the Source to a Context in a *different* Domain) triggers a
+cheap **re-extract** in the new Domain's shape; same-domain reassignment does not.
+**Why:** One call is the cheapest correct resolution of the extract-needs-domain / domain-needs-
+classify circular dependency; the confidence score + `other` fallback keeps auto-first (D-125) honest
+about uncertainty without requiring user-defined domains yet (deferred, `BACKLOG.md`).
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-worker-summarization/`, `heediq-shared/src/` (confidence threshold constant)
+
+### D-131 · Context Library — Domain profile set: work / study / personal / other (2026-07-20) — Locked
+**Area:** Product / Architecture
+**Decision:** The predefined Domains (D-127) and their behavior profiles are:
+- **work** — `extractionFields`: requirements, decisions, openQuestions, actionItems · starter
+  prompts: technical requirements, test plan & acceptance criteria, stakeholder slides, risks &
+  open questions. (This is today's summarizer behavior, now one profile among several.)
+- **study** — `extractionFields`: keyConcepts, definitions, questions, references, actionItems ·
+  starter prompts: study guide, flashcards (Q&A), practice quiz, key-concepts summary.
+- **personal** — `extractionFields`: items, amounts, dates, notes · starter prompts: shopping
+  list, spending summary, upcoming dates & reminders, checklist. (Deliberately generic — spans
+  groceries/receipts/appointments.)
+- **other** — catch-all for low domain-fit confidence (D-130). Generic `extractionFields`:
+  keyPoints, actionItems, notes. No specialized starter prompts (generic summarize/extract).
+Fields and prompts are a starting point, refined as real usage shows gaps; adding/adjusting a
+profile is a code change (D-127), not a schema migration.
+**Why:** Gives the summarizer a concrete per-domain extraction shape and the chat concrete starter
+prompts (D-126); `other` provides a safe home when confidence is low without inventing a domain.
+**Supersedes:** — (fills in D-127's profile bodies; adds `other` to D-127's initial enum) **Superseded by:** —
+**Related code:** `heediq-shared/src/` (Domain enum + `DOMAIN_PROFILES` constant)
+
+### D-132 · Context Library — Summary becomes generic domain-keyed extraction (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** The `Summary` schema's hardcoded work fields (`requirements`/`decisions`/
+`openQuestions`/`actionItems`) are replaced by a generic `extracted: Record<string, string[]>`
+keyed by the filed Domain's `extractionFields`, plus a `domain` field recording which profile
+shaped it. Keys are validated at write time against the Domain profile (D-131) so the shape can't
+drift. `transcript` and provenance fields are unchanged.
+**Why:** A fixed work-shaped Summary can't represent a study or personal (or `other`) extraction;
+domain-keyed storage lets one schema carry every Domain's output and lets chat (D-126) read it
+generically when assembling a Context's memory.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/domain.ts` (`SummarySchema`), `heediq-worker-summarization/src/writer.ts`
+
+### D-133 · Context Library — `classification_ready` WS event + review-gate Source state (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** Ingest surfaces the human review gate (D-125) through a **new `classification_ready`
+WS event** (added to `WsEventPayloadMap`, `heediq-shared/src/ws.ts`, additive per D-109) carrying
+`{sourceId, proposedContextId | newContextName, domain, labels[], confidence}` so the review card
+renders live without polling (D-111). The proposal is persisted on the Source as
+`proposedClassification` (cleared on approval); the Source gains a `classification` axis
+(`pending_review` → `approved`) separate from its existing `status`. Frontend stage flow (plain
+language): Uploading → Transcribing (audio only) → Analyzing → **Ready for your review** → Filed in
+[Context]. Every stage is a visible step via the existing `job_status` stream plus this event; the
+review is an explicit, unmissable state, never a silent auto-file.
+**Why:** The review gate needs a richer payload than plain `job_status` (the proposal itself);
+pushing it over WS keeps the ingest process fully visible and interactive end to end, which is a
+hard product requirement, not polish.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/ws.ts`, `heediq-shared/src/domain.ts` (Source fields),
+`heediq-web/src/lib/ws/`, `heediq-worker-summarization/`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
