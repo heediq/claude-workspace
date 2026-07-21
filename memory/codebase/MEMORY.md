@@ -20,10 +20,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   grants), and step 3 (ingest — combined classify+extract, D-130/D-133) all merged. `@heediq/shared`
   **0.15.0** (D-141/D-142 — Context `visibility`/`groupId`, `context:share` perm, grant schema) and
   **0.15.1** (request/audit schemas for the API step) both published. **Step 4b (API — `/contexts`
-  CRUD + `POST /sources/:id/review`) done, PR open**
-  [heediq-api#42](https://github.com/heediq/heediq-api/pull/42). Still open: `heediq-infra`
-  ApiStack IAM grants for the 6 tables ([heediq-infra#61](https://github.com/heediq/heediq-infra/pull/61),
-  non-blocking, needed before deploy). Next: Step 4c (cross-org grant routes + chat) or Step 5 (web).
+  CRUD + `POST /sources/:id/review`, [heediq-api#42](https://github.com/heediq/heediq-api/pull/42))
+  and `heediq-infra` ApiStack IAM grants for the 6 tables
+  ([heediq-infra#61](https://github.com/heediq/heediq-infra/pull/61)) both merged to `develop`.
+  Next: Step 4c (cross-org grant routes + chat) or Step 5 (web).
   Deferred: transcription `models.py` Summary mirror → gist (D-135); WS-CD gap (pusher bundles not in
   api deploy.yml); group-scoped Contexts in the classifier.
   See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
@@ -100,8 +100,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
   README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096, D-097, D-098, D-099, D-102, D-107, D-113, D-141, D-143, D-144
-  - **Context Library API (D-143/D-144, PR** [heediq-api#42](https://github.com/heediq/heediq-api/pull/42)
-    **open):** `src/routes/contexts.ts` (CRUD + tree over `heediq-contexts`, `by-scope` GSI visibility
+  - **Context Library API (D-143/D-144, merged** [heediq-api#42](https://github.com/heediq/heediq-api/pull/42)
+    **):** `src/routes/contexts.ts` (CRUD + tree over `heediq-contexts`, `by-scope` GSI visibility
     gate `canAccessContext` — personal/group/org) + `POST /sources/:id/review` on `sources.ts` (files
     kept `ExtractedItem`s into a Context). See `heediq-api/README.md` Contracts section.
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves `accountId` via `heediq-cognito-identities` first (deterministic, D-099), falling back to email self-heal; first login generates a new decoupled `accountId` — no `email_verified` gate (D-090). `src/lib/accountIdentity.ts` is the shared resolution helper used by every auth handler/route.
