@@ -15,7 +15,45 @@ The four amber slabs in the logo do double duty as a literal visual reference to
 
 Domain: heediq.com.
 
-## Brand story
+## Brand story (current — reflects D-144 contextual-memory positioning)
+Everything worth remembering starts somewhere — a meeting, a document, a note, a file. But
+somewhere between that moment and the thing you needed it for, something always gets lost. Notes
+are incomplete, context fades, and what was captured rarely turns into what you needed built,
+decided, or answered.
+
+HeedIQ exists to close that gap.
+
+We started with a simple belief: if a machine could truly *heed* — listen, understand, and
+retain — anything you fed it, then the painful translation from "what was captured" to "what we
+documented" to "what we built" could finally disappear.
+
+Today, HeedIQ turns anything you give it — meetings, documents, notes, files — into a structured,
+AI-queryable memory: your **Context Library**. Feed it once, and chat over that memory to generate
+whatever you need next — requirements, decisions, specs, answers. Meeting recording &
+transcription, and the requirements → Jira/Confluence flow, is where HeedIQ started and remains
+the first thing it does well — but it's one path into the library, not the whole product.
+
+Tomorrow, HeedIQ goes further. The same intelligence that builds your memory will help act on it —
+turning context directly into working output, with humans guiding the vision and HeedIQ handling
+the heavy lifting in between.
+
+**HeedIQ: Heed everything. Build what matters.**
+
+Other tagline options considered (kept as alternates, not the primary line):
+- "Listen smarter. Build faster."
+- "Your memory, understood."
+- "Everything you heed, in one place."
+- "Intelligence that listens."
+
+MVP-scope framing line (founding vertical, still the first thing shipped — see `product.md`):
+"HeedIQ turns your meetings into clear, actionable requirements — instantly."
+
+Future expansion narrative (pitch decks, etc.):
+1. **Heed** — capture and understand anything fed to it (meetings, documents, notes, files)
+2. **Define** — classify, extract, and organize into a structured Context
+3. **Build** — chat over that Context to generate any output: requirements, decisions, specs, code
+
+### Original brand story (historical — superseded by D-144, kept for reference)
 Every great system starts with a conversation — a meeting where ideas are discussed, decisions
 are made, and requirements take shape. But somewhere between that conversation and the final
 product, something always gets lost. Notes are incomplete, context fades, and what was "agreed"
@@ -36,20 +74,6 @@ build the systems behind them — turning conversation directly into working sof
 guiding the vision and HeedIQ handling the heavy lifting in between.
 
 **HeedIQ: Heed every word. Build what matters.**
-
-Other tagline options considered (kept as alternates, not the primary line):
-- "Listen smarter. Build faster."
-- "From conversation to requirements — automatically."
-- "Your meetings, understood."
-- "Intelligence that listens."
-
-MVP-scope framing line: "HeedIQ turns your meetings into clear, actionable requirements —
-instantly."
-
-Future expansion narrative (pitch decks, etc.):
-1. **Heed** — capture and understand conversations
-2. **Define** — extract structured requirements
-3. **Build** — auto-generate/implement into systems
 
 ## Brand register
 Premium, restrained — Linear / Vercel / Raycast aesthetic. Smart but approachable; not
