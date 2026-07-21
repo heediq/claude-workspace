@@ -1840,10 +1840,15 @@ explicit, time-limited, revocable **grant** — a deliberate, strongly-regulated
 / eng-std §2 "a user only ever touches their own org's data" invariant, never an implicit widening.
 - **New table `heediq-context-grants`:** base PK=`granteeUserId` SK=`contextId` (the access-check
   point lookup *and* the grantee's "shared-with-me" library query — at most one active grant per
-  grantee+context); GSI `by-context` PK=`contextId` SK=`granteeUserId` (owner manages/revokes a
-  Context's grantees). Item: `granteeUserId, contextId, grantId, ownerOrgId, ownerUserId,
-  granteeOrgId, access, expiresAt, status ('active'|'revoked'), createdAt, createdBy, revokedAt?`.
-  TTL on `expiresAt` (epoch) + PITR + PAY_PER_REQUEST.
+  grantee+context — the composite key **is** the grant's identity, no separate `grantId`); GSI
+  `by-context` PK=`contextId` SK=`granteeUserId` (owner manages/revokes a Context's grantees). Item
+  (`ContextGrantSchema`, `@heediq/shared` 0.15.0): `contextId, granteeUserId, granteeOrgId,
+  ownerOrgId, grantedByUserId, access, expiresAt, createdAt, updatedAt`. No `status`/`revokedAt` — a
+  revoke is a hard `DELETE` of the item (there is exactly one active grant per grantee+context by
+  key design, so there's no past-grant history to retain in this table; an audited `DELETE` action
+  is the record). TTL on `expiresAt` (epoch) + PITR + PAY_PER_REQUEST.
+  *(Corrected 2026-07-21 — the original entry specified `grantId`/`ownerUserId`/`status`/`createdBy`/
+  `revokedAt`; the shipped schema (PR heediq-shared#40) is simpler and is the source of truth.)*
 - **Two access tiers:** `read` (view + chat over the Context's memory) and `contribute` (also add
   Sources — files/meetings/transcriptions — into the Context; implies `read`).
 - **Enforcement invariants:** every cross-org read/write authorizes against an **active, unexpired**
