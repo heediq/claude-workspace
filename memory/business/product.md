@@ -1,18 +1,27 @@
 # Heediq — Product
 
-`DECISIONS.md` (D-017–D-020, D-022, D-024–D-026, D-068, D-069) points here rather than
+`DECISIONS.md` (D-017–D-020, D-022, D-024–D-026, D-068, D-069, D-143, D-144) points here rather than
 duplicating this detail.
 
-## Vision (founding brief)
-Heediq is a business development / requirements-capture assistant. Record or transcribe
-in-person meetings and discussions (live mic, audio file upload, or pasted notes), then use AI to
-extract structured requirements — functional specs, user stories, decisions made, open questions
-— optionally enriched with existing repo/documentation context. Output feeds into tools like
-Jira/Confluence.
+## Positioning (current — D-144)
+Heediq is a **contextual-memory platform**: it turns anything a user feeds it — meetings
+(record/transcribe via live mic, audio upload, or pasted notes), documents, notes, files — into a
+structured, AI-queryable memory (the **Context Library**). Capture → auto-classify/extract → file
+into a **Context** → **chat over that Context** to generate any output (requirements, decisions,
+specs, answers). Meeting recording & transcription is **one ingestion path**, not the whole product.
 
-Target audience: product managers, engineering leads, and BD/client-facing roles at software
-companies (B2B, dev-tooling adjacent) who run frequent requirement-gathering meetings and need to
-turn discussions into actionable specs without manual note-taking.
+## Founding vertical (first use case, still shipping first)
+The first vertical built on top of the platform is business-development / requirements-capture:
+record or transcribe in-person meetings and discussions, then use AI to extract structured
+requirements — functional specs, user stories, decisions made, open questions — optionally enriched
+with existing repo/documentation context, with output feeding tools like Jira/Confluence. This
+remains the MVP critical path (see Build Order); it is the *first* vertical on the memory platform,
+not the platform's ceiling (D-144).
+
+Initial target audience for that vertical: product managers, engineering leads, and BD/client-facing
+roles at software companies who run frequent requirement-gathering meetings and need to turn
+discussions into actionable specs without manual note-taking. Beyond it, the platform serves anyone
+(B2B or B2C, D-143) accumulating a durable Context Library across work, study, and personal domains.
 
 **Positioning is B2B *and* B2C (D-143).** The founding B2B requirements-capture use case above is one
 line; Heediq also serves individuals accumulating a dynamic personal digitized memory (Context

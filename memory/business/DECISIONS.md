@@ -1881,6 +1881,25 @@ alongside the B2B requirements-capture roots, widening the D-124 north-star audi
 **Supersedes:** — (broadens the B2B-only framing in `product.md` / `CLAUDE.md`; the D-124 "individuals or companies" platform vision is now explicit positioning) **Superseded by:** —
 **Related code:** `memory/business/product.md`
 
+### D-144 · Primary positioning is a contextual-memory platform; meetings are one ingestion path (2026-07-21) — Locked
+**Area:** Product
+**Decision:** Heediq's canonical top-line positioning is a **contextual-memory / "Context Library"
+platform** — it ingests anything (meetings via record/transcribe, documents, notes, files),
+auto-classifies/extracts it into structured memory, and lets users **chat over a Context** to
+generate any output (requirements, decisions, specs, answers). Meeting recording & transcription is
+**one ingestion path**, and the original requirements-capture → Jira/Confluence flow is the **first
+vertical on top of it**, not the whole product. Every top-line product description (CLAUDE.md header,
+`product.md` Vision, brand story) leads with the memory-platform framing, not "meeting-recording
+platform."
+**Why:** The product outgrew its meeting-transcription origin — D-124–D-126 (universal contextual
+memory), D-141/D-142 (shared / cross-org Contexts), D-143 (B2B+B2C personal memory) all point at a
+memory platform. Leading every description with "meeting-recording platform" mis-scopes and
+undersells it and drifts from the locked platform vision; this aligns the elevator line with what is
+actually being built. Scope, build order (`product.md` MVP build order), and the founding
+requirements-capture use case are **unchanged** — only the framing/emphasis is elevated.
+**Supersedes:** — (elevates the D-124 platform vision into canonical positioning; does not change scope or build order) **Superseded by:** —
+**Related code:** `memory/business/product.md`, `memory/business/branding.md`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
