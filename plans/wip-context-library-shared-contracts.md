@@ -16,15 +16,22 @@ This file tracks the whole Context Library build across repos/sessions, one step
 - `domain.ts`: Source +`contextId`/`classification`(optional, no default)/`proposedClassification`; **Summary shrunk** to `transcript`+`gist` (breaking, D-135)
 - `ws.ts`: `classification_ready` / `chat_delta` / `chat_complete`
 
-## Step 2 — Infra (`heediq-infra`) — ⬜ NEXT
-Create the tables the contracts imply (key design is a recorded decision per eng-std §8):
-- `heediq-contexts` — PK/SK + `by-org` GSI for the D-134 tree (list/tree a user's Contexts)
-- ExtractedItem store — access patterns: by `contextId` (+ descendants) for chat memory, by `sourceId` for the review wizard
-- Decision Ledger table (D-136) — by `contextId`
-- `heediq-conversations` (GSI `by-context`) + `heediq-chat-messages` (PK=`conversationId`, SK=`ts#messageId`), D-138
-- New `heediq-chat` stack scaffolding can wait until the chat step (D-139), but tables can land now
-- **Mirror every new table/GSI in `heediq-api/scripts/integration/create-tables.ts`** (hand-mirrored, D-030 drift risk)
-- Source field additions + Summary shrink are **non-key attrs → no infra change**
+## Step 2 — Infra (`heediq-infra`) — ✅ DONE (branch `feature/context-library-infra-tables`, not yet PR'd)
+Six tables added in `lib/foundation/context-library-tables.ts` (split per D-103), composed by `tables.ts`, wired + SSM-exported in `foundation-stack.ts`, mirrored in `heediq-api/scripts/integration/create-tables.ts` (D-030). Tests: `test/foundation/tables.test.ts` (count 13→19 + 6 key/GSI assertions) + `ssm-exports.test.ts` (19→25 params). `pnpm run test:pre-pr` green (185 tests); heediq-api typecheck green. READMEs updated (`lib/foundation/README.md` key design + gotchas; top-level infra README SSM + key-design tables).
+
+**Tables (key design, D-141/D-142 shaped the contexts + grants ones):**
+- `heediq-contexts` — PK=`contextId`; GSI `by-scope` PK=`scopeKey`(`U#`/`G#`/`O#`) SK=`domainCreatedAt`(`<domain>#<createdAt>`). Serves personal/group/org in-org visibility (D-141), grouped by Domain; NOT a by-org GSI (would leak personal Contexts — D-021).
+- `heediq-extracted-items` — PK=`sourceId` SK=`itemId`; GSI `by-context` (sparse on `contextId`) for chat memory (D-135).
+- `heediq-decision-ledger` — PK=`contextId` SK=`entryId` (D-136). No `orgId` in contract → isolation via context-ownership chain.
+- `heediq-conversations` — PK=`conversationId`; GSI `by-context` SK=`updatedAt` (D-138).
+- `heediq-chat-messages` — PK=`conversationId` SK=`sk`(`ts#messageId`) (D-138).
+- `heediq-context-grants` — PK=`granteeUserId` SK=`contextId`; GSI `by-context`; TTL `expiresAt` (cleanup only, expiry enforced in code). The regulated cross-org sharing primitive (D-142). PITR on.
+- `heediq-chat` SQS/Lambda stack still deferred to the chat step (D-139). Source field additions + Summary shrink stayed non-key → no infra change.
+
+**Forward deps for later steps (from D-141/D-142/D-143, don't lose these):**
+- `@heediq/shared` **0.15.0 addendum** (Step 1 follow-on, lands with the API step): add `ContextVisibility` enum + `visibility`/`groupId?` to `ContextSchema` (D-141); add the cross-org **grant schema** + `access` enum (`read`/`contribute`) (D-142); add `context:share` permission key (append-only, D-106).
+- **API step (Step 4):** writer computes `scopeKey`/`domainCreatedAt` on Context put; grant issuance/revoke routes + a per-request cross-org **authorization middleware** (authorize against a live, unexpired grant every request — heavily isolation-tested); contributed data homes in the Context's **owner org** (D-142).
+- B2B/B2C productization (onboarding/positioning over the single-user-org model, D-143) ships in later PRs.
 
 ## Step 3 — Ingest (`heediq-worker-summarization`) — ⬜
 Bump `@heediq/shared` to 0.14.0. Add the **combined classify+extract** Claude call (D-130): input = content + user's Contexts + `DOMAIN_PROFILES`; output = `ProposedClassification` (+ `other` fallback under `DOMAIN_FIT_CONFIDENCE_THRESHOLD`) + `ExtractedItem`s. Persist `proposedClassification` on the Source, set `classification: 'pending_review'`, emit `classification_ready`. Stop writing the old flat `Summary` arrays; write `gist` + `ExtractedItem`s. Update `heediq-worker-transcription/src/models.py` Summary mirror.

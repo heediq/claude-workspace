@@ -14,9 +14,12 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   backlog below): **`../business/BACKLOG.md`**.
 
 ## In-progress product work
-- **Context Library** (D-124–D-140, generalizes D-068/D-069) — **build started**: §11 step 1 (shared
-  contracts) landed in `@heediq/shared` v0.14.0 on branch `feature/context-library-shared-contracts`
-  (see WIP `../../plans/wip-context-library-shared-contracts.md`); next is infra tables (step 2).
+- **Context Library** (D-124–D-143, generalizes D-068/D-069; B2B **and** B2C per D-143) — **build in
+  progress**: §11 step 1 (shared contracts) landed in `@heediq/shared` v0.14.0; step 2 (infra — 6
+  DynamoDB tables incl. cross-org grants) done on branch `feature/context-library-infra-tables` (not
+  yet PR'd). Next: §11 step 3 (ingest worker) — but first a `@heediq/shared` **0.15.0 addendum** owed
+  by D-141/D-142 (Context `visibility`/`groupId`, `context:share` perm, grant schema) lands with the
+  API step. See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
   **Full spec: `../../plans/context-library-spec.md`** (data model, ingest flow, review
   wizard, chat, WS events, MVP/fast-follow/backlog scope, suggested build order). Locked: generalized
   scope + auto-first classification + chat output (D-124–126); Domain as predefined behavior-bearing
@@ -28,7 +31,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   (D-137); multiple named conversations per Context (D-138); dedicated `heediq-chat` worker streaming
   tokens over WS (`chat_delta`/`chat_complete`) with prompt caching on the stable context block
   (D-139). No RAG at MVP — chat assembles kept `ExtractedItem`s (+ descendants) + ledger +
-  full-source fallback at query time from DynamoDB. See also `../business/product.md` north-star and
+  full-source fallback at query time from DynamoDB. Context **visibility** personal/group/org,
+  permission-gated sharing, `by-scope` GSI (D-141); regulated **cross-org grants** for any-user→
+  any-user sharing, designed now / built fast-follow (D-142); Heediq serves **B2B and B2C**, personal
+  user = single-member org (D-143). See also `../business/product.md` north-star and
   `../business/BACKLOG.md`.
 
 ## Modules / Features (pointers)
@@ -63,7 +69,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   `heediq-api/README.md`, `heediq-infra/README.md`. Decision history: `DECISIONS.md` D-077–D-091, D-099.
 
 - **heediq-infra** — CDK TypeScript project; all stacks for all accounts.
-  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095, D-097, D-098, D-099, D-102, D-103, D-108 (supersedes D-101's keep-count), D-112
+  README: `../../heediq-infra/README.md` · Decisions: D-036, D-037, D-038, D-044, D-045, D-051–D-068, D-077, D-083, D-085, D-087, D-090 (supersedes D-080), D-093, D-095, D-097, D-098, D-099, D-102, D-103, D-108 (supersedes D-101's keep-count), D-112, D-135, D-136, D-138, D-141, D-142
+  - **Context Library tables** (`lib/foundation/context-library-tables.ts`, split per D-103; 6 tables, schema-only, no consumers yet) — `heediq-contexts` (PK=`contextId`, GSI `by-scope` PK=`scopeKey`(`U#`/`G#`/`O#`)/SK=`domainCreatedAt` for personal/group/org visibility grouped by Domain, D-141), `heediq-extracted-items` (PK=`sourceId`/SK=`itemId`, GSI `by-context` sparse, D-135), `heediq-decision-ledger` (PK=`contextId`/SK=`entryId`, D-136), `heediq-conversations` (GSI `by-context` SK=`updatedAt`, D-138), `heediq-chat-messages` (PK=`conversationId`/SK=`sk`=`ts#messageId`, D-138), `heediq-context-grants` (PK=`granteeUserId`/SK=`contextId`, GSI `by-context`, TTL `expiresAt` cleanup-only — the regulated cross-org sharing primitive, D-142). Names SSM-exported. Key-design + isolation gotchas: `heediq-infra/lib/foundation/README.md`.
   - **ObservabilityStack** (`lib/observability/observability-stack.ts`, D-085) — per-env CloudWatch Dashboard built from static resource-name strings (no cross-stack construct refs, per D-037); ApiStack/SummarizationStack Lambdas run with X-Ray active tracing.
   - `lib/config.ts` `logRetentionFor(workloadEnv)` (D-093) — 30 days dev/staging, 90 days prod; applied to ApiStack/SummarizationStack/TranscriptionStack log groups so none default to CDK's "Never Expire".
   - **TranscriptionStack** — EC2 GPU Spot (g4dn.xlarge, D-059); ASG min=0; two Ec2TaskDefs (free/paid, D-060); models baked in image (D-062).
@@ -77,7 +84,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: any stack renamed/replaced while another stack imports it via a direct CDK prop (not SSM) needs a two-phase deploy — only `WebSocketStack.jobsTable` uses this pattern today. Full DR recovery steps (incl. out-of-band table recreation staling the export): `heediq-infra/README.md` Gotchas.
 
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
-  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139
+  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field — pending 0.15.0), D-142 (grant schema — pending 0.15.0)
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-059/D-065), WS push (D-061), auth methods (D-091), account linking (D-078).
   - **Context Library contracts (v0.14.0, D-124–D-140):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`.
   - `src/passwordPolicy.ts` (0.7.0, D-094) — `PASSWORD_POLICY`/`PASSWORD_POLICY_RULES`/`isPasswordPolicyCompliant`, the single source of truth for Cognito's password rules (D-020), consumed by `heediq-api` and `heediq-web` only — `heediq-infra`'s CDK literal stays separate by design (checked via consistency check, not imported).
