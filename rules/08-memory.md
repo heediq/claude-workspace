@@ -57,6 +57,20 @@ Per feature: **Upstream** (depends on), **Downstream** (breaks if this changes),
 Update on every change that adds/changes/removes a feature or dependency. Drives "what to retest"
 (Step 2) and PR blast-radius notes.
 
+## Backlog maintenance (keep it current, both tracks)
+Two backlogs record work we've deliberately *not* done yet — keep them accurate so nothing is silently
+lost across sessions or machines:
+- **`memory/business/BACKLOG.md`** — product/feature backlog: postponed or not-yet-scoped feature
+  ideas.
+- **`memory/codebase/MEMORY.md`** "Backlog" section — engineering backlog: deferred technical work
+  (infra, tooling, hardening) not tied to a single feature.
+When a feature or task is **deferred** (explicitly postponed, cut from scope, or "later"), add it to
+the right backlog **the moment it's decided** — don't rely on remembering at session end. When a
+backlog item **lands** or is **dropped**, remove or annotate it in the same pass so the backlog never
+lists done/abandoned work. Pick the track by nature (product idea → business; technical debt → codebase);
+if an item is a locked *decision to defer*, it also gets a `DECISIONS.md`/`BACKLOG.md` entry per
+`09-decisions.md`. Same commit-and-push-immediately discipline as all memory (below).
+
 ## Coherence check — mandatory, blocking, every session
 
 **This runs before any other work, every session, no exceptions — not even for quick questions.**

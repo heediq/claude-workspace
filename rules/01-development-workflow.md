@@ -81,6 +81,15 @@ with its tests** (a fix includes a regression test that fails before and passes 
 introduces a regression, **roll back to the last working state before debugging** — don't stack fixes
 on a broken base.
 
+**WIP file (any multi-step or multi-session branch).** As soon as implementation starts on a branch
+that won't finish in one sitting, create `plans/wip-<branch>.md` and keep it current *as you go* — not
+only at session end. It records: the branch, the current step, what's done, what's next, and any
+handoff notes (decisions taken, gotchas, follow-ups). Commit **and push** it (memory/plans go straight
+to `claude-workspace`'s default branch — the docs-repo exemption in `02-git-and-commits.md`) so the work is fully resumable
+from another machine or by another developer — a stale or missing WIP file is the main reason a
+cross-machine handoff fails. Session start reads these first (`CLAUDE.md`, Step 0a). A single branch =
+a single `wip-*.md`; a multi-repo feature uses one WIP file tracking the step across repos.
+
 ## Step 4 — Confirm before continuing
 Wait for the user to confirm a step works locally before the next. If unconfirmed after 2 exchanges,
 flag it: *"I haven't had confirmation that step N works — please verify before I continue."*
@@ -110,9 +119,12 @@ nearest README. Pure UI tweaks, copy, and refactors that don't change behavior u
 
 ## Step 6 — Memory actualization (end of every task)
 Final memory pass after Step 5. Confirm: every README/memory file touched reflects reality; new code
-README paths are pointed to from `MEMORY.md`; `feature_dependency_map.md` is current. Run the
-**coherence check** from `08-memory.md` to confirm no staleness was introduced by decisions locked or
-changed this session. All memory changes committed; push if the session is ending. See `08-memory.md`.
+README paths are pointed to from `MEMORY.md`; `feature_dependency_map.md` is current; the branch's
+**`plans/wip-<branch>.md` reflects the true state** — update it to the current step (or delete it once
+the branch is fully merged and nothing remains); and any feature deferred or landed this session is
+reflected in the backlog (`08-memory.md` — Backlog maintenance). Run the **coherence check** from
+`08-memory.md` to confirm no staleness was introduced by decisions locked or changed this session. All
+memory changes committed; push if the session is ending. See `08-memory.md`.
 
 ---
 

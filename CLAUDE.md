@@ -61,6 +61,8 @@ The detailed rules live in the imported modules below. Read the relevant module 
 2. **Read every `plans/wip-*.md` file** — these define the active in-flight work and exactly where to resume. If a WIP file exists, open with: *"Found open branch `<branch>` — continuing: `<summary>`. Still what we're doing?"*
 3. Run the coherence check from `rules/08-memory.md`.
 
+**Keep the trackers current so any session (this machine or another) can continue:** maintain the branch's `plans/wip-<branch>.md` *as work progresses* (created at Step 3, updated at Step 6, deleted when fully merged — `rules/01-development-workflow.md`), and keep the two backlogs accurate when work is deferred or lands (`memory/business/BACKLOG.md` for product, the `MEMORY.md` Backlog section for engineering — `rules/08-memory.md`). Commit and push these to `claude-workspace` immediately — a stale WIP/backlog is the main reason a cross-machine handoff fails.
+
 ---
 
 ## Four things that are always true
