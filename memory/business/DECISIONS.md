@@ -1807,6 +1807,32 @@ Context Library design.
 and the sequence through source-detail unchanged) **Superseded by:** —
 **Related code:** `plans/context-library-spec.md`, `memory/business/product.md`
 
+### D-141 · Context Library — Context visibility model: personal / group / org, permission-gated (2026-07-21) — Locked
+**Area:** Product / Architecture
+**Decision:** A Context carries a **visibility axis** so the library can show a user everything
+available to them — their own plus what's shared — categorized by Domain:
+- **`visibility: 'personal' | 'group' | 'org'`** added to `Context` (`@heediq/shared`, a 0.15.0
+  addendum to the D-124–D-140 contracts) — `personal` = owner (`userId`) only; `group` = shared to
+  one D-102 group (adds `groupId?`, required iff `group`); `org` = visible to the whole `orgId`.
+  `userId` remains the creator/owner in every tier.
+- **Sharing is permission-gated (D-107):** publishing a Context to a group or the org gates on a new
+  RBAC permission key (`context:share`, append-only per D-106) via `requirePermission` + `<Can>`;
+  creating a personal Context is not gated beyond org membership. The exact context permission set
+  (create/read/update/delete/share) is defined with the API step.
+- **Access-pattern / key design (`heediq-contexts`):** base PK=`contextId`; one GSI **`by-scope`**
+  PK=`scopeKey` SK=`domainCreatedAt`, where the writer materializes `scopeKey` as `U#<userId>` /
+  `G#<groupId>` / `O#<orgId>` from the visibility tier, and `domainCreatedAt` as `<domain>#<createdAt>`.
+  A user's library is assembled by querying `by-scope` for `U#<self>`, `O#<orgId>`, and `G#<groupId>`
+  per group they belong to; a single Domain is filterable via `begins_with(domainCreatedAt, '<domain>#')`.
+  This replaces a naive by-`orgId` GSI, which would have leaked every member's personal Contexts to
+  the whole org — a **D-021 row-level isolation** violation.
+**Why:** Andrii confirmed the library must surface org-shared and personal Contexts together, grouped
+by Domain. Three tiers reuse the existing RBAC groups (D-102) instead of inventing a new sharing
+primitive; the single scope-key GSI serves all three audiences with one index and keeps personal
+Contexts unreadable by other members by construction.
+**Supersedes:** — (extends D-129/D-134 Context model; builds on D-102 groups, D-106/D-107 permissions, D-021 isolation) **Superseded by:** —
+**Related code:** `heediq-shared/src/context.ts` + `enums.ts` + `permissions.ts` (0.15.0), `heediq-infra/lib/foundation/context-library-tables.ts`, `heediq-api/` (context routes + writer)
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.
