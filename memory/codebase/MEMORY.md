@@ -16,13 +16,16 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 ## In-progress product work
 - **Context Library** (D-124–D-144, generalizes D-068/D-069; B2B **and** B2C per D-143; primary
   positioning is a contextual-memory platform, meetings one ingestion path, per D-144) — **build in
-  progress**: §11 step 1 (shared contracts) landed in `@heediq/shared` v0.14.0; step 2 (infra — 6
-  DynamoDB tables incl. cross-org grants) merged to `heediq-infra` develop; **step 3 (ingest — combined
-  classify+extract, D-130/D-133) merged** across infra/worker/api. `@heediq/shared` **0.15.0 addendum**
-  (D-141/D-142 — Context `visibility`/`groupId`, `context:share` perm, grant schema) merged to develop;
-  release PR [heediq-shared#41](https://github.com/heediq/heediq-shared/pull/41) open to publish
-  0.15.0. Next: §11 step 4b (API impl) once 0.15.0 is published. Deferred: transcription `models.py` Summary mirror → gist
-  (D-135); WS-CD gap (pusher bundles not in api deploy.yml); group-scoped Contexts in the classifier.
+  progress**: §11 step 1 (shared contracts, v0.14.0), step 2 (infra — 6 DynamoDB tables incl. cross-org
+  grants), and step 3 (ingest — combined classify+extract, D-130/D-133) all merged. `@heediq/shared`
+  **0.15.0** (D-141/D-142 — Context `visibility`/`groupId`, `context:share` perm, grant schema) and
+  **0.15.1** (request/audit schemas for the API step) both published. **Step 4b (API — `/contexts`
+  CRUD + `POST /sources/:id/review`) done, PR open**
+  [heediq-api#42](https://github.com/heediq/heediq-api/pull/42). Still open: `heediq-infra`
+  ApiStack IAM grants for the 6 tables ([heediq-infra#61](https://github.com/heediq/heediq-infra/pull/61),
+  non-blocking, needed before deploy). Next: Step 4c (cross-org grant routes + chat) or Step 5 (web).
+  Deferred: transcription `models.py` Summary mirror → gist (D-135); WS-CD gap (pusher bundles not in
+  api deploy.yml); group-scoped Contexts in the classifier.
   See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
   **Full spec: `../../plans/context-library-spec.md`** (data model, ingest flow, review
   wizard, chat, WS events, MVP/fast-follow/backlog scope, suggested build order). Locked: generalized
@@ -88,15 +91,19 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: any stack renamed/replaced while another stack imports it via a direct CDK prop (not SSM) needs a two-phase deploy — only `WebSocketStack.jobsTable` uses this pattern today. Full DR recovery steps (incl. out-of-band table recreation staling the export): `heediq-infra/README.md` Gotchas.
 
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
-  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field, 0.15.0, release PR open), D-142 (grant schema, 0.15.0, release PR open)
+  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field, published 0.15.0), D-142 (grant schema, published 0.15.0)
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-059/D-065), WS push (D-061), auth methods (D-091), account linking (D-078).
-  - **Context Library contracts (v0.14.0, D-124–D-140):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`.
+  - **Context Library contracts (v0.14.0–0.15.1, D-124–D-142):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134 +`visibility`/`groupId` D-141, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`, `ContextGrant` D-142); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`; 0.15.1 adds `CreateContextRequestSchema`/`UpdateContextRequestSchema`/`ReviewApprovalRequestSchema` + `AuditPayloadMap` `context`/`extractedItemReview` entries.
   - `src/passwordPolicy.ts` (0.7.0, D-094) — `PASSWORD_POLICY`/`PASSWORD_POLICY_RULES`/`isPasswordPolicyCompliant`, the single source of truth for Cognito's password rules (D-020), consumed by `heediq-api` and `heediq-web` only — `heediq-infra`'s CDK literal stays separate by design (checked via consistency check, not imported).
   - `src/logger.ts` (0.6.0, D-085/D-093) — `createLogger(service)` structured JSON logger, correlated by `sourceId`/`requestId`, recursive PII-redaction denylist, `LOG_LEVEL`-gated `debug`/`info`/`warn`/`error` threshold (default `info`).
   - Published to GitHub Packages; publish only fires on push to `main`, not `develop` — a `develop`→`main` PR is the release mechanism. New consuming repos need a manual read-access grant in GitHub Packages settings (see README).
 
 - **heediq-api** — Hono Lambda: all REST endpoints under `/api/v1/`, JWT auth middleware, D-060 access control.
-  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096, D-097, D-098, D-099, D-102
+  README: `../../heediq-api/README.md` · Decisions: D-033, D-034, D-041, D-042, D-060, D-068, D-077, D-078, D-079, D-085, D-087, D-088, D-089, D-090, D-091, D-094, D-096, D-097, D-098, D-099, D-102, D-107, D-113, D-141, D-143, D-144
+  - **Context Library API (D-143/D-144, PR** [heediq-api#42](https://github.com/heediq/heediq-api/pull/42)
+    **open):** `src/routes/contexts.ts` (CRUD + tree over `heediq-contexts`, `by-scope` GSI visibility
+    gate `canAccessContext` — personal/group/org) + `POST /sources/:id/review` on `sources.ts` (files
+    kept `ExtractedItem`s into a Context). See `heediq-api/README.md` Contracts section.
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves `accountId` via `heediq-cognito-identities` first (deterministic, D-099), falling back to email self-heal; first login generates a new decoupled `accountId` — no `email_verified` gate (D-090). `src/lib/accountIdentity.ts` is the shared resolution helper used by every auth handler/route.
   - `routes/auth-methods.ts` (`GET /auth/methods`, D-091); `routes/auth.ts`'s `request-otp`/`verify-otp`/`confirm` serve native signup, reactive linking, and Settings-linking alike (D-089), via Cognito `SignUp`/`ConfirmSignUp` reuse (D-087) — `verify-otp` confirms the code on its own before `confirm` ever sets a password, so the code is checked before the caller can proceed. A Cognito `InvalidPasswordException` on `AdminSetUserPassword` returns `WEAK_PASSWORD` (D-094) instead of the generic `BAD_REQUEST`.
   - `src/middleware/request-id.ts` (D-085) — per-request UUID correlation fallback for routes without a `sourceId` yet; logs via `@heediq/shared`'s `createLogger`.
