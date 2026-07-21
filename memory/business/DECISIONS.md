@@ -1833,6 +1833,54 @@ Contexts unreadable by other members by construction.
 **Supersedes:** — (extends D-129/D-134 Context model; builds on D-102 groups, D-106/D-107 permissions, D-021 isolation) **Superseded by:** —
 **Related code:** `heediq-shared/src/context.ts` + `enums.ts` + `permissions.ts` (0.15.0), `heediq-infra/lib/foundation/context-library-tables.ts`, `heediq-api/` (context routes + writer)
 
+### D-142 · Context Library — cross-org Context sharing via regulated grants (design now, build fast-follow) (2026-07-21) — Locked
+**Area:** Architecture / Policy
+**Decision:** A Context can be shared **across org boundaries** to a specific external user through an
+explicit, time-limited, revocable **grant** — a deliberate, strongly-regulated exception to the D-021
+/ eng-std §2 "a user only ever touches their own org's data" invariant, never an implicit widening.
+- **New table `heediq-context-grants`:** base PK=`granteeUserId` SK=`contextId` (the access-check
+  point lookup *and* the grantee's "shared-with-me" library query — at most one active grant per
+  grantee+context); GSI `by-context` PK=`contextId` SK=`granteeUserId` (owner manages/revokes a
+  Context's grantees). Item: `granteeUserId, contextId, grantId, ownerOrgId, ownerUserId,
+  granteeOrgId, access, expiresAt, status ('active'|'revoked'), createdAt, createdBy, revokedAt?`.
+  TTL on `expiresAt` (epoch) + PITR + PAY_PER_REQUEST.
+- **Two access tiers:** `read` (view + chat over the Context's memory) and `contribute` (also add
+  Sources — files/meetings/transcriptions — into the Context; implies `read`).
+- **Enforcement invariants:** every cross-org read/write authorizes against an **active, unexpired**
+  grant **at request time**, never cached into the JWT (revoke is immediate); **expiry is enforced in
+  code** (read-time `expiresAt` check), DynamoDB TTL is cleanup-only because TTL deletion lags (the
+  `heediq-rate-limits` precedent, D-097); grant create/revoke writes an audit event (D-107); the owner
+  can revoke anytime. This is a mandatory cross-org-isolation test path.
+- **Owner-org homing:** all data under a shared Context stays homed in the **owner org** — a
+  contributed Source lands in the owner org's partition attached to the Context, contributed *into*
+  the org under the grant, never copied across orgs — so a Context's memory stays unified and the
+  grant is the single controlled crossing point.
+- **Scope:** the table/model are designed in **now** (rewrite-free); grant issuance/revoke UI, the
+  per-request authorization middleware, secure invite flow, and email-invite-before-signup build as a
+  **fast-follow** (grants target existing Heediq accounts first — no magic-link/token flow yet). Not
+  overengineered now.
+**Why:** B2C sharing between individuals (D-143) and B2B cross-company collaboration both need one
+person to use and optionally enrich another's accumulated Context; a per-user, expiring, permission-
+scoped, audited grant is the minimal safe primitive that opens the org wall exactly as far as the
+owner allows and no further.
+**Supersedes:** — (regulated exception to D-021; builds on D-107 audit/permissions, D-141 Context model) **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/context-library-tables.ts` (`heediq-context-grants`), `heediq-shared/src/` (grant schema + access enum), `heediq-api/` (grant routes + cross-org authorization middleware)
+
+### D-143 · Heediq serves B2B and B2C; org is the universal tenant boundary (2026-07-21) — Locked
+**Area:** Product
+**Decision:** Heediq is positioned for **both B2B and B2C**, not B2B-only. A **personal user is
+modeled as a single-member org** — the same `org` tenant concept is reused, not a separate account
+type — so one data model serves a company (shared Contexts around workloads/projects, via D-141
+group/org visibility) and an individual (a dynamic personal digitized memory / Context Library).
+Cross-individual sharing (family/friends) and cross-company collaboration both run through the same
+**cross-org grant** primitive (D-142). No separate "consumer" schema, tenancy model, or code path.
+**Why:** Reusing org-as-tenant for solo users means B2C is a positioning/onboarding surface over the
+existing multi-tenant model rather than a second architecture; it also makes the personal-memory
+use case (individuals accumulating and sharing their own Context Library) a first-class product line
+alongside the B2B requirements-capture roots, widening the D-124 north-star audience.
+**Supersedes:** — (broadens the B2B-only framing in `product.md` / `CLAUDE.md`; the D-124 "individuals or companies" platform vision is now explicit positioning) **Superseded by:** —
+**Related code:** `memory/business/product.md`
+
 ## Open / proposed (not yet locked)
 - **Exact pricing/packaging** — principle locked at D-011/D-019; revisit numbers against the post-D-059 cost basis (GPU compute: ~$0.003/free job, ~$0.010/paid job).
 - **SAML/OIDC for enterprise IdPs** — explicitly deferred (D-020); revisit once an enterprise deal needs it.

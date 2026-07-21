@@ -14,6 +14,14 @@ Target audience: product managers, engineering leads, and BD/client-facing roles
 companies (B2B, dev-tooling adjacent) who run frequent requirement-gathering meetings and need to
 turn discussions into actionable specs without manual note-taking.
 
+**Positioning is B2B *and* B2C (D-143).** The founding B2B requirements-capture use case above is one
+line; Heediq also serves individuals accumulating a dynamic personal digitized memory (Context
+Library). A personal user is modeled as a **single-member org** — the same tenant concept, not a
+separate account type — so one model serves companies (shared Contexts around workloads/projects via
+D-141 group/org visibility) and individuals. Sharing between individuals (family/friends) and between
+companies both run through the same cross-org **grant** primitive (D-142, designed now / built
+fast-follow).
+
 Long-term direction: Heediq doesn't just capture requirements — it eventually helps build the
 systems behind them (Heed → Define → Build; see `branding.md`).
 
