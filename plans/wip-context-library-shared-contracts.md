@@ -1,6 +1,6 @@
 # WIP — Context Library build (multi-session)
 
-**Spec:** `plans/context-library-spec.md` — build order is §11. **Decisions:** D-124–D-140.
+**Spec:** `plans/context-library-spec.md` — build order is §11. **Decisions:** D-124–D-144.
 This file tracks the whole Context Library build across repos/sessions, one step at a time.
 
 ## Step 1 — `@heediq/shared` contracts + Container→Context rename — ✅ DONE & SHIPPED
@@ -34,8 +34,17 @@ Six tables added in `lib/foundation/context-library-tables.ts` (split per D-103)
 - **API step (Step 4):** writer computes `scopeKey`/`domainCreatedAt` on Context put; grant issuance/revoke routes + a per-request cross-org **authorization middleware** (authorize against a live, unexpired grant every request — heavily isolation-tested); contributed data homes in the Context's **owner org** (D-142).
 - B2B/B2C productization (onboarding/positioning over the single-user-org model, D-143) ships in later PRs.
 
-## Step 3 — Ingest (`heediq-worker-summarization`) — ⬜
-Bump `@heediq/shared` to 0.14.0. Add the **combined classify+extract** Claude call (D-130): input = content + user's Contexts + `DOMAIN_PROFILES`; output = `ProposedClassification` (+ `other` fallback under `DOMAIN_FIT_CONFIDENCE_THRESHOLD`) + `ExtractedItem`s. Persist `proposedClassification` on the Source, set `classification: 'pending_review'`, emit `classification_ready`. Stop writing the old flat `Summary` arrays; write `gist` + `ExtractedItem`s. Update `heediq-worker-transcription/src/models.py` Summary mirror.
+## Step 3 — Ingest (combined classify+extract, D-130/D-133) — ✅ DONE (3 branches, not yet PR'd)
+Full Step 3 across 3 repos (user chose the "emit classification_ready now" option). Workers don't push WS (D-109) — the worker writes `classification='pending_review'`; a `heediq-sources` DDB stream → `heediq-ws-classification-pusher` (heediq-api handler, shell in WebSocketStack) emits `classification_ready`.
+
+- **`heediq-worker-summarization`** branch `feature/context-library-ingest` (commit 3fa74dc): bumped `@heediq/shared` ^0.12→^0.14; `provider.classifyExtract` = one Claude call → placement proposal + `gist` + items in the chosen Domain's shape; `shapeResult` enforces `other` fallback below `DOMAIN_FIT_CONFIDENCE_THRESHOLD` + drops items whose category is invalid for the final Domain + guarantees exactly-one placement; `context-loader.loadExistingContexts` reads candidate Contexts via `by-scope` GSI (`O#org`+`U#user`; **group scope `G#` deferred** — needs RBAC group lookup); `writer.writeExtractedItems` batch-writes to `heediq-extracted-items` (UnprocessedItems retry) + `writeSummaryAndClassification` sets gist/proposedClassification/`pending_review` on the Source and REMOVEs the old flat arrays. 28 tests.
+- **`heediq-infra`** branch `feature/context-library-ingest-infra` (commit 3fcc881): SummarizationStack injects `CONTEXTS_TABLE_NAME`/`EXTRACTED_ITEMS_TABLE_NAME` + grants read on `heediq-contexts`(+GSI)/write on `heediq-extracted-items`; `heediq-sources` gains a `NEW_IMAGE` stream (in-place, no replacement); WebSocketStack adds the `heediq-ws-classification-pusher` Lambda shell on that stream, filtered to `classification='pending_review'`, via `grantPush`. 189 tests.
+- **`heediq-api`** branch `feature/context-library-classification-pusher` (commit 9f08dcb): `src/handlers/classification-pusher.ts` (mirrors `ws-pusher.ts`) + `bundle:classification-pusher` + bump `@heediq/shared` ^0.13→^0.14. 204 tests.
+
+**Deferred / flagged (carry forward):**
+- `heediq-worker-transcription/src/models.py` **Summary mirror** still lists the old flat arrays — update it to `transcript`+`gist` (D-135) when that repo is next touched (consistency-check contract, §3). Not done this session (transcription repo untouched).
+- **WS-CD gap (pre-existing):** `ws-connect`/`ws-pusher`/`classification-pusher` bundles are build-ready but **not wired into `heediq-api/.github/workflows/deploy.yml`** — WS handlers deploy manually. Out of Step 3 scope; flag for a WS-CD follow-up.
+- **Group-scoped Contexts** not queried by the ingest classifier yet (only org+personal) — API-step follow-up.
 
 ## Step 4 — API (`heediq-api`) — ⬜
 Bump 0.14.0. Contexts CRUD (+ tree), review-approval endpoints, conversations/messages endpoints, chat-job enqueue. Every mutating route: `requirePermission` + `auditWriter` (extend `AuditPayloadMap`) + frontend `<Can>` (D-107).

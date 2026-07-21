@@ -14,12 +14,18 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   backlog below): **`../business/BACKLOG.md`**.
 
 ## In-progress product work
-- **Context Library** (D-124–D-143, generalizes D-068/D-069; B2B **and** B2C per D-143) — **build in
+- **Context Library** (D-124–D-144, generalizes D-068/D-069; B2B **and** B2C per D-143; primary
+  positioning is a contextual-memory platform, meetings one ingestion path, per D-144) — **build in
   progress**: §11 step 1 (shared contracts) landed in `@heediq/shared` v0.14.0; step 2 (infra — 6
-  DynamoDB tables incl. cross-org grants) done on branch `feature/context-library-infra-tables` (not
-  yet PR'd). Next: §11 step 3 (ingest worker) — but first a `@heediq/shared` **0.15.0 addendum** owed
-  by D-141/D-142 (Context `visibility`/`groupId`, `context:share` perm, grant schema) lands with the
-  API step. See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
+  DynamoDB tables incl. cross-org grants) merged to `heediq-infra` develop (#59); **step 3 (ingest —
+  combined classify+extract, D-130/D-133) done across 3 branches, not yet PR'd** (worker
+  `feature/context-library-ingest`; infra `feature/context-library-ingest-infra` — sources NEW_IMAGE
+  stream + SummarizationStack grants/env + `heediq-ws-classification-pusher` shell; api
+  `feature/context-library-classification-pusher` — the pusher handler). Next: §11 step 4 (API) — but
+  first a `@heediq/shared` **0.15.0 addendum** owed by D-141/D-142 (Context `visibility`/`groupId`,
+  `context:share` perm, grant schema). Deferred: transcription `models.py` Summary mirror → gist
+  (D-135); WS-CD gap (pusher bundles not in api deploy.yml); group-scoped Contexts in the classifier.
+  See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
   **Full spec: `../../plans/context-library-spec.md`** (data model, ingest flow, review
   wizard, chat, WS events, MVP/fast-follow/backlog scope, suggested build order). Locked: generalized
   scope + auto-first classification + chat output (D-124–126); Domain as predefined behavior-bearing
@@ -106,8 +112,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - `src/models.py` is hand-maintained (mirrors `@heediq/shared`, not generated).
   - `src/logger.py` (D-085/D-093) — Python mirror of `@heediq/shared`'s `logger.ts` (`print()`-based JSON logging + PII denylist + `LOG_LEVEL`-gated threshold, default `info`); no X-Ray sidecar on this worker (one-shot batch task, correlation via `source_id` in logs instead).
 
-- **heediq-worker-summarization** — Node.js Lambda: reads transcript from DynamoDB, extracts structured fields (requirements/decisions/openQuestions/actionItems) via Claude, writes back to DynamoDB.
-  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068, D-084, D-085, D-093, D-100
+- **heediq-worker-summarization** — Node.js Lambda: reads a Source's transcript, runs the **combined classify+extract** Claude call (D-130) — one call → placement proposal (Domain + Context) + `gist` + per-statement `ExtractedItem`s in the chosen Domain's shape. Writes items to `heediq-extracted-items`, sets `gist`/`proposedClassification`/`classification='pending_review'` on the Source (which the api classification-pusher turns into `classification_ready`, D-133); reads candidate Contexts via `heediq-contexts` by-scope GSI (org+personal; group scope deferred).
+  README: `../../heediq-worker-summarization/README.md` · Decisions: D-032, D-038, D-043, D-065, D-067, D-068, D-084, D-085, D-093, D-100, D-130, D-133, D-135, D-141
   - `sourceType='text'` → `contentRef` IS the sourceId (reads `heediq-sources[sourceId].transcript`), not an S3 key.
 
 - **heediq-web** — Vite + React + TS PWA frontend; D-030 stack (TanStack Query, CVA, Radix, Vitest/RTL).

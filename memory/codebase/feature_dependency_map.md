@@ -39,7 +39,9 @@ Drives "what to retest" (Step 2) and PR blast-radius notes. One entry per featur
 - **Shared surfaces**:
   - `heediq-summarization` SQS queue — written by TranscriptionStack EC2 task role (audio path, live); ApiStack Lambda is wired with `SUMMARIZATION_QUEUE_URL` in its env (`config.ts`) for the direct non-audio path (D-065, D-026) but has no call site sending to it yet — `sources.ts` doesn't enqueue there, so this producer is not yet implemented, only provisioned. Consumed by summarization Lambda. Message schema: `SummarizationJobMessage { jobId, sourceId, orgId, sourceType, contentRef, tier }` — `tier` is required and forwarded by all producers so the summarization Lambda can select the correct Claude model (D-067)
   - `heediq-jobs` table — written by summarization Lambda (status: `summarizing → done/failed`); also written by transcription worker + read by Status Pusher Lambda
-  - `heediq-sources` table — written by summarization Lambda (structured extraction fields); also written by transcription worker + read by ApiStack Lambda
+  - `heediq-sources` table — written by summarization Lambda (now `gist` + `classification='pending_review'` + `proposedClassification`, REMOVEs the old flat arrays, D-130/D-135); also written by transcription worker + read by ApiStack Lambda. **NEW_IMAGE stream → `heediq-ws-classification-pusher`** (heediq-api handler) emits `classification_ready` at org scope when a Source enters `pending_review` (D-133) — same stream→pusher pattern as heediq-jobs/job_status
+  - `heediq-contexts` table — **read** by summarization Lambda via the `by-scope` GSI (`O#org`+`U#user`) to classify against the uploader's Contexts (D-130/D-141); written by heediq-api (Context CRUD, step 4)
+  - `heediq-extracted-items` table — **written** by summarization Lambda (per-statement `ExtractedItem`s, `status:'proposed'`, no contextId until approval, D-135); read by heediq-api (review wizard / chat memory, steps 4–5)
   - `heediq-audio-uploads-*` S3 bucket — read by summarization Lambda (transcript + direct-path content files); also written by API (presigned URL upload)
 
 ### Web frontend delivery (WorkloadCfCertStack + WebStack)
