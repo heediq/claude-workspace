@@ -17,13 +17,11 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **Context Library** (D-124–D-144, generalizes D-068/D-069; B2B **and** B2C per D-143; primary
   positioning is a contextual-memory platform, meetings one ingestion path, per D-144) — **build in
   progress**: §11 step 1 (shared contracts) landed in `@heediq/shared` v0.14.0; step 2 (infra — 6
-  DynamoDB tables incl. cross-org grants) merged to `heediq-infra` develop (#59); **step 3 (ingest —
-  combined classify+extract, D-130/D-133) done across 3 branches, not yet PR'd** (worker
-  `feature/context-library-ingest`; infra `feature/context-library-ingest-infra` — sources NEW_IMAGE
-  stream + SummarizationStack grants/env + `heediq-ws-classification-pusher` shell; api
-  `feature/context-library-classification-pusher` — the pusher handler). Next: §11 step 4 (API) — but
-  first a `@heediq/shared` **0.15.0 addendum** owed by D-141/D-142 (Context `visibility`/`groupId`,
-  `context:share` perm, grant schema). Deferred: transcription `models.py` Summary mirror → gist
+  DynamoDB tables incl. cross-org grants) merged to `heediq-infra` develop; **step 3 (ingest — combined
+  classify+extract, D-130/D-133) merged** across infra/worker/api. `@heediq/shared` **0.15.0 addendum**
+  (D-141/D-142 — Context `visibility`/`groupId`, `context:share` perm, grant schema) merged to develop;
+  release PR [heediq-shared#41](https://github.com/heediq/heediq-shared/pull/41) open to publish
+  0.15.0. Next: §11 step 4b (API impl) once 0.15.0 is published. Deferred: transcription `models.py` Summary mirror → gist
   (D-135); WS-CD gap (pusher bundles not in api deploy.yml); group-scoped Contexts in the classifier.
   See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
   **Full spec: `../../plans/context-library-spec.md`** (data model, ingest flow, review
@@ -90,7 +88,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   - Gotcha: any stack renamed/replaced while another stack imports it via a direct CDK prop (not SSM) needs a two-phase deploy — only `WebSocketStack.jobsTable` uses this pattern today. Full DR recovery steps (incl. out-of-band table recreation staling the export): `heediq-infra/README.md` Gotchas.
 
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
-  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field — pending 0.15.0), D-142 (grant schema — pending 0.15.0)
+  README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field, 0.15.0, release PR open), D-142 (grant schema, 0.15.0, release PR open)
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-059/D-065), WS push (D-061), auth methods (D-091), account linking (D-078).
   - **Context Library contracts (v0.14.0, D-124–D-140):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`.
   - `src/passwordPolicy.ts` (0.7.0, D-094) — `PASSWORD_POLICY`/`PASSWORD_POLICY_RULES`/`isPasswordPolicyCompliant`, the single source of truth for Cognito's password rules (D-020), consumed by `heediq-api` and `heediq-web` only — `heediq-infra`'s CDK literal stays separate by design (checked via consistency check, not imported).
