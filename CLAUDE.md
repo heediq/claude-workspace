@@ -5,7 +5,7 @@ This is the **single contract** for how Claude works on Heediq. It is version-co
 set of rules. Launch Claude from the workspace root so this file (and everything it imports) always
 loads.
 
-Heediq is a B2B SaaS meeting-recording & transcription platform: record → transcribe → extract
+Heediq is a B2B and B2C SaaS meeting-recording & transcription platform (D-143): record → transcribe → extract
 structured requirements / decisions / open questions → push to Jira/Confluence. AWS serverless
 (Lambda, EC2 GPU Spot, SQS, DynamoDB), React frontend, AWS CDK + GitHub Actions.
 
