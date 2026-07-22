@@ -66,6 +66,11 @@ Full Step 3 across 3 repos (user chose the "emit classification_ready now" optio
 ## Step 5 — Web (`heediq-web`) — ⬜
 Bump 0.15.3 (was 0.14.0 at last check — `/contexts`, `/context-grants`, and now `/conversations` routes plus the `ContextGrant`/chat contracts are all available to build against). Context tree/library, source detail (curated `ExtractedItem`s), the interactive review wizard (D-137 steps 1–2), Context chat UI streaming via `useWsEvent('chat_delta'/'chat_complete'/'chat_failed')`. Kit + motion system only; all copy through `t()` (map `DOMAIN_PROFILES` slugs → labels).
 
+**Chat UI bar (read before building the chat panel):** `rules/04-loading-and-feedback.md` §6 — hold the
+chat panel to the ChatGPT/Claude.ai feel specifically (token-by-token streaming, pre-first-token
+thinking indicator, scroll-aware auto-scroll, Stop/Retry, incremental markdown, per-turn copy) — this
+is a flagship surface the user explicitly wants held to that bar, not treated as a generic async form.
+
 ## Next session — Step 5 (Web)
 4c-ii (Chat) is fully merged across all 4 repos (`heediq-shared#46`, `heediq-infra#62`+`#63`, `heediq-chat#1`,
 `heediq-api#44`) — see Step 4 above for exact state and PR links. Nothing left to build for the Chat backend.
@@ -73,6 +78,7 @@ Recommended before starting Step 5: a quick end-to-end smoke check (post a messa
 processes the SQS job and pushes `chat_delta`/`chat_complete` over WS on a deployed `dev` stack) — not done
 yet this session. **Step 5 (Web)** is the only remaining unplanned path — Context tree/library + review
 wizard don't need chat and could ship first, with the chat panel wired in once its own screens are built.
+When building the chat panel, read `rules/04-loading-and-feedback.md` §6 first.
 
 ## Step 6 — Fast-follow — ⬜
 Decision Ledger generation + fill-in UI + chat-time gating (D-136) + wizard step 3 (D-137).

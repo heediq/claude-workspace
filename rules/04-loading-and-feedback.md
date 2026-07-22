@@ -57,28 +57,52 @@ D-061/D-109/D-110) — not polling, not faked. Every feature with async backend 
 `useWsEvent` handler (reusing `job_status` or adding a new `WsEventPayloadMap` event) to drive this;
 this is a planning requirement (D-111, `01-development-workflow.md` Step 2), not a per-feature choice.
 
-## 6. Optimistic UI where safe
+## 6. Context chat UI — hold to the ChatGPT/Claude.ai bar, not a generic form (D-138/D-139/D-145)
+Chat is a flagship surface, not just another async form — benchmark it against ChatGPT/Claude.ai
+directly, not against the rest of this app. Driven by the same WS event framework as §5
+(`chat_delta`/`chat_complete`/`chat_failed`, D-145), but the bar for *feel* is higher because this is
+where users spend sustained attention:
+- **Stream token-by-token**, appending each `chat_delta` incrementally — never buffer and dump a
+  whole response at once.
+- **Show a "thinking" indicator** (animated ellipsis / pulsing dots) the instant the user's message
+  sends, before the first delta arrives — the gap between send and first token is exactly the silent
+  wait §1 forbids.
+- **Auto-scroll while streaming, but stop the instant the user scrolls up** — never yank their
+  viewport back down mid-read. Show a "jump to latest" affordance instead while they're scrolled up.
+- **Render markdown incrementally** without flicker/re-layout as it completes (code blocks with syntax
+  highlighting, lists, tables) — a half-formed code fence shouldn't visibly reflow when it closes.
+- **A visible Stop control** while a turn is streaming; **Retry/Regenerate** on `chat_failed` or on a
+  completed assistant turn — never leave a failed turn as a dead end (ties to §8's actionable-error
+  rule).
+- **Clear per-turn affordances**: copy-message, distinct user/assistant styling — no ambiguity about
+  who said what while scrolling a long thread.
+- **Input box**: auto-growing textarea, Enter-to-send / Shift+Enter-newline, send control disabled
+  while a turn is in flight (the double-submit guard from §4 applies here too — one turn at a time).
+- Message entrances animate via the shared motion system (`src/lib/motion.ts`, D-117) rather than
+  popping in.
+
+## 7. Optimistic UI where safe
 For low-risk mutations (rename, toggle, reorder), update the UI immediately and **roll back on error**
 with a toast. Don't use optimistic UI for operations where a wrong-then-corrected state would mislead
 (payments, destructive actions) — those wait for the server.
 
-## 7. Outcome feedback — success & error toasts
+## 8. Outcome feedback — success & error toasts
 Every completed operation gives feedback:
 - **Success** — a brief, non-blocking toast/inline confirmation ("Recording saved", "Pushed to
   Jira").
 - **Error** — a clear, **actionable** toast/inline message: what failed, what to do, and a **Retry**
   where applicable. Never swallow an error into a blank screen or a silent no-op.
 
-## 8. Designed empty states (distinct from loading)
+## 9. Designed empty states (distinct from loading)
 Empty ≠ loading. When there's genuinely no data, show a designed `EmptyState` with a short
 explanation and a primary action ("No recordings yet — Start your first recording"), not a bare blank
 region.
 
-## 9. Designed error states for every data fetch
+## 10. Designed error states for every data fetch
 Every data-loading surface has three branches: **loading (skeleton) · success (content) · error
 (ErrorState with Retry)**. A failed fetch must never leave the user staring at an empty container.
 
-## 10. Perceived-performance details
+## 11. Perceived-performance details
 - **Instant click feedback** (<100ms): the control reacts immediately (press state) even before the
   request resolves.
 - **Spinner delay threshold**: for very fast operations, delay showing a spinner ~150–200ms so it
@@ -88,7 +112,7 @@ Every data-loading surface has three branches: **loading (skeleton) · success (
 - **No layout shift**: reserve space for content that's loading (skeletons/placeholders sized to the
   real thing).
 
-## 11. Global async conventions
+## 12. Global async conventions
 - Use a server-state library (e.g. TanStack Query) so loading/error/refetch states are consistent and
   cached app-wide rather than hand-rolled per screen.
 - Centralize toast handling (one Toaster) and error normalization so every failure renders the same
@@ -105,3 +129,5 @@ Every data-loading surface has three branches: **loading (skeleton) · success (
 - [ ] Empty state and error state both designed (no blank screens)
 - [ ] No double-submit; no layout shift; spinner delay/min-display applied
 - [ ] All feedback rendered via kit components, not one-off markup
+- [ ] For Context chat specifically: streams token-by-token, shows a thinking indicator pre-first-token,
+      auto-scroll respects manual scroll-up, Stop/Retry present, feels on par with ChatGPT/Claude.ai (§6)
