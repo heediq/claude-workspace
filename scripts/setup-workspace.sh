@@ -75,6 +75,15 @@ else
   echo "       Then re-run this script or continue manually."
 fi
 
+echo ""
+
+# ---- 4. Install claude-workspace git hooks --------------------
+
+echo "--- 4. Memory line-budget pre-commit hook ---"
+echo ""
+
+bash "$SCRIPT_DIR/install-git-hooks.sh"
+
 # ---- Done ----------------------------------------------------
 
 echo ""
