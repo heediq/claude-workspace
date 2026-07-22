@@ -19,7 +19,9 @@ teammates get it; pull regularly.
 A fact is recorded once in its home and referenced elsewhere, never copied.
 
 ## Read at task start (Step 0c)
-- `memory/business/DECISIONS.md` — locked decisions are constraints.
+- `memory/business/DECISIONS.md` — the lean index; locked decisions are constraints.
+  `memory/business/DECISIONS_FULL.md` is **not** part of this read set — open it only once a
+  specific `D-NNN` from the index is actually in play and you need its full Decision/Why text.
 - `memory/codebase/MEMORY.md` (index) and `memory/codebase/feature_dependency_map.md`.
 - Then the **code README(s)** next to the files you'll touch, and any codebase memory file flagged
   relevant.
@@ -81,7 +83,7 @@ Do not proceed with any task until this check is clean.
 **Files to scan every time:**
 | File | What to verify |
 |---|---|
-| `DECISIONS.md` | The reference — read what is Locked and what is Superseded. Fully-superseded entries belong in `DECISIONS_ARCHIVE.md`, not here (see `rules/09-decisions.md`). |
+| `DECISIONS.md` (index) | The reference — read what is Locked and what is Superseded. Full Decision/Why text for a given `D-NNN` lives in `DECISIONS_FULL.md` (read on demand, not scanned every session). Fully-superseded entries belong in `DECISIONS_ARCHIVE.md`, not either (see `rules/09-decisions.md`). |
 | `memory/business/architecture.md`, `product.md` | Must not describe superseded decisions as current. |
 | All `rules/*.md` | Must not label locked decisions as "proposed" or "confirm or change". |
 | `CLAUDE.md` | Must not duplicate content from DECISIONS.md or detail files — pointer only. |
@@ -104,8 +106,29 @@ all before proceeding. Never carry staleness forward.
 **On ambiguity** (cannot tell which version is correct): stop and flag — *"This conflicts with
 D-NNN — which is current?"* — wait for resolution before writing anything.
 
-**Optimization trigger:** if a single pass finds more than 3 mismatches, propose a full
-consolidation pass (see Memory optimization below) before continuing work.
+**Optimization trigger:** if a single pass finds more than 3 mismatches, or any always-loaded file
+(below) is over its line budget, propose a full consolidation pass (see Memory optimization below)
+before continuing work.
+
+## Always-loaded line budget
+
+These files are read at the start of every session (root `CLAUDE.md`, Step 0c) — their combined
+size is a fixed cost paid before any task-specific work happens. Keep each under its soft cap:
+
+| File | Budget |
+|---|---|
+| `CLAUDE.md` (root + workspace) | 150 lines each |
+| `memory/business/DECISIONS.md` (index) | 200 lines |
+| `memory/codebase/MEMORY.md` (index) | 150 lines |
+| `memory/codebase/feature_dependency_map.md` | 150 lines |
+
+On-demand files (`DECISIONS_FULL.md`, `DECISIONS_ARCHIVE.md`, `STALE_ARCHIVE.md`, code READMEs,
+`rules/*.md`) are **not** part of this budget — they're read only when a task needs them, so their
+size doesn't gate every session.
+
+Crossing a cap is itself an optimization trigger — don't wait for Andrii to notice or ask. Check
+this as part of the size & staleness control pass (`rules/10-consistency-check.md` §5) and flag it
+the same way as the mismatch-count trigger below.
 
 ## Memory optimization (when memory grows noisy)
 When memory accumulates enough that it starts to feel repetitive, scattered, or hard to navigate,

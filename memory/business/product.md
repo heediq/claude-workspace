@@ -35,8 +35,8 @@ Long-term direction: Heediq doesn't just capture requirements — it eventually 
 systems behind them (Heed → Define → Build; see `branding.md`).
 
 ### Long-term platform vision — universal contextual memory ("Context Library")
-Captured 2026-07-01, refined 2026-07-02, generalized 2026-07-20 (D-124–D-126). The long-term platform
-direction below is **not** fully in MVP scope, but a first slice of it now is — see D-069. Don't
+Generalized by D-124–D-126. The long-term platform direction below is **not** fully in MVP scope,
+but a first slice of it now is — see D-069. Don't
 confuse the two: D-069 (multi-source ingestion + container-level synthesis) is locked and being
 built; everything else here (arbitrary connectors, full personal/professional memory, assistant
 reasoning over it, custom RAG) remains north-star context, not a spec to build toward yet.
@@ -137,12 +137,9 @@ subscription. No card required on signup or during trial; Stripe Checkout is onl
 the org upgrades. Subscription state (seat count, plan status) is kept in sync via Stripe
 webhooks.
 
-Pricing note: an earlier cost-based estimate (when transcription ran on AWS Transcribe at
-~$2/meeting) suggested $35–40/seat/month with a fair-use meeting cap as the workable model. The
-self-hosted faster-whisper pivot (~70–75× cheaper, see `architecture.md`) makes that exact number
-stale — the *principle* (flat per-seat without usage caps doesn't work; fair-use cap does) is
-locked, but exact packaging/price is still open and should be revisited against the new cost
-basis.
+Pricing principle (fair-use cap over flat per-seat, D-011) is locked; exact packaging/price is
+still open and stale against the post-faster-whisper cost basis — see D-011 for the numbers and
+why they need revisiting.
 
 ## Auth
 AWS Cognito User Pool, with Google and Microsoft (Entra/Azure AD) as federated identity providers

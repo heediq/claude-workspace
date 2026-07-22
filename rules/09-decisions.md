@@ -6,7 +6,9 @@ automatically**, kept as **business memory**, and applied as **constraints** in 
 
 ## Two memory tracks (keep them separate, both live in `memory/`)
 - **Business memory** (`memory/business/`) — *what we decided and why*. Product, design, architecture,
-  infra, cost, pricing, branding, scope, positioning. Canonical file: `memory/business/DECISIONS.md`.
+  infra, cost, pricing, branding, scope, positioning. `memory/business/DECISIONS.md` is the
+  always-loaded one-line-per-decision index; `memory/business/DECISIONS_FULL.md` holds the full entry
+  (Decision/Why/Supersedes/Related code) for each, read on demand.
 - **Codebase memory** (`memory/codebase/` + code READMEs) — *how the system works now*. Index, the
   feature dependency map, and per-module READMEs.
 
@@ -41,8 +43,9 @@ clearly locked.
    - Does this conflict with an existing locked decision? If yes, flag it before writing:
      *"This conflicts with D-NNN (title) — supersede it, or keep both?"*
    - Is the scope or wording unclear? Ask one short question before writing.
-4. **Write it to `memory/business/DECISIONS.md`** in the entry format below.
-5. **Confirm in one line**, e.g. *"Locked → recorded as D-014 in DECISIONS.md."*
+4. **Write the full entry to `memory/business/DECISIONS_FULL.md`** in the entry format below, and add
+   its one-line bullet to the index in `memory/business/DECISIONS.md`.
+5. **Confirm in one line**, e.g. *"Locked → recorded as D-014 in DECISIONS.md / DECISIONS_FULL.md."*
 6. **Claude never self-locks.** Claude proposes and records; only Andrii locks. If Claude recommends
    something, it stays a proposal until Andrii confirms.
 
@@ -76,25 +79,28 @@ Decisions evolve. When a new decision changes an old one:
 Never delete a decision or silently edit its meaning; supersede it.
 
 ## Archiving fully-superseded decisions
-`DECISIONS.md` stays lean by moving decisions to `memory/business/DECISIONS_ARCHIVE.md` once they
-carry no substantive active content — this is not deletion, the entry is preserved verbatim with
-its full rationale, just out of the main reading path.
+`DECISIONS_FULL.md` (and its one-line bullet in the `DECISIONS.md` index) stay lean by moving
+decisions to `memory/business/DECISIONS_ARCHIVE.md` once they carry no substantive active content —
+this is not deletion, the entry is preserved verbatim with its full rationale, just out of the main
+reading path.
 
 - **Archive** a decision when its superseding entry's text already restates whatever part of it is
   still true (i.e. the old entry adds nothing beyond history).
-- **Keep in `DECISIONS.md`** a decision whose superseding annotation says only part changed (e.g.
-  "mechanism only", "compute only", "X unchanged") and that unchanged part isn't fully restated in
-  the superseding entry — it's still load-bearing, not just historical.
-- When archiving, move the entry as-is (same fields, same wording) into
-  `DECISIONS_ARCHIVE.md`; leave its `Superseded by:` reference intact so a reader following an ID
-  from `DECISIONS.md` into the archive can still see why.
+- **Keep** a decision whose superseding annotation says only part changed (e.g. "mechanism only",
+  "compute only", "X unchanged") and that unchanged part isn't fully restated in the superseding
+  entry — it's still load-bearing, not just historical.
+- When archiving, move the full entry as-is (same fields, same wording) from `DECISIONS_FULL.md`
+  into `DECISIONS_ARCHIVE.md`, and remove its bullet from the `DECISIONS.md` index; leave its
+  `Superseded by:` reference intact so a reader following an ID from the index into the archive can
+  still see why.
 - This decision applies going forward as part of the periodic consistency check
   (`rules/10-consistency-check.md`) — don't wait for memory to feel cluttered before archiving.
 
 ## Status lifecycle
 `Proposed` (optional, while under discussion) → `Locked` → `Superseded` / `Reversed`.
 
-## Entry format (in `DECISIONS.md`)
+## Entry format (full text in `DECISIONS_FULL.md`, index bullet in `DECISIONS.md`)
+Full entry, in `DECISIONS_FULL.md`:
 ```
 ### D-014 · <short title> (YYYY-MM-DD) — Locked
 **Area:** Product | Design | Architecture | Infra | Cost | Pricing | Brand | Policy
@@ -104,8 +110,15 @@ its full rationale, just out of the main reading path.
 **Related code:** path/to/module/README.md (once implemented, or —)
 ```
 
-Keep entries lean: the decision + its rationale (3–5 sentences), not an essay. Detail about *how it's
-built* belongs in the code README the entry points to — never in `DECISIONS.md` itself.
+Matching index bullet, in `DECISIONS.md`, grouped under the same `## ` area section:
+```
+- **D-014** · <short title> · <Area> · <Locked | Superseded by D-NNN> · → path/to/module/README.md (or —)
+```
+
+Keep the full entry lean: the decision + its rationale (3–5 sentences), not an essay. Detail about
+*how it's built* belongs in the code README the entry points to — never in `DECISIONS_FULL.md`
+itself. The index bullet is one line, no rationale — just enough to know the decision exists and
+where to look.
 
 **`Related code` is a pointer, never a build log.** It names the README(s) (and, only if no README
 exists yet, the file/path) that carry the implementation. It never contains PR links, commit hashes,
@@ -116,6 +129,7 @@ already tells you what merged when; `DECISIONS.md` only needs to tell you *what*
 *why*.
 
 ## End-of-task pass (ties into Step 6)
-Confirm every decision locked during the task is in `DECISIONS.md`, any superseded entries are marked,
-and `memory/codebase/MEMORY.md` carries a pointer only for new *in-progress* items (never full
-decision text).
+Confirm every decision locked during the task has a full entry in `DECISIONS_FULL.md` and a matching
+bullet in the `DECISIONS.md` index, any superseded entries are marked in both, and
+`memory/codebase/MEMORY.md` carries a pointer only for new *in-progress* items (never full decision
+text).

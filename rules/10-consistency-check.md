@@ -66,14 +66,17 @@ Check contracts that span repos — a mismatch here causes silent runtime failur
 Memory and READMEs are a working reference, not a history log — they must stay short enough to scan
 and trusted enough to act on. Check every run, not just when things "feel" cluttered:
 
-- **`DECISIONS.md`** — any entry whose `Superseded by:` annotation shows the superseding entry now
-  fully restates it (nothing substantive left active) should be archived to
+- **`DECISIONS.md` / `DECISIONS_FULL.md`** — any entry whose `Superseded by:` annotation shows the
+  superseding entry now fully restates it (nothing substantive left active) should be archived to
   `memory/business/DECISIONS_ARCHIVE.md` per `rules/09-decisions.md` (Archiving fully-superseded
-  decisions). Partially-superseded entries (annotation says "mechanism only" / "X unchanged" and that
-  part isn't restated elsewhere) stay. Independent of supersession: check every remaining entry's
-  `Related code` field against `rules/09-decisions.md`'s pointer-only rule — PR links, commit hashes,
-  phase-by-phase merge narrative, or key/schema-level detail that now lives (or belongs) in a code
-  README gets removed and replaced with a README pointer.
+  decisions) — move the full entry out of `DECISIONS_FULL.md` and drop its bullet from the
+  `DECISIONS.md` index. Partially-superseded entries (annotation says "mechanism only" / "X unchanged"
+  and that part isn't restated elsewhere) stay in both files. Independent of supersession: check every
+  remaining `DECISIONS_FULL.md` entry's `Related code` field against `rules/09-decisions.md`'s
+  pointer-only rule — PR links, commit hashes, phase-by-phase merge narrative, or key/schema-level
+  detail that now lives (or belongs) in a code README gets removed and replaced with a README pointer.
+  Also check the `DECISIONS.md` index itself against its line budget (`rules/08-memory.md` — Always-
+  loaded line budget) — over budget is itself a finding here, not just an optimization trigger.
 - **`memory/codebase/MEMORY.md`** — flag any entry that has drifted from its own contract (feature ->
   one-line summary -> README path -> decision IDs -> dependency-map entry name, nothing else,
   `rules/08-memory.md`): PR numbers, exact test counts, version numbers, or narrated build-status

@@ -29,7 +29,8 @@ claude-workspace/
   rules/                        ← read on demand, per the routing table below
   memory/
     business/                   ← BUSINESS memory: what we decided & why
-      DECISIONS.md              ← canonical decisions log (source of truth, lean entries)
+      DECISIONS.md              ← always-loaded index: one line per locked decision
+      DECISIONS_FULL.md         ← full entry per decision (Decision/Why/Related code), read on demand
       DECISIONS_ARCHIVE.md      ← fully-superseded decisions, verbatim (read only on demand)
       architecture.md           ← high-level architecture overview, no per-feature implementation detail
       product.md, branding.md, BACKLOG.md
@@ -82,8 +83,9 @@ purpose above before opening it in full.
 
 ## Four things that are always true
 
-1. **Decisions are locked before they are built, and captured the moment they're locked**, in
-   `memory/business/DECISIONS.md`. Locked decisions are constraints in every future chat — never
+1. **Decisions are locked before they are built, and captured the moment they're locked**, as a full
+   entry in `memory/business/DECISIONS_FULL.md` plus an index bullet in `DECISIONS.md`. Locked
+   decisions are constraints in every future chat — never
    silently contradict one. If anything conflicts, flag it before responding to anything else:
    *"⚠️ This conflicts with D-NNN · [title] — supersede it or adjust the direction?"* Do not proceed
    until resolved. Full process: `rules/09-decisions.md`.
@@ -96,15 +98,16 @@ purpose above before opening it in full.
    wait the user experiences is visible. `rules/03-ui-kit.md`, `rules/04-loading-and-feedback.md`.
 
 4. **Memory stays coherent and minimal.** Read only what the task needs (routing table above); a
-   fact lives in exactly one home (README, `DECISIONS.md`, or `architecture.md`) and is referenced,
-   never copied, elsewhere. Run the coherence check every session — `rules/08-memory.md`.
+   fact lives in exactly one home (README, `DECISIONS_FULL.md`, or `architecture.md`) and is
+   referenced, never copied, elsewhere. Run the coherence check every session — `rules/08-memory.md`.
 
 ---
 
 ## Decisions
 
-All locked decisions live in **`memory/business/DECISIONS.md`** — the canonical source of truth,
-kept lean (decision + why + supersession pointers + one README link, no implementation narrative).
-Fully-superseded entries move to `DECISIONS_ARCHIVE.md`, which is not read by default. Read
-`DECISIONS.md` before planning or writing code that could touch a locked constraint. Never act
-against a locked decision without explicitly superseding it.
+All locked decisions are indexed in **`memory/business/DECISIONS.md`** — one line per decision, the
+always-loaded constraint surface. Full text (decision + why + supersession pointers + one README
+link, no implementation narrative) lives in `DECISIONS_FULL.md`, read on demand once a specific
+`D-NNN` matters. Fully-superseded entries move to `DECISIONS_ARCHIVE.md`, which is not read by
+default. Read `DECISIONS.md` before planning or writing code that could touch a locked constraint.
+Never act against a locked decision without explicitly superseding it.
