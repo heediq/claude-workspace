@@ -1710,3 +1710,13 @@ actually being built. Scope, build order (`product.md` MVP build order), and the
 requirements-capture use case are **unchanged** — only the framing/emphasis is elevated.
 **Supersedes:** — (elevates the D-124 platform vision into canonical positioning; does not change scope or build order) **Superseded by:** —
 **Related code:** `memory/business/product.md`, `memory/business/branding.md`
+
+### D-145 · Context Library — `chat_failed` WS event for a failed chat turn (2026-07-22) — Locked
+**Area:** Architecture
+**Decision:** Add `chat_failed` (`{ conversationId, messageId, error }`) to `WsEventPayloadMap`
+alongside `chat_delta`/`chat_complete` (D-139), pushed at user scope when the `heediq-chat` worker
+fails a turn (Claude API error, timeout) after retries are exhausted.
+**Why:** D-139 defined the success path only; without a failure event the frontend has nothing to
+react to on a worker error and would spin indefinitely, violating D-111 (no silent wait).
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/ws.ts`, `heediq-chat` worker repo

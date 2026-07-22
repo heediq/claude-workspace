@@ -62,3 +62,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-138** · Context Library — Context chat persistence model · Architecture · Locked · → `heediq-shared/src/`
 - **D-139** · Context Library — dedicated `heediq-chat` worker, streamed over WS with prompt caching · Architecture / Cost · Locked · → `heediq-infra/lib/chat/`
 - **D-142** · Context Library — cross-org Context sharing via regulated grants (design now, build fast-follow) · Architecture / Policy · Locked · → `heediq-infra/lib/foundation/README.md`
+- **D-145** · Context Library — `chat_failed` WS event for a failed chat turn · Architecture · Locked · → `heediq-shared/src/ws.ts`
