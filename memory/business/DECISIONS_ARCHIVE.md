@@ -90,3 +90,66 @@ client-direct is unaffected)
 confirmation-code reuse — same problem, no custom OTP/SES code needed)
 **Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — superseded,
 see D-087)
+
+### D-069 · MVP v1 scope expanded to multi-source ingestion + container-level synthesis (2026-07-02) — Locked
+**Area:** Product
+**Decision:** MVP v1 expands beyond audio-only to include multi-source ingestion (PDF/doc/image
+uploads alongside audio, already source-agnostic at the pipeline level per D-065) plus a
+**container-level synthesis** capability: given multiple labeled Sources attached to the same
+Container (e.g. meeting transcripts + a rules PDF + design-standard screenshots for one project),
+generate a single structured technical-requirement output ready to implement, rather than the user
+manually reconciling separate per-source summaries. Critical path (build order sequence
+unchanged): auth/onboarding → home/Listen → recordings library → source detail/summary →
+multi-source upload + container-level synthesis view. Org/billing and calendar/meeting-bot
+settings remain follow-on.
+**Why:** Validates the platform's core differentiator (ready-to-implement requirements assembled
+from many source types, not months of clarification) at v1 instead of as a later fast-follow. The
+source-agnostic SQS entry point (D-065) already exists, so the marginal build is upload UI +
+container-level synthesis logic, not new pipeline architecture.
+**Supersedes:** D-010 (scope only — build order sequence unchanged) **Superseded by:** D-140 (synthesis-output mechanism + the final "synthesis view" build-order step only — the multi-source-ingestion scope and the critical path through source-detail are unchanged and still load-bearing).
+**Related code:** `memory/business/product.md`, `plans/wip-app-repos-scaffold.md`
+
+### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
+**Area:** Architecture
+**Decision:** Replicating a working pattern from Andrii's own prior implementation
+(`EmotiXOrg/emotix-infra`), linking a password to an existing `EXTERNAL_PROVIDER`-only user reuses
+Cognito's **own** `SignUp`/`ConfirmSignUp` verification-code mechanism instead of building custom
+OTP generation/storage/SES-sending (D-086). Flow: (1) `POST /auth/link/request-otp` calls Cognito's
+`SignUp` with the user's email and a throwaway random password — this creates a **native** Cognito
+user in `UNCONFIRMED` status and Cognito automatically emails its own confirmation code (via
+Cognito's own SES-backed delivery — no app code touches SES directly for this). (2) `POST
+/auth/link/confirm` calls `ConfirmSignUp` with the code (verifies it), then `AdminSetUserPassword`
+(sets the real chosen password, `Permanent=True`), then `AdminLinkProviderForUser` (links the
+existing federated identity — Google/Microsoft — onto this newly-confirmed native user via its
+`ProviderAttributeValue`/`sub`), then flips our own `passwordSet=true` / writes the `METHOD#COGNITO`
+DynamoDB row in the same request. Same non-disclosing UX as D-078/D-086 (generic prompt, no provider
+named). If `SignUp` returns `UsernameExistsException`/`AliasExistsException` (user already mid-flow),
+skip straight to `ResendConfirmationCode` rather than erroring.
+**Why:** Cognito already owns code generation, expiry, delivery, and resend-rate-limiting for
+`SignUp`/`ConfirmSignUp` — reusing it means zero custom OTP code (no DynamoDB TTL item design, no
+hashing/storage, no SES template, no custom rate-limiting) versus D-086's fully hand-rolled
+equivalent. This is a strictly smaller, already-proven implementation (Andrii built and ran this
+exact pattern in `emotix-infra`) for the identical problem D-086 was solving. `AdminSetUserPassword`
+and `AdminLinkProviderForUser` still require IAM credentials the browser never holds, so both backend
+endpoints stay server-owned per D-082 — unaffected by this decision.
+**Supersedes:** D-086 (custom OTP+SES mechanism only — the problem statement, non-disclosing UX, and
+`passwordSet` semantics from D-078 are unchanged)
+**Superseded by:** D-089 (scope only — generalized from linking-only to also cover native signup and
+proactive settings-linking, and split into two sequential screens instead of one combined form; the
+underlying SignUp/ConfirmSignUp-reuse mechanism defined here is kept)
+**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — built, see
+D-089's Related code for the generalized version), `heediq-infra` (no new resources — no SES role
+needed by app code for this path; D-058's SES role stays for other transactional email)
+
+### D-132 · Context Library — Summary becomes generic domain-keyed extraction (2026-07-20) — Locked
+**Area:** Architecture
+**Decision:** The `Summary` schema's hardcoded work fields (`requirements`/`decisions`/
+`openQuestions`/`actionItems`) are replaced by a generic `extracted: Record<string, string[]>`
+keyed by the filed Domain's `extractionFields`, plus a `domain` field recording which profile
+shaped it. Keys are validated at write time against the Domain profile (D-131) so the shape can't
+drift. `transcript` and provenance fields are unchanged.
+**Why:** A fixed work-shaped Summary can't represent a study or personal (or `other`) extraction;
+domain-keyed storage lets one schema carry every Domain's output and lets chat (D-126) read it
+generically when assembling a Context's memory.
+**Supersedes:** — **Superseded by:** D-135 (extraction storage moves to item-level `ExtractedItem`; domain-keyed *categorization* survives as each item's `category`) — fully superseded, archive at next consistency check.
+**Related code:** `heediq-shared/src/domain.ts` (`SummarySchema`), `heediq-worker-summarization/src/writer.ts`

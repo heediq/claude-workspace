@@ -73,6 +73,7 @@ states, empty-state copy)
 `branding.md` — reproduce verbatim, do not redesign). Name layers "heed" + "HQ" + "IQ"; the four
 slabs also visually represent "HQ". Domain: heediq.com. Full asset library generated
 (`heediq-brand-assets.zip`).
+**Superseded by:** D-073 (asset shape/proportions only — brand story, wordmark, tagline, color unchanged)
 **Related:** `memory/business/branding.md` (verbatim SVG, brand story, taglines, asset list)
 
 ### D-026 · Home / Listen screen UX — Locked (2026-06-11)
@@ -565,25 +566,6 @@ instead of three narrowly-named tables.
 **Related code:** `heediq-shared/src/`, `heediq-infra/lib/foundation/foundation-stack.ts`,
 `heediq-api/`, `heediq-worker-transcription/`, `heediq-worker-summarization/`, `heediq-web/`
 
-### D-069 · MVP v1 scope expanded to multi-source ingestion + container-level synthesis (2026-07-02) — Locked
-**Area:** Product
-**Decision:** MVP v1 expands beyond audio-only to include multi-source ingestion (PDF/doc/image
-uploads alongside audio, already source-agnostic at the pipeline level per D-065) plus a
-**container-level synthesis** capability: given multiple labeled Sources attached to the same
-Container (e.g. meeting transcripts + a rules PDF + design-standard screenshots for one project),
-generate a single structured technical-requirement output ready to implement, rather than the user
-manually reconciling separate per-source summaries. Critical path (build order sequence
-unchanged): auth/onboarding → home/Listen → recordings library → source detail/summary →
-multi-source upload + container-level synthesis view. Org/billing and calendar/meeting-bot
-settings remain follow-on.
-**Why:** Validates the platform's core differentiator (ready-to-implement requirements assembled
-from many source types, not months of clarification) at v1 instead of as a later fast-follow. The
-source-agnostic SQS entry point (D-065) already exists, so the marginal build is upload UI +
-container-level synthesis logic, not new pipeline architecture.
-**Supersedes:** D-010 (scope only — build order sequence unchanged) **Superseded by:** D-140 (synthesis-output mechanism + the final "synthesis view" build-order step only — the multi-source-ingestion scope and the critical path through source-detail are unchanged and still load-bearing).
-**Related code:** `memory/business/product.md`, `plans/wip-app-repos-scaffold.md`
-
----
 
 ### D-070 · AWS region resolved from GitHub org-level variable, not hardcoded per repo (2026-07-03) — Locked
 **Area:** Infra / Process
@@ -732,12 +714,10 @@ real cost gap found while implementing this: `ApiFn`/`SummarizationFn` in `heedi
 have no retention set (unbounded storage growth); only `TranscriptionLogGroup` does today.
 **Supersedes:** — **Superseded by:** — (refines D-085; does not contradict it — same
 CloudWatch/X-Ray stack, no separate tool)
-**Related code:** `heediq-shared/src/logger.ts` (0.6.0) and
-`heediq-worker-transcription/src/logger.py` — level filtering +
-`LOG_LEVEL` support implemented. `heediq-infra/lib/config.ts` `logRetentionFor(workloadEnv)` (30
-days dev/staging, 90 days prod) applied to `ApiStack`, `SummarizationStack`, and
-`TranscriptionStack`'s log groups. All three merged to `develop`
-(`heediq-shared` PR #13, `heediq-worker-transcription` PR #12, `heediq-infra` PR #41).
+**Related code:** `heediq-shared/src/logger.ts` (level filtering + `LOG_LEVEL` support),
+`heediq-worker-transcription/src/logger.py` (Python mirror), `heediq-infra/lib/config.ts`
+`logRetentionFor(workloadEnv)` (applied to `ApiStack`, `SummarizationStack`, `TranscriptionStack`
+log groups).
 
 ### D-094 · Password-policy visibility — checked-not-wired sync, dedicated weak-password error (2026-07-06) — Locked
 **Area:** Architecture / Design
@@ -766,39 +746,6 @@ unhelpful generic "Failed to set password" message.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-shared/src/passwordPolicy.ts`, `heediq-web/src/components/ui/PasswordRequirements/README.md`, `heediq-web/src/features/auth/README.md`, `heediq-api/src/routes/auth.ts`
 
-### D-087 · Cross-provider linking reuses Cognito's native SignUp/ConfirmSignUp confirmation code, not custom OTP+SES (2026-07-04) — Locked
-**Area:** Architecture
-**Decision:** Replicating a working pattern from Andrii's own prior implementation
-(`EmotiXOrg/emotix-infra`), linking a password to an existing `EXTERNAL_PROVIDER`-only user reuses
-Cognito's **own** `SignUp`/`ConfirmSignUp` verification-code mechanism instead of building custom
-OTP generation/storage/SES-sending (D-086). Flow: (1) `POST /auth/link/request-otp` calls Cognito's
-`SignUp` with the user's email and a throwaway random password — this creates a **native** Cognito
-user in `UNCONFIRMED` status and Cognito automatically emails its own confirmation code (via
-Cognito's own SES-backed delivery — no app code touches SES directly for this). (2) `POST
-/auth/link/confirm` calls `ConfirmSignUp` with the code (verifies it), then `AdminSetUserPassword`
-(sets the real chosen password, `Permanent=True`), then `AdminLinkProviderForUser` (links the
-existing federated identity — Google/Microsoft — onto this newly-confirmed native user via its
-`ProviderAttributeValue`/`sub`), then flips our own `passwordSet=true` / writes the `METHOD#COGNITO`
-DynamoDB row in the same request. Same non-disclosing UX as D-078/D-086 (generic prompt, no provider
-named). If `SignUp` returns `UsernameExistsException`/`AliasExistsException` (user already mid-flow),
-skip straight to `ResendConfirmationCode` rather than erroring.
-**Why:** Cognito already owns code generation, expiry, delivery, and resend-rate-limiting for
-`SignUp`/`ConfirmSignUp` — reusing it means zero custom OTP code (no DynamoDB TTL item design, no
-hashing/storage, no SES template, no custom rate-limiting) versus D-086's fully hand-rolled
-equivalent. This is a strictly smaller, already-proven implementation (Andrii built and ran this
-exact pattern in `emotix-infra`) for the identical problem D-086 was solving. `AdminSetUserPassword`
-and `AdminLinkProviderForUser` still require IAM credentials the browser never holds, so both backend
-endpoints stay server-owned per D-082 — unaffected by this decision.
-**Supersedes:** D-086 (custom OTP+SES mechanism only — the problem statement, non-disclosing UX, and
-`passwordSet` semantics from D-078 are unchanged)
-**Superseded by:** D-089 (scope only — generalized from linking-only to also cover native signup and
-proactive settings-linking, and split into two sequential screens instead of one combined form; the
-underlying SignUp/ConfirmSignUp-reuse mechanism defined here is kept)
-**Related code:** `heediq-api/src/routes/auth.ts` (`link/request-otp`, `link/confirm` — built, see
-D-089's Related code for the generalized version), `heediq-infra` (no new resources — no SES role
-needed by app code for this path; D-058's SES role stays for other transactional email)
-
----
 
 ### D-088 · API version prefix owned by exactly one place per side; route tests must exercise the real mounted app (2026-07-04) — Locked
 **Area:** Architecture
@@ -1086,79 +1033,22 @@ keep-count — avoids building/maintaining new automation for a marginal storage
 **Related code:** `heediq-infra/lib/shared-services/shared-services-stack.ts`,
 `heediq-worker-transcription/.github/workflows/deploy.yml`
 
-### D-102 · Dynamic per-org RBAC + unified GxP-quality audit trail — design locked (2026-07-08) — Locked
+### D-102 · Dynamic per-org RBAC + unified GxP-quality audit trail (2026-07-08) — Locked
 **Area:** Architecture
-**Decision:** Replaces D-017's fixed Admin/Member roles with a dynamic, per-org RBAC framework:
-Users, Groups, Roles, and a static code-defined Permission catalog (`resource:verb`, e.g.
-`sources:delete`, `org:manage-roles`), enforced at resource-type granularity (not per-record ACLs)
-in `heediq-api`'s Hono middleware. Each org manages its own roles/groups (no cross-org visibility,
-no platform-wide super-admin tier yet). Two non-deletable system roles (`admin`, `member`) are
-seeded into every org at first-login provisioning via a shared `DEFAULT_ORG_RBAC_SEED` — the direct
-migration path from D-017 — fully editable afterward; unlimited custom roles per org. A user's
-effective permissions = union of their direct role assignments + every group's roles they belong to
-(no deny rules). Permissions are resolved and baked into the Cognito ID token at issuance (via the
-existing `auth-provision.ts` PreTokenGeneration trigger) alongside an `rbacVersion` claim; a
-per-request check in `heediq-api`'s auth middleware compares it against the live value on
-`heediq-users` and forces a full re-login (`401 RBAC_STALE`, no silent refresh) the moment a user's
-roles/permissions change — bounded staleness without a permission-set DB read on every request.
-`heediq-web` gets UX-only permission wrappers (`usePermissions`, `<Can>`) driven by a server-resolved
-`effectivePermissions` field on `GET /me` — never a client-side authority; server-side
-`requirePermission` middleware remains the only real enforcement.
-Audit trail: a single unified `heediq-audit-log` table (org-scoped partition, write-once by
-construction, no delete/update path in application code) supersedes the auth-only
-`heediq-auth-audit-log` (D-087), covering both auth events and every RBAC-governed action.
-`before`/`after` snapshots are resource-type-specific, human-readable, and resolved at write time by
-the calling handler (never a raw DB row) via a typed `AuditPayloadMap`/`writeAuditEvent` helper in
-`@heediq/shared` — keeps entries self-contained (readable without a live join, even after the
-referenced record is renamed/deleted) and structurally prevents PII (e.g. transcript text) from
-reaching the log. Org Admins get a dedicated `/org/audit-log` viewer (`GET /org/audit-log`,
-cursor-paginated, filterable by date range/actor/action/resource type, gated by a new `audit:read`
-permission); free-text search is explicitly deferred.
-**Why:** Andrii wants a comprehensive, dynamically configurable RBAC + audit framework ahead of
-building a lot of functionality on top of the current fixed two-role model, and wants the audit
-trail rigorous enough to meet a GxP-grade quality bar (immutable, complete who/what/when/before-after
-records) even though no formal regulatory (21 CFR Part 11-style) obligation exists today — confirmed
-as a design-quality target, not a compliance requirement to formally validate (no e-signatures or
-validation docs built now). Resource-type (not per-record) permission granularity and JWT-bake-in
-(not per-request DB lookup) were chosen to avoid a much heavier data model and extra request latency
-that no current product need justifies; the `rbacVersion` forced-re-login mechanism was Andrii's
-explicit preference over a silent-refresh alternative, trading an unannounced logout (rare,
-admin-initiated event) for immediate effect and simplicity/auditability.
-**Supersedes:** D-017 (the Admin/Member roles and their permission scope carry forward unchanged as
-the seeded `admin`/`member` system roles — only the mechanism becomes dynamic)
-**Superseded by:** D-105 (invalidation mechanism only — `rbacVersion`/`RBAC_STALE`/per-request DB
-check dropped in favor of natural JWT expiry; Roles/Groups/Permissions catalog, effective-permission
-union model, resource-type granularity, and audit trail all unchanged)
-**Related code:** Phase 1 **done** — `heediq-shared/src/permissions.ts`, `src/audit.ts` merged &
-published (`@heediq/shared@0.9.0`); `heediq-infra` FoundationStack tables
-(`heediq-roles`/`heediq-groups`/`heediq-role-assignments`/`heediq-audit-log`, D-103-split
-`lib/foundation/tables.ts`, README: `heediq-infra/lib/foundation/README.md`) merged to `develop`
-via [PR #48](https://github.com/heediq/heediq-infra/pull/48). Phase 2 **done** — role/group CRUD +
-audit write path in `heediq-api` (`routes/roles.ts`/`groups.ts`/`role-assignments.ts`, `lib/audit.ts`),
-backed by `heediq-shared`'s 5 RBAC request schemas + `buildAuditLogEntry()` (`@heediq/shared@0.10.0`)
-and `heediq-infra` ApiStack grants on the 4 tables — merged to `develop` via
-[heediq-shared#26](https://github.com/heediq/heediq-shared/pull/26) (`4f073d4`),
-[heediq-infra#49](https://github.com/heediq/heediq-infra/pull/49) (`5be8e07`),
-[heediq-api#24](https://github.com/heediq/heediq-api/pull/24) (`87a3528`), all 2026-07-08.
-README: `heediq-api/README.md` §"D-102 RBAC & audit trail". Phase 4 **merged to `develop`** —
-frontend RBAC UI in `heediq-web`: `src/lib/rbac/` (`usePermissions`/`<Can>`, server-resolved
-`effectivePermissions` off `GET /me`, D-105), `src/features/rbac/` (`RoleForm`/`GroupForm`/
-`RolesPanel`/`GroupsPanel`/`UsersPanel`/`AssignmentsModal`), `src/routes/RolesSettingsPage.tsx`
-(`/settings/roles`, tabbed Roles/Groups/Users). Backed by new `heediq-api` `GET /api/v1/users`
-(`src/routes/users.ts`, org-scoped) and `GET /me`'s `effectivePermissions` field. Merged via
-[heediq-api#26](https://github.com/heediq/heediq-api/pull/26) (`65b939f`),
-[heediq-web#26](https://github.com/heediq/heediq-web/pull/26) (`803fb44`), both 2026-07-09.
-READMEs: `heediq-api/README.md` §"D-102 RBAC & audit trail", `heediq-web/README.md`
-(Key Files/Dependencies/Testing sections). Phase 5 **merged to `develop`** — audit-log viewer:
-`GET /api/v1/org/audit-log` (`heediq-api` `src/routes/audit-log.ts`, cursor-paginated, filterable by
-date range/actor/action/resource type, gated by `audit:read`) and the `/org/audit-log` page
-(`heediq-web` `src/routes/AuditLogPage.tsx`), backed by a narrowed `dynamodb:Query` IAM grant on
-`heediq-audit-log` (`heediq-infra` `lib/api/api-stack.ts`, `Scan`/`GetItem` still blocked). Merged via
-[heediq-infra#51](https://github.com/heediq/heediq-infra/pull/51),
-[heediq-api#27](https://github.com/heediq/heediq-api/pull/27),
-[heediq-web#27](https://github.com/heediq/heediq-web/pull/27), all 2026-07-10.
-All 5 phases now merged. Full architecture in `memory/business/architecture.md`
-§"RBAC & Audit Trail".
+**Decision:** Replaces D-017's fixed Admin/Member roles with dynamic, per-org RBAC (Users, Groups,
+Roles, a static `resource:verb` Permission catalog) enforced at resource-type granularity in
+`heediq-api` middleware, plus a unified, write-once `heediq-audit-log` table covering auth events
+and every RBAC-governed action. Two non-deletable system roles (`admin`, `member`) seed every org;
+unlimited custom roles/groups. Effective permissions = union of direct + group-mediated role
+assignments, no deny rules.
+**Why:** Andrii wants comprehensive, dynamically configurable RBAC ahead of building more
+functionality on the fixed two-role model, with an audit trail rigorous enough to meet a GxP-grade
+quality bar (design target, not a formal compliance obligation).
+**Supersedes:** D-017 (Admin/Member roles carry forward as the seeded system roles — only the
+mechanism becomes dynamic)
+**Superseded by:** D-105 (invalidation mechanism only — see D-105)
+**Related code:** `heediq-api/README.md` §"D-102/D-105 RBAC & audit trail",
+`heediq-web/src/lib/rbac/README.md`, `memory/business/architecture.md` §"RBAC & Audit Trail"
 
 ### D-103 · Script files stay scoped to one thing (2026-07-08) — Locked
 **Area:** Architecture
@@ -1651,19 +1541,6 @@ prompts (D-126); `other` provides a safe home when confidence is low without inv
 **Supersedes:** — (fills in D-127's profile bodies; adds `other` to D-127's initial enum) **Superseded by:** —
 **Related code:** `heediq-shared/src/` (Domain enum + `DOMAIN_PROFILES` constant)
 
-### D-132 · Context Library — Summary becomes generic domain-keyed extraction (2026-07-20) — Locked
-**Area:** Architecture
-**Decision:** The `Summary` schema's hardcoded work fields (`requirements`/`decisions`/
-`openQuestions`/`actionItems`) are replaced by a generic `extracted: Record<string, string[]>`
-keyed by the filed Domain's `extractionFields`, plus a `domain` field recording which profile
-shaped it. Keys are validated at write time against the Domain profile (D-131) so the shape can't
-drift. `transcript` and provenance fields are unchanged.
-**Why:** A fixed work-shaped Summary can't represent a study or personal (or `other`) extraction;
-domain-keyed storage lets one schema carry every Domain's output and lets chat (D-126) read it
-generically when assembling a Context's memory.
-**Supersedes:** — **Superseded by:** D-135 (extraction storage moves to item-level `ExtractedItem`; domain-keyed *categorization* survives as each item's `category`) — fully superseded, archive at next consistency check.
-**Related code:** `heediq-shared/src/domain.ts` (`SummarySchema`), `heediq-worker-summarization/src/writer.ts`
-
 ### D-133 · Context Library — `classification_ready` WS event + review-gate Source state (2026-07-20) — Locked
 **Area:** Architecture
 **Decision:** Ingest surfaces the human review gate (D-125) through a **new `classification_ready`
@@ -1809,67 +1686,37 @@ and the sequence through source-detail unchanged) **Superseded by:** —
 
 ### D-141 · Context Library — Context visibility model: personal / group / org, permission-gated (2026-07-21) — Locked
 **Area:** Product / Architecture
-**Decision:** A Context carries a **visibility axis** so the library can show a user everything
-available to them — their own plus what's shared — categorized by Domain:
-- **`visibility: 'personal' | 'group' | 'org'`** added to `Context` (`@heediq/shared`, a 0.15.0
-  addendum to the D-124–D-140 contracts) — `personal` = owner (`userId`) only; `group` = shared to
-  one D-102 group (adds `groupId?`, required iff `group`); `org` = visible to the whole `orgId`.
-  `userId` remains the creator/owner in every tier.
-- **Sharing is permission-gated (D-107):** publishing a Context to a group or the org gates on a new
-  RBAC permission key (`context:share`, append-only per D-106) via `requirePermission` + `<Can>`;
-  creating a personal Context is not gated beyond org membership. The exact context permission set
-  (create/read/update/delete/share) is defined with the API step.
-- **Access-pattern / key design (`heediq-contexts`):** base PK=`contextId`; one GSI **`by-scope`**
-  PK=`scopeKey` SK=`domainCreatedAt`, where the writer materializes `scopeKey` as `U#<userId>` /
-  `G#<groupId>` / `O#<orgId>` from the visibility tier, and `domainCreatedAt` as `<domain>#<createdAt>`.
-  A user's library is assembled by querying `by-scope` for `U#<self>`, `O#<orgId>`, and `G#<groupId>`
-  per group they belong to; a single Domain is filterable via `begins_with(domainCreatedAt, '<domain>#')`.
-  This replaces a naive by-`orgId` GSI, which would have leaked every member's personal Contexts to
-  the whole org — a **D-021 row-level isolation** violation.
+**Decision:** A Context carries a `visibility: 'personal' | 'group' | 'org'` axis so the library can
+show a user everything available to them — their own plus what's shared — grouped by Domain.
+`personal` = owner only; `group` reuses an existing D-102 RBAC group; `org` = whole org. Publishing
+to a group or org gates on a new `context:share` RBAC permission (D-106/D-107); creating a personal
+Context is not gated beyond org membership.
 **Why:** Andrii confirmed the library must surface org-shared and personal Contexts together, grouped
-by Domain. Three tiers reuse the existing RBAC groups (D-102) instead of inventing a new sharing
-primitive; the single scope-key GSI serves all three audiences with one index and keeps personal
-Contexts unreadable by other members by construction.
-**Supersedes:** — (extends D-129/D-134 Context model; builds on D-102 groups, D-106/D-107 permissions, D-021 isolation) **Superseded by:** —
-**Related code:** `heediq-shared/src/context.ts` + `enums.ts` + `permissions.ts` (0.15.0), `heediq-infra/lib/foundation/context-library-tables.ts`, `heediq-api/` (context routes + writer)
+by Domain. Reusing RBAC groups avoids inventing a new sharing primitive.
+**Supersedes:** — (extends D-129/D-134 Context model; builds on D-102 groups, D-106/D-107
+permissions, D-021 isolation) **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/README.md` §"Context Library tables" (key/GSI design),
+`heediq-shared/src/context.ts`, `heediq-api/` (context routes + writer)
 
 ### D-142 · Context Library — cross-org Context sharing via regulated grants (design now, build fast-follow) (2026-07-21) — Locked
 **Area:** Architecture / Policy
-**Decision:** A Context can be shared **across org boundaries** to a specific external user through an
-explicit, time-limited, revocable **grant** — a deliberate, strongly-regulated exception to the D-021
-/ eng-std §2 "a user only ever touches their own org's data" invariant, never an implicit widening.
-- **New table `heediq-context-grants`:** base PK=`granteeUserId` SK=`contextId` (the access-check
-  point lookup *and* the grantee's "shared-with-me" library query — at most one active grant per
-  grantee+context — the composite key **is** the grant's identity, no separate `grantId`); GSI
-  `by-context` PK=`contextId` SK=`granteeUserId` (owner manages/revokes a Context's grantees). Item
-  (`ContextGrantSchema`, `@heediq/shared` 0.15.0): `contextId, granteeUserId, granteeOrgId,
-  ownerOrgId, grantedByUserId, access, expiresAt, createdAt, updatedAt`. No `status`/`revokedAt` — a
-  revoke is a hard `DELETE` of the item (there is exactly one active grant per grantee+context by
-  key design, so there's no past-grant history to retain in this table; an audited `DELETE` action
-  is the record). TTL on `expiresAt` (epoch) + PITR + PAY_PER_REQUEST.
-  *(Corrected 2026-07-21 — the original entry specified `grantId`/`ownerUserId`/`status`/`createdBy`/
-  `revokedAt`; the shipped schema (PR heediq-shared#40) is simpler and is the source of truth.)*
-- **Two access tiers:** `read` (view + chat over the Context's memory) and `contribute` (also add
-  Sources — files/meetings/transcriptions — into the Context; implies `read`).
-- **Enforcement invariants:** every cross-org read/write authorizes against an **active, unexpired**
-  grant **at request time**, never cached into the JWT (revoke is immediate); **expiry is enforced in
-  code** (read-time `expiresAt` check), DynamoDB TTL is cleanup-only because TTL deletion lags (the
-  `heediq-rate-limits` precedent, D-097); grant create/revoke writes an audit event (D-107); the owner
-  can revoke anytime. This is a mandatory cross-org-isolation test path.
-- **Owner-org homing:** all data under a shared Context stays homed in the **owner org** — a
-  contributed Source lands in the owner org's partition attached to the Context, contributed *into*
-  the org under the grant, never copied across orgs — so a Context's memory stays unified and the
-  grant is the single controlled crossing point.
-- **Scope:** the table/model are designed in **now** (rewrite-free); grant issuance/revoke UI, the
-  per-request authorization middleware, secure invite flow, and email-invite-before-signup build as a
-  **fast-follow** (grants target existing Heediq accounts first — no magic-link/token flow yet). Not
-  overengineered now.
+**Decision:** A Context can be shared **across org boundaries** to a specific external user through
+an explicit, time-limited, revocable **grant** (`heediq-context-grants` table) — a deliberate,
+strongly-regulated exception to the D-021 org-isolation invariant, never an implicit widening. Two
+access tiers: `read` and `contribute` (implies `read`). Every cross-org read/write authorizes against
+an active, unexpired grant at request time (never cached into the JWT); expiry is enforced in code,
+not by DynamoDB TTL alone. Contributed data always homes in the Context's owner org, never copied
+across orgs. Table/model ship now; grant issuance/revoke UI, authorization middleware, and invite
+flow are a fast-follow (grants target existing Heediq accounts first, no magic-link flow yet).
 **Why:** B2C sharing between individuals (D-143) and B2B cross-company collaboration both need one
-person to use and optionally enrich another's accumulated Context; a per-user, expiring, permission-
-scoped, audited grant is the minimal safe primitive that opens the org wall exactly as far as the
-owner allows and no further.
-**Supersedes:** — (regulated exception to D-021; builds on D-107 audit/permissions, D-141 Context model) **Superseded by:** —
-**Related code:** `heediq-infra/lib/foundation/context-library-tables.ts` (`heediq-context-grants`), `heediq-shared/src/` (grant schema + access enum), `heediq-api/` (grant routes + cross-org authorization middleware)
+person to use and optionally enrich another's accumulated Context; a per-user, expiring,
+permission-scoped, audited grant is the minimal safe primitive that opens the org wall exactly as far
+as the owner allows and no further.
+**Supersedes:** — (regulated exception to D-021; builds on D-107 audit/permissions, D-141 Context
+model) **Superseded by:** —
+**Related code:** `heediq-infra/lib/foundation/README.md` §"Context Library tables" (key/GSI design,
+TTL-vs-code-enforcement gotcha), `heediq-shared/src/` (grant schema + access enum), `heediq-api/`
+(grant routes + cross-org authorization middleware)
 
 ### D-143 · Heediq serves B2B and B2C; org is the universal tenant boundary (2026-07-21) — Locked
 **Area:** Product
