@@ -73,9 +73,9 @@ it work."
 - **Shared surfaces**: `passwordSet` flag on `heediq-users`, `identities` ID-token claim, `/settings/link-callback` callback URL, `heediq-user-auth-methods`/`heediq-auth-audit-log` tables, `VerifyAndSetPasswordForm.tsx`, `accountIdentity.ts` resolution helpers, `rateLimit.ts`
 
 ### Context Library (D-124–D-144)
-- **Upstream**: heediq-shared Context Library contracts, heediq-infra Context Library tables (`heediq-contexts`, `heediq-extracted-items`, `heediq-decision-ledger`, `heediq-conversations`, `heediq-chat-messages`, `heediq-context-grants`)
-- **Downstream**: heediq-worker-summarization, heediq-api, heediq-web (not started), heediq-worker-transcription `models.py` (deferred mirror update)
-- **Shared surfaces**: `Summary` schema, `Source` classification fields, `DOMAIN_PROFILES`, `wsPush.ts`/`useWsEvent`, `create-tables.ts` mirror, `heediq-context-grants` table, `canAccessContext()` gate
+- **Upstream**: heediq-shared Context Library contracts, heediq-infra Context Library tables (`heediq-contexts`, `heediq-extracted-items`, `heediq-decision-ledger`, `heediq-conversations`, `heediq-chat-messages`, `heediq-context-grants`), heediq-infra `ChatStack` (SQS `heediq-chat`+DLQ, D-138/D-139)
+- **Downstream**: heediq-worker-summarization, heediq-api, heediq-chat (new repo, D-138/D-139 — consumes `ChatJobMessage`, own WS-push), heediq-web (not started), heediq-worker-transcription `models.py` (deferred mirror update)
+- **Shared surfaces**: `Summary` schema, `Source` classification fields, `DOMAIN_PROFILES`, `wsPush.ts`/`useWsEvent`, `create-tables.ts` mirror, `heediq-context-grants` table, `canAccessContext()` gate, `ChatJobMessage`/`chat_delta`/`chat_complete`/`chat_failed` (D-145)
 
 ### Observability (D-085, D-093)
 - **Upstream**: reads other stacks'/repos' resource names only (no construct-level dependency)
