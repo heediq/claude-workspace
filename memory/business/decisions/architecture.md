@@ -1,0 +1,64 @@
+# Decisions — Architecture & Data Stores
+
+Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-decisions.md`.
+
+---
+
+- **D-001** · Full AWS serverless stack · Architecture · Locked · → `memory/business/architecture.md`
+- **D-007** · DynamoDB-only at launch · Architecture · Locked · → `memory/business/architecture.md`
+- **D-021** · Multi-tenancy — shared DB, row-level isolation · Architecture · Locked · → `memory/business/architecture.md`
+- **D-020** · Auth — AWS Cognito + federated IdPs · Architecture · Locked · → `memory/business/product.md`
+- **D-028** · UI component stack · Architecture / Design · Locked · → `rules/03-ui-kit.md`
+- **D-029** · Frontend build stack · Architecture · Locked · → `heediq-web/`
+- **D-030** · Test stack · Architecture · Locked · → `rules/05-testing.md`
+- **D-031** · DynamoDB multi-table design · Architecture · Locked · → —
+- **D-032** · Summarization/extraction model · Architecture / Product · Locked · → `heediq-worker-summarization/`
+- **D-033** · REST as API style · Architecture · Locked · → `heediq-api/`
+- **D-034** · API service runtime — Hono on Lambda · Architecture / Infra · Locked · → `heediq-api/`
+- **D-035** · Polyrepo structure — 7 repos · Architecture / Process · Superseded by D-046 · → github.com/heediq/
+- **D-039** · Dev tooling — pnpm + Node 22 LTS · Architecture · Locked · → all Node repos
+- **D-040** · `@heediq/shared` delivery via GitHub Packages · Architecture · Locked · → `heediq-shared/`
+- **D-041** · JWT auth enforcement — Hono middleware · Architecture · Locked · → `heediq-api/`
+- **D-042** · API versioning — `/api/v1/` URL prefix · Architecture · Locked · → `heediq-api/`
+- **D-054** · Transactional email via Amazon SES · Architecture / Infra · Superseded by D-058 · → `heediq-infra/`
+- **D-058** · SES identity in shared-services account; cross-account role for workload sending · Architecture / Infra · Superseded by D-095 · → `heediq-infra/lib/shared-services/shared-services-stack.ts`
+- **D-061** · Real-time job status via API Gateway WebSocket · Architecture / Product · Locked · → `heediq-infra/lib/websocket/websocket-stack.ts`
+- **D-065** · SummarizationStack trigger — SQS queue, source-agnostic · Architecture / Infra · Locked · → `heediq-infra/lib/summarization/summarization-stack.ts`
+- **D-066** · Transcription Spot-interruption retry — explicit SQS re-enqueue, not visibility timeout · Architecture / Infra · Locked · → `heediq-worker-transcription/src/worker.py`
+- **D-068** · Generic entity naming — Source / Container / multi-label · Architecture · Superseded by D-129, D-128 · → `heediq-shared/src/`
+- **D-075** · Full i18n coverage in heediq-web — all user-facing text, including errors · Architecture / Product · Locked · → `heediq-web/README.md`
+- **D-076** · i18n library — react-i18next · Architecture · Locked · → `heediq-web/src/i18n/`
+- **D-077** · Org creation on first login via a single Cognito PreTokenGeneration trigger · Architecture · Locked · → `heediq-infra/lib/foundation/foundation-stack.ts`
+- **D-078** · Email is the one true identity — cross-provider account linking model · Architecture / Product · Superseded by D-087 · → `heediq-api/src/handlers/auth-*.ts`
+- **D-082** · Auth flows are client-direct-to-Cognito; backend owns only lookup-email + link/confirm · Architecture · Superseded by D-089 · → `heediq-api/src/routes/auth.ts`
+- **D-083** · Proactive provider-linking uses a dedicated OAuth callback route · Architecture · Locked · → `heediq-infra/lib/foundation/foundation-stack.ts`
+- **D-085** · Logging & observability: native AWS (CloudWatch + X-Ray), no separate tool · Architecture / Infra / Cost · Locked · → `heediq-shared/src/logger.ts`
+- **D-093** · Logger usage is mandatory; default log level `info`, `debug` opt-in via env var, no unbounded log retention · Architecture / Cost · Locked · → `heediq-shared/src/logger.ts`
+- **D-094** · Password-policy visibility — checked-not-wired sync, dedicated weak-password error · Architecture / Design · Locked · → `heediq-shared/src/passwordPolicy.ts`
+- **D-088** · API version prefix owned by exactly one place per side; route tests must exercise the real mounted app · Architecture · Locked · → `heediq-web/src/lib/api-client.ts`
+- **D-089** · Own-verification email-confirmation model replaces IdP-trust; unified verify+password component · Architecture / Product · Locked · → `heediq-api/src/routes/auth.ts`
+- **D-090** · Org/user auto-provisioning no longer gated on IdP-asserted email_verified · Architecture / Policy · Locked · → `heediq-api/src/handlers/auth-provision.ts`
+- **D-091** · heediq-user-auth-methods is the source of truth for active login methods · Architecture · Locked · → `heediq-api/src/routes/auth-methods.ts`
+- **D-095** · Per-workload-account SES identity, narrowly, so Cognito can send its own OTP emails · Architecture / Infra · Locked · → `heediq-infra/lib/foundation/foundation-stack.ts`
+- **D-096** · request-otp self-heals a stuck confirmed-but-unlinked native Cognito user · Architecture · Locked · → `heediq-api/src/routes/auth.ts`
+- **D-097** · Layered abuse protection for the OTP endpoints · Architecture / Policy · Superseded by D-098 · → `heediq-infra/lib/api/api-stack.ts`
+- **D-098** · Defer WAF activation until a marketing campaign is planned · Architecture / Cost · Locked · → `heediq-infra/lib/api/api-stack.ts`
+- **D-099** · Decouple internal accountId from Cognito `sub` via a `heediq-cognito-identities` mapping table · Architecture · Locked · → `heediq-api/src/lib/accountIdentity.ts`
+- **D-102** · Dynamic per-org RBAC + unified GxP-quality audit trail · Architecture · Superseded by D-105 · → `heediq-api/README.md`
+- **D-103** · Script files stay scoped to one thing · Architecture · Locked · → `heediq-infra/lib/foundation/README.md`
+- **D-104** · No migration for `heediq-auth-audit-log` — drop the table · Architecture · Locked · → —
+- **D-105** · RBAC permission invalidation rides the JWT, no per-request DB check · Architecture · Locked · → `heediq-api/README.md`
+- **D-106** · Permission key strings are immutable once released — additive-only, never rename in place · Architecture · Locked · → `heediq-shared/src/permissions.ts`
+- **D-107** · Every mutating endpoint/UI action requires permission gating + audit trail — standing rule · Architecture · Locked · → `heediq-api/src/lib/audit.ts`
+- **D-109** · Generalized real-time WebSocket framework · Architecture · Locked · → `heediq-infra/lib/foundation/tables.ts`
+- **D-110** · heediq-web centralized WebSocket client — Context + typed hook, no new cross-repo push access · Architecture · Locked · → `heediq-web/src/lib/ws/`
+- **D-114** · `requirePermission` writes a denial audit entry on every 403 · Architecture · Locked · → `heediq-shared/src/audit.ts`
+- **D-119** · PWA build tooling — vite-plugin-pwa · Architecture · Locked · → `heediq-web/vite.config.ts`
+- **D-123** · Extract-on-second-duplication — standing DRY/SOLID architecture rule · Architecture · Locked · → `heediq-web/src/lib/auth/README.md`
+- **D-129** · Context Library — rename Container entity to Context · Architecture · Locked · → `heediq-shared/src/`
+- **D-130** · Context Library — combined classify+extract in the summarization worker · Architecture / Cost · Locked · → `heediq-worker-summarization/`
+- **D-133** · Context Library — `classification_ready` WS event + review-gate Source state · Architecture · Locked · → `heediq-shared/src/ws.ts`
+- **D-135** · Context Library — item-level `ExtractedItem` model (supersedes D-132) · Architecture · Locked · → `heediq-shared/src/`
+- **D-138** · Context Library — Context chat persistence model · Architecture · Locked · → `heediq-shared/src/`
+- **D-139** · Context Library — dedicated `heediq-chat` worker, streamed over WS with prompt caching · Architecture / Cost · Locked · → `heediq-infra/lib/chat/`
+- **D-142** · Context Library — cross-org Context sharing via regulated grants (design now, build fast-follow) · Architecture / Policy · Locked · → `heediq-infra/lib/foundation/README.md`
