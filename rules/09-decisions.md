@@ -104,8 +104,16 @@ its full rationale, just out of the main reading path.
 **Related code:** path/to/module/README.md (once implemented, or —)
 ```
 
-Keep entries lean: the decision + its rationale, not an essay. Detail about *how it's built* belongs in
-the code README the entry points to.
+Keep entries lean: the decision + its rationale (3–5 sentences), not an essay. Detail about *how it's
+built* belongs in the code README the entry points to — never in `DECISIONS.md` itself.
+
+**`Related code` is a pointer, never a build log.** It names the README(s) (and, only if no README
+exists yet, the file/path) that carry the implementation. It never contains PR links, commit hashes,
+phase-by-phase merge narrative ("Phase 1 done... Phase 2 merged via..."), or key/schema-level detail
+(DynamoDB keys, GSI design, message shapes) — that content lives in the module's README
+(`rules/06-documentation.md`) and, once it does, gets removed from here, not duplicated. Git history
+already tells you what merged when; `DECISIONS.md` only needs to tell you *what* was decided and
+*why*.
 
 ## End-of-task pass (ties into Step 6)
 Confirm every decision locked during the task is in `DECISIONS.md`, any superseded entries are marked,

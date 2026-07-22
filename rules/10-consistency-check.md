@@ -70,10 +70,19 @@ and trusted enough to act on. Check every run, not just when things "feel" clutt
   fully restates it (nothing substantive left active) should be archived to
   `memory/business/DECISIONS_ARCHIVE.md` per `rules/09-decisions.md` (Archiving fully-superseded
   decisions). Partially-superseded entries (annotation says "mechanism only" / "X unchanged" and that
-  part isn't restated elsewhere) stay.
-- **`memory/codebase/MEMORY.md`** — flag any entry that has drifted from its own contract ("one-line
-  summary + pointer," `rules/08-memory.md`): PR numbers, exact test counts, or narrated bug-fix
-  history that duplicates a code README or a `DECISIONS.md` entry. Condense to a pointer.
+  part isn't restated elsewhere) stay. Independent of supersession: check every remaining entry's
+  `Related code` field against `rules/09-decisions.md`'s pointer-only rule — PR links, commit hashes,
+  phase-by-phase merge narrative, or key/schema-level detail that now lives (or belongs) in a code
+  README gets removed and replaced with a README pointer.
+- **`memory/codebase/MEMORY.md`** — flag any entry that has drifted from its own contract (feature ->
+  one-line summary -> README path -> decision IDs -> dependency-map entry name, nothing else,
+  `rules/08-memory.md`): PR numbers, exact test counts, version numbers, or narrated build-status
+  history that duplicates a code README, a `DECISIONS.md` entry, or a `plans/wip-*.md` file. Condense
+  to a pointer.
+- **`memory/codebase/feature_dependency_map.md`** — flag any entry that has drifted from pure
+  name-only (`rules/08-memory.md`): DynamoDB key/GSI designs, SQS message schema fields, SSM param
+  paths, or prose explaining *why*/*how* a dependency works. Only feature/resource/table/file *names*
+  belong here; strip anything more into the owning module's README.
 - **Per-repo README "Gotchas & Constraints" sections** — for each gotcha, check: is it non-obvious
   (a hidden constraint, subtle invariant, or workaround for a specific bug), or does it (a) merely
   restate something already in the same README's Data Flow/Contracts section, (b) describe a bug now
