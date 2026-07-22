@@ -24,9 +24,12 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   and `heediq-infra` ApiStack IAM grants for the 6 tables
   ([heediq-infra#61](https://github.com/heediq/heediq-infra/pull/61)) both merged to `develop`.
   Step 4c-i (cross-org grant issuance/revoke routes + `canAccessContext` grant fallback) is built and
-  tested on branch `feature/context-library-grants` (both `heediq-shared` and `heediq-api`), **not yet
-  PR'd** — pending `@heediq/shared` 0.15.2 publish (held for explicit go-ahead, a real GitHub Packages
-  publish). Next: publish 0.15.2, PR the grants branches, then Step 4c-ii (chat) or Step 5 (web).
+  tested on branch `feature/context-library-grants` (both `heediq-shared` and `heediq-api`).
+  `@heediq/shared` **0.15.2 published** ([heediq-shared#44](https://github.com/heediq/heediq-shared/pull/44)
+  merged to `develop`, release [heediq-shared#45](https://github.com/heediq/heediq-shared/pull/45)
+  merged to `main`). `heediq-api`'s grants PR is open:
+  [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) → `develop`, CI green, awaiting
+  review/merge. Next: merge heediq-api#43, then Step 4c-ii (chat) or Step 5 (web).
   Deferred: transcription `models.py` Summary mirror → gist (D-135); WS-CD gap (pusher bundles not in
   api deploy.yml); group-scoped Contexts in the classifier.
   See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
@@ -96,7 +99,7 @@ duplicate their content. See `rules/08-memory.md` for the contract.
 - **heediq-shared** — `@heediq/shared`: Zod schemas + TypeScript types for all cross-repo contracts.
   README: `../../heediq-shared/README.md` · Decisions: D-033, D-040, D-047, D-048, D-085, D-093, D-094, D-102, D-127, D-129, D-130, D-131, D-133, D-135, D-136, D-139, D-141 (visibility field, published 0.15.0), D-142 (grant schema, published 0.15.0)
   - Schemas: enums, domain (Org/User/Source/Job/Summary), API requests, SQS messages (D-059/D-065), WS push (D-061), auth methods (D-091), account linking (D-078).
-  - **Context Library contracts (v0.14.0–0.15.2, D-124–D-142):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134 +`visibility`/`groupId` D-141, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`, `ContextGrant` D-142); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`; 0.15.1 adds `CreateContextRequestSchema`/`UpdateContextRequestSchema`/`ReviewApprovalRequestSchema` + `AuditPayloadMap` `context`/`extractedItemReview` entries; **0.15.2** (built, not yet published — see WIP) fixes `ContextGrantSchema.expiresAt` to epoch number, adds `CreateContextGrantRequestSchema` + `AuditPayloadMap` `contextGrant` entry.
+  - **Context Library contracts (v0.14.0–0.15.2, D-124–D-142):** `domains.ts` (`DOMAIN_PROFILES` behaviour catalog + `DOMAIN_FIT_CONFIDENCE_THRESHOLD`, slug-only fields/prompts for i18n), `context.ts` (`Context` self-nesting D-134 +`visibility`/`groupId` D-141, `ProposedClassification`, `ExtractedItem` D-135, `DecisionLedgerEntry` D-136 + `LEDGER_REVIEW_CONFIDENCE_THRESHOLD`, `ContextGrant` D-142); Source gains `contextId`/`classification`/`proposedClassification`; `Summary` shrunk to `transcript`+`gist` (breaking, D-135 supersedes D-132's flat arrays); `ws.ts` +`classification_ready`/`chat_delta`/`chat_complete`; 0.15.1 adds `CreateContextRequestSchema`/`UpdateContextRequestSchema`/`ReviewApprovalRequestSchema` + `AuditPayloadMap` `context`/`extractedItemReview` entries; **0.15.2** (published) fixes `ContextGrantSchema.expiresAt` to epoch number, adds `CreateContextGrantRequestSchema` + `AuditPayloadMap` `contextGrant` entry.
   - `src/passwordPolicy.ts` (0.7.0, D-094) — `PASSWORD_POLICY`/`PASSWORD_POLICY_RULES`/`isPasswordPolicyCompliant`, the single source of truth for Cognito's password rules (D-020), consumed by `heediq-api` and `heediq-web` only — `heediq-infra`'s CDK literal stays separate by design (checked via consistency check, not imported).
   - `src/logger.ts` (0.6.0, D-085/D-093) — `createLogger(service)` structured JSON logger, correlated by `sourceId`/`requestId`, recursive PII-redaction denylist, `LOG_LEVEL`-gated `debug`/`info`/`warn`/`error` threshold (default `info`).
   - Published to GitHub Packages; publish only fires on push to `main`, not `develop` — a `develop`→`main` PR is the release mechanism. New consuming repos need a manual read-access grant in GitHub Packages settings (see README).
@@ -107,9 +110,10 @@ duplicate their content. See `rules/08-memory.md` for the contract.
     **):** `src/routes/contexts.ts` (CRUD + tree over `heediq-contexts`, `by-scope` GSI visibility
     gate `canAccessContext` — personal/group/org) + `POST /sources/:id/review` on `sources.ts` (files
     kept `ExtractedItem`s into a Context). See `heediq-api/README.md` Contracts section.
-  - **Cross-org grants (D-142, built on `feature/context-library-grants`, not yet PR'd):**
-    `src/routes/context-grants.ts` (issue/revoke/list grants) + `canAccessContext`'s `minAccess`
-    live-grant fallback. See WIP `../../plans/wip-context-library-shared-contracts.md` §4c-i.
+  - **Cross-org grants (D-142, [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) open
+    → `develop`, CI green, awaiting review):** `src/routes/context-grants.ts` (issue/revoke/list
+    grants) + `canAccessContext`'s `minAccess` live-grant fallback. See WIP
+    `../../plans/wip-context-library-shared-contracts.md` §4c-i.
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves `accountId` via `heediq-cognito-identities` first (deterministic, D-099), falling back to email self-heal; first login generates a new decoupled `accountId` — no `email_verified` gate (D-090). `src/lib/accountIdentity.ts` is the shared resolution helper used by every auth handler/route.
   - `routes/auth-methods.ts` (`GET /auth/methods`, D-091); `routes/auth.ts`'s `request-otp`/`verify-otp`/`confirm` serve native signup, reactive linking, and Settings-linking alike (D-089), via Cognito `SignUp`/`ConfirmSignUp` reuse (D-087) — `verify-otp` confirms the code on its own before `confirm` ever sets a password, so the code is checked before the caller can proceed. A Cognito `InvalidPasswordException` on `AdminSetUserPassword` returns `WEAK_PASSWORD` (D-094) instead of the generic `BAD_REQUEST`.
   - `src/middleware/request-id.ts` (D-085) — per-request UUID correlation fallback for routes without a `sourceId` yet; logs via `@heediq/shared`'s `createLogger`.
