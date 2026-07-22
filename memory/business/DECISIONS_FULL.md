@@ -1720,3 +1720,35 @@ fails a turn (Claude API error, timeout) after retries are exhausted.
 react to on a worker error and would spin indefinitely, violating D-111 (no silent wait).
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-shared/src/ws.ts`, `heediq-chat` worker repo
+
+### D-146 · Appending a permission requires backfilling existing orgs' system roles (2026-07-22) — Locked
+**Area:** Architecture
+**Decision:** Adding a `Permission` to `heediq-shared`'s `PERMISSIONS` catalog requires a one-off
+migration that adds the new key to every existing org's system roles (`admin`/`member`) in
+`heediq-roles`, per `DEFAULT_ORG_RBAC_SEED` intent — admin receives all permissions; member receives
+the new key only if it is in the member seed. Custom (non-system) roles are never auto-touched, and
+system roles stay fully editable. Complements D-106, which mandated the same migration discipline for
+retiring/renaming a permission but was silent on the append case.
+**Why:** System-role permission sets are frozen into `heediq-roles` at org provisioning and never
+re-synced, so any org created before a catalog addition silently lacks the new permission — hit on
+2026-07-22 when the dev admin org (provisioned 2026-07-16) had none of the Context Library `context:*`
+keys and every Context route 403'd. Resolving system-role perms dynamically from the seed at issuance
+was rejected because it would break the "system roles are fully editable after creation" property.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/README.md` (RBAC & audit trail)
+
+### D-147 · Every feature ships a scripted E2E happy-path smoke against the deployed dev stack (2026-07-22) — Locked
+**Area:** Process
+**Decision:** Each user-facing feature ships with a scripted, repeatable end-to-end happy-path smoke
+that runs against the real deployed `dev` stack (real auth token, real API, real WS/queue) covering
+the feature's trivial success scenario end to end. These live in the owning repo's `tests/e2e/`
+(Playwright per D-030 for browser journeys; a lightweight Node script is acceptable for headless
+API+WS/queue flows such as Context chat). They run deliberately — after deploying a feature to `dev`
+and before calling it done — not as part of the local pre-PR gate (consistent with D-030's layer
+table). Extends D-030's E2E layer from "critical journeys only" to "a happy-path smoke per feature."
+**Why:** Merged unit + integration tests passed for Context chat, yet the first real dev run surfaced
+a deploy/config gap (stale RBAC seed, D-146) that no in-repo mocked test could catch. A cheap,
+scripted, real-stack smoke per feature catches wiring/permission/deploy gaps and turns "confirm it
+works on dev" into a repeatable artifact instead of a manual one-off.
+**Supersedes:** — **Superseded by:** —
+**Related code:** — (harness home: owning repo `tests/e2e/`; first instance is the Context-chat smoke)

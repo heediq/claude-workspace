@@ -15,11 +15,11 @@ Fully-superseded decisions (no substantive content still active) live in
 
 | Area file | Covers | Decisions |
 |---|---|---|
-| `decisions/architecture.md` | Architecture & Data Stores | 59 |
+| `decisions/architecture.md` | Architecture & Data Stores | 60 |
 | `decisions/infra.md` | Infrastructure, Deploy & Ops | 28 |
 | `decisions/product.md` | Product, Access & Billing | 20 |
 | `decisions/design-brand.md` | Brand & Design | 12 |
-| `decisions/process.md` | Process (this workspace) | 9 |
+| `decisions/process.md` | Process (this workspace) | 10 |
 | `decisions/pricing-cost-policy.md` | Pricing, Cost & Policy | 7 |
 
 ---

@@ -13,3 +13,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-048** · Renovate for @heediq/shared dependency updates · Process · Locked · → `heediq-shared/`
 - **D-049** · Hotfix flow · Process · Locked · → `rules/02-git-and-commits.md`
 - **D-050** · Infra-first deployment convention · Process / Infra · Locked · → `heediq-infra/`
+- **D-147** · Scripted E2E happy-path smoke per feature against dev stack · Process · Locked · → owning repo `tests/e2e/`

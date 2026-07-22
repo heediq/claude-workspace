@@ -105,3 +105,9 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
 - **Bundle-size budget enforcement** — `07-engineering-standards.md` §6 states the principle, no
   CI gate.
 - **Offline recording + queued upload + Wake Lock** — part of D-024's PWA scope, deferred by D-119.
+- **RBAC catalog-append backfill migration (D-146)** — no tooling yet; when a permission is appended
+  to `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled. Currently a
+  manual per-org PATCH (done for the dev admin org 2026-07-22). Needs a scripted migration.
+- **E2E dev-smoke harness (D-147)** — no shared harness/CI wiring yet; first instance is the
+  Context-chat Node smoke (create Context → conversation → post → chat_delta/chat_complete over WS).
+  Generalize into each repo's `tests/e2e/` and decide a token-provisioning helper.

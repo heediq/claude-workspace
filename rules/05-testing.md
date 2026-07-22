@@ -9,7 +9,7 @@ Vitest against DynamoDB Local / LocalStack (backend integration), Playwright (E2
 |-------|----------|---------|------|
 | **Unit** | colocated `__tests__/` + `*.test.ts(x)` | Vitest, no external services | every change; the pre-PR gate |
 | **Integration** | `tests/integration/<area>/` | Vitest + **real DynamoDB Local / LocalStack** (SQS, S3), msw for external HTTP | API/DB/permission/queue changes; related suites in the pre-PR gate |
-| **E2E** | `tests/e2e/` | Playwright (real browser) | critical journeys: record → transcribe → view → push to Jira/Confluence; not in the local gate |
+| **E2E** | `tests/e2e/` | Playwright (real browser); a lightweight Node script for headless API+WS/queue flows | critical journeys **and a happy-path smoke per feature against the deployed `dev` stack (D-147)**; run deliberately after deploy, not in the local gate |
 | **Performance** | `tests/performance/`, `tests/stress/` (k6) | k6 / Vitest, separate env | load-sensitive surfaces (transcription throughput, library/search); run deliberately |
 
 ## What every change must do
