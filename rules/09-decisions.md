@@ -7,8 +7,11 @@ automatically**, kept as **business memory**, and applied as **constraints** in 
 ## Two memory tracks (keep them separate, both live in `memory/`)
 - **Business memory** (`memory/business/`) — *what we decided and why*. Product, design, architecture,
   infra, cost, pricing, branding, scope, positioning. `memory/business/DECISIONS.md` is the
-  always-loaded one-line-per-decision index; `memory/business/DECISIONS_FULL.md` holds the full entry
-  (Decision/Why/Supersedes/Related code) for each, read on demand.
+  always-loaded **manifest**: a table pointing to `memory/business/decisions/<area>.md`, one
+  one-line-per-decision index file per area (architecture, infra, product, design-brand, process,
+  pricing-cost-policy — see the manifest table for the current list and which decisions each covers).
+  `memory/business/DECISIONS_FULL.md` holds the full entry (Decision/Why/Supersedes/Related code) for
+  every decision regardless of area, read on demand.
 - **Codebase memory** (`memory/codebase/` + code READMEs) — *how the system works now*. Index, the
   feature dependency map, and per-module READMEs.
 
@@ -44,14 +47,29 @@ clearly locked.
      *"This conflicts with D-NNN (title) — supersede it, or keep both?"*
    - Is the scope or wording unclear? Ask one short question before writing.
 4. **Write the full entry to `memory/business/DECISIONS_FULL.md`** in the entry format below, and add
-   its one-line bullet to the index in `memory/business/DECISIONS.md`.
-5. **Confirm in one line**, e.g. *"Locked → recorded as D-014 in DECISIONS.md / DECISIONS_FULL.md."*
+   its one-line bullet to the matching `memory/business/decisions/<area>.md` file (pick the file whose
+   "Covers" column in the `DECISIONS.md` manifest table matches the decision's `Area:`; if genuinely
+   none fit, propose a new area file to Andrii rather than forcing a bad fit). Bump that file's decision
+   count in the manifest table.
+5. **Confirm in one line**, e.g. *"Locked → recorded as D-014 in decisions/architecture.md +
+   DECISIONS_FULL.md."*
 6. **Claude never self-locks.** Claude proposes and records; only Andrii locks. If Claude recommends
    something, it stays a proposal until Andrii confirms.
 
 ## Apply decisions as constraints (every chat)
-- Read `DECISIONS.md` at task start (Step 0c). Treat locked decisions as binding context.
+- Read the `DECISIONS.md` manifest plus the `memory/business/decisions/<area>.md` file(s) matching the
+  task at task start (Step 0c). Treat locked decisions as binding context.
 - **Never silently contradict a locked decision.** This applies to both discussion and code.
+
+## Looking up a specific decision's full text — grep, don't Read the whole file
+`DECISIONS_FULL.md` and `DECISIONS_ARCHIVE.md` are on-demand precisely because they're long — a full
+`Read` of either just to check one `D-NNN`'s Decision/Why text defeats the point. Once an area file or
+a reference elsewhere has told you which ID you need, fetch just that entry:
+```
+grep -n -A6 "^### D-NNN" memory/business/DECISIONS_FULL.md
+```
+Only fall back to a full `Read` of `DECISIONS_FULL.md` when you genuinely need to scan many entries at
+once (e.g. the periodic archiving pass in `rules/10-consistency-check.md`).
 
 ## Conflict detection — blocking, real-time
 
@@ -79,10 +97,10 @@ Decisions evolve. When a new decision changes an old one:
 Never delete a decision or silently edit its meaning; supersede it.
 
 ## Archiving fully-superseded decisions
-`DECISIONS_FULL.md` (and its one-line bullet in the `DECISIONS.md` index) stay lean by moving
-decisions to `memory/business/DECISIONS_ARCHIVE.md` once they carry no substantive active content —
-this is not deletion, the entry is preserved verbatim with its full rationale, just out of the main
-reading path.
+`DECISIONS_FULL.md` (and its one-line bullet in the matching `memory/business/decisions/<area>.md`
+file) stay lean by moving decisions to `memory/business/DECISIONS_ARCHIVE.md` once they carry no
+substantive active content — this is not deletion, the entry is preserved verbatim with its full
+rationale, just out of the main reading path.
 
 - **Archive** a decision when its superseding entry's text already restates whatever part of it is
   still true (i.e. the old entry adds nothing beyond history).
@@ -90,16 +108,17 @@ reading path.
   "compute only", "X unchanged") and that unchanged part isn't fully restated in the superseding
   entry — it's still load-bearing, not just historical.
 - When archiving, move the full entry as-is (same fields, same wording) from `DECISIONS_FULL.md`
-  into `DECISIONS_ARCHIVE.md`, and remove its bullet from the `DECISIONS.md` index; leave its
-  `Superseded by:` reference intact so a reader following an ID from the index into the archive can
-  still see why.
+  into `DECISIONS_ARCHIVE.md`, and remove its bullet from the `memory/business/decisions/<area>.md`
+  file it lived in (decrement that file's count in the `DECISIONS.md` manifest table); leave its
+  `Superseded by:` reference intact so a reader following an ID from the area file into the archive
+  can still see why.
 - This decision applies going forward as part of the periodic consistency check
   (`rules/10-consistency-check.md`) — don't wait for memory to feel cluttered before archiving.
 
 ## Status lifecycle
 `Proposed` (optional, while under discussion) → `Locked` → `Superseded` / `Reversed`.
 
-## Entry format (full text in `DECISIONS_FULL.md`, index bullet in `DECISIONS.md`)
+## Entry format (full text in `DECISIONS_FULL.md`, index bullet in `decisions/<area>.md`)
 Full entry, in `DECISIONS_FULL.md`:
 ```
 ### D-014 · <short title> (YYYY-MM-DD) — Locked
@@ -110,7 +129,9 @@ Full entry, in `DECISIONS_FULL.md`:
 **Related code:** path/to/module/README.md (once implemented, or —)
 ```
 
-Matching index bullet, in `DECISIONS.md`, grouped under the same `## ` area section:
+Matching index bullet, in `memory/business/decisions/<area>.md` (the file whose "Covers" column in
+the `DECISIONS.md` manifest matches this decision's `Area:` — first-listed area wins for combo areas
+like `Architecture / Product`):
 ```
 - **D-014** · <short title> · <Area> · <Locked | Superseded by D-NNN> · → path/to/module/README.md (or —)
 ```
@@ -125,11 +146,12 @@ exists yet, the file/path) that carry the implementation. It never contains PR l
 phase-by-phase merge narrative ("Phase 1 done... Phase 2 merged via..."), or key/schema-level detail
 (DynamoDB keys, GSI design, message shapes) — that content lives in the module's README
 (`rules/06-documentation.md`) and, once it does, gets removed from here, not duplicated. Git history
-already tells you what merged when; `DECISIONS.md` only needs to tell you *what* was decided and
+already tells you what merged when; the decisions files only need to tell you *what* was decided and
 *why*.
 
 ## End-of-task pass (ties into Step 6)
 Confirm every decision locked during the task has a full entry in `DECISIONS_FULL.md` and a matching
-bullet in the `DECISIONS.md` index, any superseded entries are marked in both, and
+bullet in the correct `memory/business/decisions/<area>.md` file (with that file's count updated in
+the `DECISIONS.md` manifest table), any superseded entries are marked in all of those, and
 `memory/codebase/MEMORY.md` carries a pointer only for new *in-progress* items (never full decision
 text).

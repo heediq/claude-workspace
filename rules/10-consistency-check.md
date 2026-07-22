@@ -1,6 +1,6 @@
 # Periodic Consistency Check
 
-Run this check at the start of a new feature, after a multi-repo release, or when memory/docs feel stale. It catches drift between READMEs, memory, and actual code before it causes real bugs. Andrii triggers it by asking for a "consistency check" or "coherency check", or by running `/consistency-check` (project slash command, `.claude/commands/consistency-check.md`, launches Claude from the workspace root and runs this rule end to end).
+Run this check at the start of a new feature, after a multi-repo release, or when memory/docs feel stale. It catches drift between READMEs, memory, and actual code before it causes real bugs. Andrii triggers it by asking for a "consistency check" or "coherency check", or by running `/consistency-check` (project slash command, `.claude/commands/consistency-check.md`, launches Claude from the workspace root and runs this rule end to end). For just the line-budget piece of §5 — fast, no agents spawned — run `/memory-budget-check` instead (`.claude/commands/memory-budget-check.md`, wraps `scripts/check-memory-budget.sh`).
 
 This extends the per-session coherence check in `08-memory.md` (which covers only business memory files) to cover the full cross-repo surface: code, READMEs, memory indexes, and disaster recovery docs.
 
@@ -21,7 +21,8 @@ Claude must ask at the end of every session that involved cross-repo changes: *"
 ## Scope — what to check
 
 ### 1. Business memory coherence (from `08-memory.md`)
-Run the four-point coherence check from `rules/08-memory.md` first. It must be clean before proceeding to the broader check.
+Run the five-point coherence check from `rules/08-memory.md` first (includes the manifest-vs-area-
+file drift check). It must be clean before proceeding to the broader check.
 
 ### 2. Per-repo README vs code
 
@@ -57,7 +58,7 @@ Check contracts that span repos — a mismatch here causes silent runtime failur
 
 ### 4. Memory index accuracy
 
-- `memory/codebase/MEMORY.md`: every decision ID listed for a module actually exists in `DECISIONS.md` as Locked (not Superseded)
+- `memory/codebase/MEMORY.md`: every decision ID listed for a module actually exists in the relevant `memory/business/decisions/<area>.md` file as Locked (not Superseded)
 - `memory/codebase/MEMORY.md`: every README path pointed to actually exists on disk
 - `memory/codebase/feature_dependency_map.md`: upstream/downstream entries reflect current code (no removed deps, no new deps missing)
 
@@ -66,17 +67,20 @@ Check contracts that span repos — a mismatch here causes silent runtime failur
 Memory and READMEs are a working reference, not a history log — they must stay short enough to scan
 and trusted enough to act on. Check every run, not just when things "feel" cluttered:
 
-- **`DECISIONS.md` / `DECISIONS_FULL.md`** — any entry whose `Superseded by:` annotation shows the
-  superseding entry now fully restates it (nothing substantive left active) should be archived to
-  `memory/business/DECISIONS_ARCHIVE.md` per `rules/09-decisions.md` (Archiving fully-superseded
-  decisions) — move the full entry out of `DECISIONS_FULL.md` and drop its bullet from the
-  `DECISIONS.md` index. Partially-superseded entries (annotation says "mechanism only" / "X unchanged"
-  and that part isn't restated elsewhere) stay in both files. Independent of supersession: check every
-  remaining `DECISIONS_FULL.md` entry's `Related code` field against `rules/09-decisions.md`'s
-  pointer-only rule — PR links, commit hashes, phase-by-phase merge narrative, or key/schema-level
-  detail that now lives (or belongs) in a code README gets removed and replaced with a README pointer.
-  Also check the `DECISIONS.md` index itself against its line budget (`rules/08-memory.md` — Always-
-  loaded line budget) — over budget is itself a finding here, not just an optimization trigger.
+- **`DECISIONS.md` (manifest) / `memory/business/decisions/<area>.md` / `DECISIONS_FULL.md`** — any
+  entry whose `Superseded by:` annotation shows the superseding entry now fully restates it (nothing
+  substantive left active) should be archived to `memory/business/DECISIONS_ARCHIVE.md` per
+  `rules/09-decisions.md` (Archiving fully-superseded decisions) — move the full entry out of
+  `DECISIONS_FULL.md`, drop its bullet from the area file it lived in, and decrement that area's count
+  in the `DECISIONS.md` manifest table. Partially-superseded entries (annotation says "mechanism only"
+  / "X unchanged" and that part isn't restated elsewhere) stay in both files. Independent of
+  supersession: check every remaining `DECISIONS_FULL.md` entry's `Related code` field against
+  `rules/09-decisions.md`'s pointer-only rule — PR links, commit hashes, phase-by-phase merge
+  narrative, or key/schema-level detail that now lives (or belongs) in a code README gets removed and
+  replaced with a README pointer. Also check the `DECISIONS.md` manifest and every
+  `decisions/<area>.md` file against their line budgets (`rules/08-memory.md` — Always-loaded line
+  budget) — a manifest over 60 lines, or any area file over 150, is itself a finding here, not just an
+  optimization trigger; over-budget area files should be split further per that section.
 - **`memory/codebase/MEMORY.md`** — flag any entry that has drifted from its own contract (feature ->
   one-line summary -> README path -> decision IDs -> dependency-map entry name, nothing else,
   `rules/08-memory.md`): PR numbers, exact test counts, version numbers, or narrated build-status

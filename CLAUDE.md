@@ -29,7 +29,8 @@ claude-workspace/
   rules/                        ← read on demand, per the routing table below
   memory/
     business/                   ← BUSINESS memory: what we decided & why
-      DECISIONS.md              ← always-loaded index: one line per locked decision
+      DECISIONS.md              ← always-loaded thin manifest: table pointing to decisions/<area>.md
+      decisions/<area>.md       ← one-line-per-decision index, per area (task-scoped, not always-loaded)
       DECISIONS_FULL.md         ← full entry per decision (Decision/Why/Related code), read on demand
       DECISIONS_ARCHIVE.md      ← fully-superseded decisions, verbatim (read only on demand)
       architecture.md           ← high-level architecture overview, no per-feature implementation detail
@@ -105,9 +106,13 @@ purpose above before opening it in full.
 
 ## Decisions
 
-All locked decisions are indexed in **`memory/business/DECISIONS.md`** — one line per decision, the
-always-loaded constraint surface. Full text (decision + why + supersession pointers + one README
-link, no implementation narrative) lives in `DECISIONS_FULL.md`, read on demand once a specific
-`D-NNN` matters. Fully-superseded entries move to `DECISIONS_ARCHIVE.md`, which is not read by
-default. Read `DECISIONS.md` before planning or writing code that could touch a locked constraint.
-Never act against a locked decision without explicitly superseding it.
+Locked decisions are indexed in three tiers so a task only loads what it needs. **`memory/business/
+DECISIONS.md`** is the always-loaded thin manifest — a table pointing to `memory/business/
+decisions/<area>.md`, one lean one-line-per-decision index per area (architecture, infra, product,
+design-brand, process, pricing-cost-policy). Open the manifest, then just the area file(s) matching
+the task. Full text (decision + why + supersession pointers + one README link, no implementation
+narrative) lives in `DECISIONS_FULL.md`, opened (via `grep` for the specific `D-NNN`, not a full
+read) only once a decision's rationale is actually in play. Fully-superseded entries move to
+`DECISIONS_ARCHIVE.md`, which is not read by default. Read the manifest before planning or writing
+code that could touch a locked constraint. Never act against a locked decision without explicitly
+superseding it.

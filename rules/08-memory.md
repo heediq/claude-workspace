@@ -1,7 +1,7 @@
 # Memory Contract
 
 Memory is the **lean task-priming layer**: what Claude reads first to know which decisions and code
-READMEs apply. It does **not** duplicate full decision text (that's `memory/business/DECISIONS.md`)
+READMEs apply. It does **not** duplicate full decision text (that's `memory/business/DECISIONS_FULL.md`)
 or full design docs (those are code READMEs). Keep it small and pointer-heavy.
 
 ## Where memory lives
@@ -10,8 +10,9 @@ the team. This overrides any default per-user memory path. After writing memory,
 teammates get it; pull regularly.
 
 ## Two tracks (don't duplicate across them)
-1. **Business memory** — `memory/business/` — *what we decided and why*. Canonical file
-   `DECISIONS.md`. Captured automatically when decisions are locked; see `rules/09-decisions.md`.
+1. **Business memory** — `memory/business/` — *what we decided and why*. `DECISIONS.md` is a thin
+   manifest pointing to `decisions/<area>.md` (one lean index per area); `DECISIONS_FULL.md` has the
+   full text. Captured automatically when decisions are locked; see `rules/09-decisions.md`.
 2. **Codebase memory** — `memory/codebase/` + the code READMEs next to the code — *how the system
    works now*. The index (`MEMORY.md`), the dependency map, and per-module READMEs
    (`rules/06-documentation.md`).
@@ -19,9 +20,13 @@ teammates get it; pull regularly.
 A fact is recorded once in its home and referenced elsewhere, never copied.
 
 ## Read at task start (Step 0c)
-- `memory/business/DECISIONS.md` — the lean index; locked decisions are constraints.
-  `memory/business/DECISIONS_FULL.md` is **not** part of this read set — open it only once a
-  specific `D-NNN` from the index is actually in play and you need its full Decision/Why text.
+- `memory/business/DECISIONS.md` — the manifest (always, it's tiny). Then open whichever
+  `memory/business/decisions/<area>.md` file(s) the manifest table says cover the task's area(s) —
+  locked decisions there are constraints. If the task is genuinely cross-cutting or you can't tell
+  which area applies, open all of them; they're small enough that this is still cheap.
+  `memory/business/DECISIONS_FULL.md` is **not** part of this read set — open it (via `grep`, per
+  `rules/09-decisions.md`) only once a specific `D-NNN` is actually in play and you need its full
+  Decision/Why text.
 - `memory/codebase/MEMORY.md` (index) and `memory/codebase/feature_dependency_map.md`.
 - Then the **code README(s)** next to the files you'll touch, and any codebase memory file flagged
   relevant.
@@ -29,9 +34,10 @@ A fact is recorded once in its home and referenced elsewhere, never copied.
 ## Write throughout (continuous updates)
 Write as you learn — what a file does, a non-obvious dependency/side-effect, a contract, a DB shape, a
 permission rule, a gotcha. Put durable per-module knowledge in the **code README**; use
-`memory/codebase/` for the index pointer, cross-module facts, and the dependency map; put decisions in
-`memory/business/DECISIONS.md`. Stale memory is worse than none — correct or delete wrong notes
-immediately.
+`memory/codebase/` for the index pointer, cross-module facts, and the dependency map; put decisions
+through the capture process in `rules/09-decisions.md` (full entry in `DECISIONS_FULL.md`, bullet in
+the matching `memory/business/decisions/<area>.md`). Stale memory is worse than none — correct or
+delete wrong notes immediately.
 
 ## Verify before every write (prevent noise and contradiction)
 Before writing or updating any memory file, do the following — every time, no exceptions:
@@ -83,22 +89,26 @@ Do not proceed with any task until this check is clean.
 **Files to scan every time:**
 | File | What to verify |
 |---|---|
-| `DECISIONS.md` (index) | The reference — read what is Locked and what is Superseded. Full Decision/Why text for a given `D-NNN` lives in `DECISIONS_FULL.md` (read on demand, not scanned every session). Fully-superseded entries belong in `DECISIONS_ARCHIVE.md`, not either (see `rules/09-decisions.md`). |
+| `DECISIONS.md` (manifest) | Each area file's decision count matches its actual bullet count — drift here means a write skipped updating the manifest. |
+| `memory/business/decisions/<area>.md` | The reference for that area — read what is Locked and what is Superseded. Full Decision/Why text for a given `D-NNN` lives in `DECISIONS_FULL.md` (read on demand via `grep`, not scanned every session). Fully-superseded entries belong in `DECISIONS_ARCHIVE.md`, not either (see `rules/09-decisions.md`). |
 | `memory/business/architecture.md`, `product.md` | Must not describe superseded decisions as current. |
 | All `rules/*.md` | Must not label locked decisions as "proposed" or "confirm or change". |
-| `CLAUDE.md` | Must not duplicate content from DECISIONS.md or detail files — pointer only. |
+| `CLAUDE.md` | Must not duplicate content from the decisions files or detail files — pointer only. |
 
-**What to check (in order — all four, every time):**
-1. **Superseded decisions in detail files.** Does any detail file describe something DECISIONS.md
+**What to check (in order — all five, every time):**
+1. **Superseded decisions in detail files.** Does any detail file describe something an area file
    now marks `Superseded by D-NNN`? Update the detail file to reflect the current decision and
    add a pointer to the superseding entry.
 2. **"Proposed" language for locked items.** Scan rules files for the words "proposed", "confirm
-   or change", "still open", "not yet locked". If the item has a Locked entry in DECISIONS.md,
+   or change", "still open", "not yet locked". If the item has a Locked entry in its area file,
    replace the qualifier with the decision ID reference (e.g. `Locked stack (D-030)`).
 3. **Duplicated decision content.** If a rules file or CLAUDE.md restates the full content of a
    locked decision rather than referencing its ID, that is duplication — reduce to a pointer.
 4. **Broken or superseded ID references.** If any file references D-NNN, confirm the entry exists
-   in DECISIONS.md and is not marked Superseded. If superseded, update the reference to the new ID.
+   in its area file and is not marked Superseded. If superseded, update the reference to the new ID.
+5. **Manifest drift.** Confirm the `DECISIONS.md` manifest's per-area decision counts still match
+   each `decisions/<area>.md` file's actual bullet count, and that every area file listed there
+   still exists (and vice versa).
 
 **On finding any mismatch:** fix it immediately, commit, then continue. One mismatch or ten — fix
 all before proceeding. Never carry staleness forward.
@@ -112,23 +122,49 @@ before continuing work.
 
 ## Always-loaded line budget
 
-These files are read at the start of every session (root `CLAUDE.md`, Step 0c) — their combined
-size is a fixed cost paid before any task-specific work happens. Keep each under its soft cap:
+These files are read at the start of every session regardless of task (root `CLAUDE.md`, Step 0c) —
+their combined size is a fixed cost paid before any task-specific work happens. Keep each under its
+soft cap:
 
 | File | Budget |
 |---|---|
 | `CLAUDE.md` (root + workspace) | 150 lines each |
-| `memory/business/DECISIONS.md` (index) | 200 lines |
+| `memory/business/DECISIONS.md` (manifest) | 60 lines |
 | `memory/codebase/MEMORY.md` (index) | 150 lines |
 | `memory/codebase/feature_dependency_map.md` | 150 lines |
 
+The manifest's cap is tight on purpose — it's a table of area files plus the small "Open / proposed"
+list, never decision bullets themselves. If it's approaching 60 lines, that's a sign a new area file
+is needed (below), not that the manifest should grow.
+
+**Per-area file budget (task-scoped, not always-loaded):** each `memory/business/decisions/<area>.md`
+is only read when a task's area matches it (Step 0c above), but still shouldn't re-balloon into a
+monolith. Soft cap: **150 lines per area file.** If one crosses it, split that area further (e.g.
+`architecture.md` into `architecture-data.md` / `architecture-auth.md`) and add the new file(s) to the
+manifest table — same principle that motivated the original area split.
+
 On-demand files (`DECISIONS_FULL.md`, `DECISIONS_ARCHIVE.md`, `STALE_ARCHIVE.md`, code READMEs,
-`rules/*.md`) are **not** part of this budget — they're read only when a task needs them, so their
-size doesn't gate every session.
+`rules/*.md`) are **not** part of either budget above — they're read (and usually `grep`-ed, not fully
+`Read`, per `rules/09-decisions.md`) only when a task needs them, so their size doesn't gate every
+session.
 
 Crossing a cap is itself an optimization trigger — don't wait for Andrii to notice or ask. Check
 this as part of the size & staleness control pass (`rules/10-consistency-check.md` §5) and flag it
-the same way as the mismatch-count trigger below.
+the same way as the mismatch-count trigger below. This check, and the pre-commit hook enforcing it
+(`scripts/check-memory-budget.sh`), are the two lines of defense — the hook catches the always-loaded
+files mechanically on every commit; the consistency-check pass is what catches per-area file growth.
+
+## Looking up archived content — grep, don't Read the whole file
+`memory/codebase/STALE_ARCHIVE.md` is deliberately not part of the session-start read set — it's
+where trimmed content goes so nothing is lost without burning context every session (`rules/10-
+consistency-check.md` §5). When Andrii explicitly asks for something removed/historical, don't
+`Read` the whole file to find it — it's headed by dated section markers, so grep for the source file
+or topic first:
+```
+grep -n -B1 -A10 "<source file or topic>" memory/codebase/STALE_ARCHIVE.md
+```
+Only fall back to a full `Read` when you genuinely need to scan the whole archive at once (e.g.
+deciding whether anything in it is worth restoring during a consolidation pass).
 
 ## Memory optimization (when memory grows noisy)
 When memory accumulates enough that it starts to feel repetitive, scattered, or hard to navigate,
@@ -144,8 +180,8 @@ do a consolidation pass. This is triggered by Andrii's request, not done silentl
    For decisions, never hard-delete — supersede, and once an entry is *fully* superseded (no
    substantive content still active), move it verbatim to `memory/business/DECISIONS_ARCHIVE.md`
    (see `rules/09-decisions.md` — Archiving fully-superseded decisions). Partially-superseded
-   decisions stay in `DECISIONS.md`. For codebase memory, deletion is fine when the fact is no
-   longer true.
+   decisions stay in their `memory/business/decisions/<area>.md` file. For codebase memory,
+   deletion is fine when the fact is no longer true.
 5. **Verify completeness after**: confirm nothing load-bearing was lost. The optimized memory must
    still cover every constraint, contract, and gotcha that a future session would need.
 
@@ -177,6 +213,8 @@ without a prompt to do so.
 
 ## End-of-task pass (Step 6)
 Confirm: every README/memory file touched reflects reality; new README paths are pointed to from
-`MEMORY.md`; `feature_dependency_map.md` is current; every decision locked this task is in
-`DECISIONS.md` (with superseded entries marked) per `rules/09-decisions.md`. All memory changes
-are committed to `claude-workspace`; push if the session is ending.
+`MEMORY.md`; `feature_dependency_map.md` is current; every decision locked this task has a full
+entry in `DECISIONS_FULL.md` and a matching bullet in the correct `memory/business/decisions/
+<area>.md` file, with that file's count current in the `DECISIONS.md` manifest (superseded entries
+marked in both) per `rules/09-decisions.md`. All memory changes are committed to `claude-workspace`;
+push if the session is ending.
