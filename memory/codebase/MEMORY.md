@@ -23,13 +23,13 @@ duplicate their content. See `rules/08-memory.md` for the contract.
   CRUD + `POST /sources/:id/review`, [heediq-api#42](https://github.com/heediq/heediq-api/pull/42))
   and `heediq-infra` ApiStack IAM grants for the 6 tables
   ([heediq-infra#61](https://github.com/heediq/heediq-infra/pull/61)) both merged to `develop`.
-  Step 4c-i (cross-org grant issuance/revoke routes + `canAccessContext` grant fallback) is built and
-  tested on branch `feature/context-library-grants` (both `heediq-shared` and `heediq-api`).
-  `@heediq/shared` **0.15.2 published** ([heediq-shared#44](https://github.com/heediq/heediq-shared/pull/44)
-  merged to `develop`, release [heediq-shared#45](https://github.com/heediq/heediq-shared/pull/45)
-  merged to `main`). `heediq-api`'s grants PR is open:
-  [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) → `develop`, CI green, awaiting
-  review/merge. Next: merge heediq-api#43, then Step 4c-ii (chat) or Step 5 (web).
+  Step 4c-i (cross-org grant issuance/revoke routes + `canAccessContext` grant fallback) is
+  **done and merged** (both `heediq-shared` and `heediq-api`). `@heediq/shared` **0.15.2 published**
+  ([heediq-shared#44](https://github.com/heediq/heediq-shared/pull/44) merged to `develop`, release
+  [heediq-shared#45](https://github.com/heediq/heediq-shared/pull/45) merged to `main`).
+  [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) merged to `develop` 2026-07-21.
+  **All of Step 4 (4a/4b/4c-i) is now fully merged.** Next: pick Step 4c-ii (chat, api+infra) or
+  Step 5 (web) — neither planned in detail yet, ask before starting.
   Deferred: transcription `models.py` Summary mirror → gist (D-135); WS-CD gap (pusher bundles not in
   api deploy.yml); group-scoped Contexts in the classifier.
   See WIP `../../plans/wip-context-library-shared-contracts.md` for full forward-deps.
@@ -110,8 +110,8 @@ duplicate their content. See `rules/08-memory.md` for the contract.
     **):** `src/routes/contexts.ts` (CRUD + tree over `heediq-contexts`, `by-scope` GSI visibility
     gate `canAccessContext` — personal/group/org) + `POST /sources/:id/review` on `sources.ts` (files
     kept `ExtractedItem`s into a Context). See `heediq-api/README.md` Contracts section.
-  - **Cross-org grants (D-142, [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) open
-    → `develop`, CI green, awaiting review):** `src/routes/context-grants.ts` (issue/revoke/list
+  - **Cross-org grants (D-142, [heediq-api#43](https://github.com/heediq/heediq-api/pull/43) merged
+    → `develop`, 2026-07-21):** `src/routes/context-grants.ts` (issue/revoke/list
     grants) + `canAccessContext`'s `minAccess` live-grant fallback. See WIP
     `../../plans/wip-context-library-shared-contracts.md` §4c-i.
   - `auth-provision.ts` (PreTokenGeneration trigger body) resolves `accountId` via `heediq-cognito-identities` first (deterministic, D-099), falling back to email self-heal; first login generates a new decoupled `accountId` — no `email_verified` gate (D-090). `src/lib/accountIdentity.ts` is the shared resolution helper used by every auth handler/route.
