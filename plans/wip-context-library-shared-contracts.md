@@ -133,7 +133,7 @@ Kick off like this:
    - **Chat backend follow-ups** logged in `memory/codebase/MEMORY.md` engineering backlog: server-side turn cancel (web Stop is client-side only), no-duplicate regenerate (web Retry re-posts), conversation rename/auto-title.
 3. **Step 6 proper — D-136 Decision Ledger + review-wizard step 3.** Split: the **backend half** (ledger *generation* pass — `DecisionLedgerEntry` schema already in `@heediq/shared`; needs generation logic likely in a worker/heediq-chat + API read/fill routes + chat-time gating, D-136) is independent and can go first off develop; the **web half** (wizard step 3, ledger fill-in UI) builds on the now-merged slices C/D. Write a Step-2 plan + get approval before code (new contracts/decisions likely).
 
-## Step 6 — Fast-follow (D-136 Decision Ledger + D-137 wizard step 3) — 🟡 IN PROGRESS (backend half)
+## Step 6 — Fast-follow (D-136 Decision Ledger + D-137 wizard step 3) — 🟡 IN PROGRESS (backend half; 6a PR'd, 6b PR'd, 6c/6d open)
 
 **Session 2026-07-23 (Step 6 kickoff).** Step 0 clean (all repos synced to develop; coherence check
 green — manifest counts match, D-132 already archived). `setup.sh` re-run **skipped** by Andrii (not
@@ -151,12 +151,13 @@ event; reuses `context:update` perm → no D-146 backfill). Both in `DECISIONS_F
   `LedgerJobMessageSchema`; `requests.ts` `Create`/`UpdateLedgerEntryRequestSchema` + `bypassLedgerGating`
   on `CreateMessageRequestSchema`; `context.ts` `LEDGER_GATED_ERROR_CODE` + `LedgerGatedDetailsSchema`;
   `audit.ts` `ledgerEntry` payload (topic/answer excluded, D-093). 279 tests green (+22), typecheck clean.
-  README versioning backfilled (0.15.3 chat entry was missing) + 0.15.4 entry. **Needs PR→merge→publish
-  before 6b/6c/6d can consume `^0.15.4`.**
-- **6b · `heediq-infra` `LedgerStack` + ApiStack wiring — ⬜ NEXT.** New `lib/ledger/ledger-stack.ts`
-  (SQS `heediq-ledger`+DLQ+Lambda, D-065; read contexts/extracted-items, read-write decision-ledger;
-  `WebSocketStack.grantPush` for `ledger_ready` + `WS_CONNECTIONS_TABLE_NAME` per the infra#63 lesson);
-  ApiStack gets `LEDGER_QUEUE_URL` + `sqs:SendMessage`. No new table (heediq-decision-ledger exists since Step 2).
+  README versioning backfilled (0.15.3 chat entry was missing) + 0.15.4 entry. **PR [heediq-shared#48](https://github.com/heediq/heediq-shared/pull/48)** — open, awaiting review/merge→publish
+  before 6c/6d can consume `^0.15.4` (6b needs no shared import at synth time, so it shipped independently).
+- **6b · `heediq-infra` `LedgerStack` + ApiStack wiring — ✅ DONE → PR [heediq-infra#65](https://github.com/heediq/heediq-infra/pull/65)** (branch `feature/context-library-ledger`).
+  `lib/ledger/ledger-stack.ts` (SQS `heediq-ledger`+DLQ maxReceiveCount=3+Lambda 512/300, D-065/D-139;
+  read contexts/extracted-items, read-write decision-ledger; `grantPush` for `ledger_ready` + `WS_CONNECTIONS_TABLE_NAME`);
+  `bin/infra.ts` composes after ChatStack; ApiStack `LEDGER_QUEUE_URL` + scoped `sqs:SendMessage`; `COMPUTE.lambda.ledger`.
+  No new table. Tests 232 green (+19 ledger-stack, +2 api producer), synth clean. README Stack Map + Chat/Ledger sections (Chat doc gap backfilled). **Out-of-band before deploy:** provision `/heediq/ledger/anthropic-api-key` per workload account.
 - **6c · new `heediq-ledger` worker repo — ⬜ (create only on explicit go-ahead).** Mirrors heediq-chat
   layout; reconciliation Claude pass (prompt caching, D-139 tier map); writes entries w/ computed status;
   own `ledger_ready` wsPush. **Out-of-band (Andrii):** provision `/heediq/ledger/anthropic-api-key`; add
