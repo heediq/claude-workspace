@@ -112,14 +112,23 @@ chat panel to the ChatGPT/Claude.ai feel specifically (token-by-token streaming,
 thinking indicator, scroll-aware auto-scroll, Stop/Retry, incremental markdown, per-turn copy) — this
 is a flagship surface the user explicitly wants held to that bar, not treated as a generic async form.
 
-## Next session — Step 5 (Web)
-4c-ii (Chat) is fully merged across all 4 repos (`heediq-shared#46`, `heediq-infra#62`+`#63`, `heediq-chat#1`,
-`heediq-api#44`) — see Step 4 above for exact state and PR links. Nothing left to build for the Chat backend.
-Recommended before starting Step 5: a quick end-to-end smoke check (post a message, confirm `heediq-chat`
-processes the SQS job and pushes `chat_delta`/`chat_complete` over WS on a deployed `dev` stack) — not done
-yet this session. **Step 5 (Web)** is the only remaining unplanned path — Context tree/library + review
-wizard don't need chat and could ship first, with the chat panel wired in once its own screens are built.
-When building the chat panel, read `rules/04-loading-and-feedback.md` §6 first.
+## Next session — Step 5 (Web) — READY TO START
+Chat backend fully merged (all 4 repos) **and dev-smoke GREEN 2026-07-23** (see "Step 4c-ii smoke check"
+above). Nothing left on the backend. **Kick off Step 5 like this:**
+1. **First, resolve the two open cleanup items** (non-blocking, both worked around live):
+   - PR the roles PATCH fix — branch `fix/roles-patch-permissions-reserved-word` on **heediq-api**
+     (committed, typecheck clean) — run the roles integration suite (DynamoDB Local) then `gh pr create`.
+   - **heediq-infra#64** (OIDC immutable-subject trust) — review/merge, then re-run `scripts/setup.sh`
+     on staging/prod accounts.
+2. **Bump `@heediq/shared` 0.14.0 → 0.15.3** in heediq-web (all `/contexts`, `/context-grants`,
+   `/conversations` routes + ContextGrant/chat contracts available).
+3. Read `rules/03-ui-kit.md` + `rules/04-loading-and-feedback.md` (§6 for the chat panel bar) +
+   `heediq-web/README.md` + sub-module READMEs; then **write a Step-2 plan and get approval before UI code.**
+4. Build: Context tree/library, source detail (curated `ExtractedItem`s), review wizard (D-137 steps 1–2),
+   Context chat panel streaming via `useWsEvent('chat_delta'/'chat_complete'/'chat_failed')`. Kit + motion
+   only; copy through `t()` (map `DOMAIN_PROFILES` slugs → labels). Tree/library + wizard don't need chat
+   and can ship first; wire the chat panel in once its screens exist.
+5. Per **D-147**, generalize the passing smoke (`scratchpad/chat-e2e.mjs`) into a committed `tests/e2e/`.
 
 ## Step 6 — Fast-follow — ⬜
 Decision Ledger generation + fill-in UI + chat-time gating (D-136) + wizard step 3 (D-137).
