@@ -74,7 +74,7 @@ it work."
 
 ### Context Library (D-124–D-144)
 - **Upstream**: heediq-shared Context Library contracts, heediq-infra Context Library tables (`heediq-contexts`, `heediq-extracted-items`, `heediq-decision-ledger`, `heediq-conversations`, `heediq-chat-messages`, `heediq-context-grants`), heediq-infra `ChatStack` (SQS `heediq-chat`+DLQ, D-138/D-139)
-- **Downstream**: heediq-worker-summarization, heediq-api, heediq-chat (new repo, D-138/D-139 — consumes `ChatJobMessage`, own WS-push), heediq-web (not started), heediq-worker-transcription `models.py` (deferred mirror update)
+- **Downstream**: heediq-worker-summarization, heediq-api, heediq-chat (new repo, D-138/D-139 — consumes `ChatJobMessage`, own WS-push), heediq-web (slice A shipped: `/contexts` tree/library + `src/features/contexts/`; B source-detail / C review-wizard / D chat panel in progress), heediq-worker-transcription `models.py` (deferred mirror update)
 - **Shared surfaces**: `Summary` schema, `Source` classification fields, `DOMAIN_PROFILES`, `wsPush.ts`/`useWsEvent`, `create-tables.ts` mirror, `heediq-context-grants` table, `canAccessContext()` gate, `ChatJobMessage`/`chat_delta`/`chat_complete`/`chat_failed` (D-145)
 
 ### Observability (D-085, D-093)

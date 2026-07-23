@@ -70,11 +70,12 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
 - **heediq-web** — Vite + React + TS PWA frontend; UI kit, auth flows, WS client, motion system,
   Context Library review UI (in progress).
   README: `../../heediq-web/README.md` (sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
+  `src/features/contexts/` (Context Library slice A — tree/library + detail + create),
   `src/components/layout/`, `src/components/ui/PasswordRequirements/`, `src/components/ui/Logo/`,
   `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/IdentityProviderButton/`,
   `src/components/ui/FullPageLoading/`) · Decisions: D-008, D-020, D-024, D-028–D-030, D-043,
-  D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097, D-110, D-116–D-123 ·
-  Dependency map: `heediq-web (PWA frontend)`
+  D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097, D-110, D-116–D-123, D-124–D-144 ·
+  Dependency map: `heediq-web (PWA frontend)`, `Context Library (D-124–D-144)`
 
 <!--
 - **<feature/area>** — <one-line summary>.
