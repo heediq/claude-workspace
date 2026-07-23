@@ -128,8 +128,8 @@ is a flagship surface the user explicitly wants held to that bar, not treated as
     - **D-147 smoke committed** in **heediq-chat** (branch `test/context-chat-e2e-smoke`): `tests/e2e/chat-smoke.mjs` + `pnpm run e2e:chat` + `tests/e2e/README.md`. Generalized from the 2026-07-23 scratchpad smoke; standalone Node ≥22, env-driven, config-guarded (syntax + guard verified; a real run needs a live dev ID token). **Separate PR from the web branch (different repo).**
     - **Chat backend follow-ups logged** in MEMORY engineering backlog: server-side turn cancel (Stop is client-side only), no-duplicate regenerate (Retry re-posts), conversation rename/auto-title.
 
-## Step 5 — ALL SLICES DONE (feature/context-library-web) — READY FOR ONE PR
-Backend items endpoint (heediq-api#48) merged. Web branch `feature/context-library-web` (local, unpushed): shared bump + slices A–D. Full suite **260 green**, typecheck + prod build clean. **Next: push the branch + open ONE PR** (user's plan — all slices together). Separately, heediq-chat `test/context-chat-e2e-smoke` needs its own PR. Then Step 6 (D-136 ledger + wizard step 3) remains.
+## Step 5 — ALL SLICES DONE & PR'd
+Backend items endpoint (heediq-api#48) merged. **Web: PR [heediq-web#41](https://github.com/heediq/heediq-web/pull/41) OPEN** (`feature/context-library-web` → develop, shared bump + slices A–D, 60 files/260 tests green). **D-147 smoke: PR [heediq-chat#3](https://github.com/heediq/heediq-chat/pull/3) OPEN** (`test/context-chat-e2e-smoke`). Both awaiting review — not merged.
 
 ## Next session — Step 5 (Web) — READY TO START
 Chat backend fully merged (all 4 repos) **and dev-smoke GREEN 2026-07-23** (see "Step 4c-ii smoke check"
