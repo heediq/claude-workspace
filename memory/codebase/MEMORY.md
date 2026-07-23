@@ -109,5 +109,12 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   to `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled. Currently a
   manual per-org PATCH (done for the dev admin org 2026-07-22). Needs a scripted migration.
 - **E2E dev-smoke harness (D-147)** — no shared harness/CI wiring yet; first instance is the
-  Context-chat Node smoke (create Context → conversation → post → chat_delta/chat_complete over WS).
-  Generalize into each repo's `tests/e2e/` and decide a token-provisioning helper.
+  Context-chat Node smoke (create Context → conversation → post → chat_delta/chat_complete over WS),
+  **verified green on dev 2026-07-23** (script in scratchpad, not yet committed). Generalize into each
+  repo's `tests/e2e/` and decide a token-provisioning helper.
+- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA,
+  SDK auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no
+  static key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets, their rotation,
+  and the "new service forgot its secret" onboarding gap (all hit 2026-07-23). Needs AWS-Lambda→
+  Anthropic federation feasibility verified first; touches heediq-chat + heediq-worker-summarization
+  provider/config + infra + Console setup. Would supersede the per-service-secret choice for Claude keys.

@@ -63,6 +63,47 @@ Full Step 3 across 3 repos (user chose the "emit classification_ready now" optio
   - **`heediq-api` — ✅ DONE & MERGED** ([heediq-api#44](https://github.com/heediq/heediq-api/pull/44) merged to `develop`, branch `feature/context-chat-conversations-routes`, bumped to `@heediq/shared ^0.15.3`). `config.ts` picks up `CONVERSATIONS_TABLE_NAME`/`CHAT_MESSAGES_TABLE_NAME`/`CHAT_QUEUE_URL`; new `src/routes/conversations.ts` — `POST`/`GET /conversations?contextId=`, `GET`/`POST /conversations/:id/messages`, gated by `requirePermission('context:read')` + `canAccessContext()` (`'contribute'`-tier for starting a conversation/posting a message, `'read'`-tier for listing/viewing — a read-only cross-org grant can view a shared thread but never start or post into one); posting a message resolves the org's tier (`resolveTier()`, same pattern as `sources.ts`'s job enqueue) and enqueues a `ChatJobMessage` onto the chat SQS queue; `auditWriter` on both mutations, ids/role only, no message content (D-093). 260 unit tests (27 files) + full integration suite green (incl. 3 new conversations integration tests, DynamoDB Local + mocked SQS per D-030). `heediq-api/README.md` updated (Key Files, Data Flow, Contracts, Dependencies, Testing).
   - **All of Step 4 (4a/4b/4c-i/4c-ii) is now fully merged to `develop` across all four repos** (`heediq-shared`, `heediq-infra`, `heediq-chat`, `heediq-api`). Not yet done: an end-to-end smoke check (a real chat turn producing `chat_delta`/`chat_complete` over WS against a deployed `dev` stack) and promoting any of these repos' `develop`→`main` for staging/prod (not requested this session — `develop`-push already deploys to `dev` per each repo's CI/CD).
 
+## Step 4c-ii smoke check (dev) — ✅ GREEN (2026-07-23)
+
+End-to-end Context-chat smoke passed on the deployed **dev** stack: create Context → conversation →
+post message → `heediq-chat` consumes the SQS job → streams `chat_delta` → persists → `chat_complete`
+over WS (client assembled `"PONG"`, `completed: true`). Auth: `admin@heediq.com` via non-admin
+`USER_PASSWORD_AUTH`. The smoke uncovered **7 real deploy/config/code gaps** invisible to unit +
+integration tests (the case D-147 makes). Fixes:
+
+1. **Stale RBAC seed** — dev admin/member roles (provisioned 2026-07-16) lacked the Context Library
+   `context:*` perms → every Context route 403'd. Backfilled live. Locked **D-146** (append a perm →
+   backfill existing orgs' system roles).
+2. **`roles` PATCH 500** — `permissions` is a DynamoDB reserved word, wasn't aliased (`#permissions`).
+   Fixed on branch `fix/roles-patch-permissions-reserved-word` (heediq-api) + integration regression
+   (PATCH now updates permissions, not just name). **Committed, NOT yet PR'd** — needs the roles
+   integration suite (DynamoDB Local) run before PR (Step 4.6).
+3. **`heediq-chat` never deployed to dev** — its first deploy failed OIDC assume-role because GitHub
+   now gives new repos the **immutable subject** `repo:heediq@<orgId>/<repo>@<repoId>:...`, which the
+   `GitHubActionsDeployRole` trust (`repo:heediq/*:*`) didn't match. Dev trust patched live; durable
+   fix `scripts/setup.sh` (both subject formats) → **heediq-infra#64 OPEN** (review + re-run setup.sh
+   on staging/prod before any new repo deploys there).
+4. **Missing Claude secrets** — `/heediq/chat/anthropic-api-key` + `/heediq/summarization/anthropic-api-key`
+   never provisioned (per-service-secret convention confirmed; secrets are out-of-band, D-038). Andrii
+   created both. (Note: summarization's was equally missing — its Claude call would also have failed.)
+5. **`heediq-chat` ledger query bug** — `loadLedgerAnswers` built `KeyConditionExpression 'contextId =
+   :cid'` with no `ExpressionAttributeValues` → 400 every turn. **heediq-chat#2 MERGED + deployed.**
+6. **WS-CD gap** — `heediq-api/.github/workflows/deploy.yml` never deployed the WS handlers
+   (`ws-connect`/`ws-pusher`→`heediq-ws-status-pusher`/`classification-pusher`), so they were infra
+   placeholders since 2026-07-02: `$connect` returned 200 but wrote no connection row → chat push
+   found 0 connections. Wired all three into CD → **heediq-api#45 MERGED.**
+7. **WS zip filename** — #45 zipped `ws-connect.js` but the Lambdas run `index.handler` →
+   `Runtime.ImportModuleError` at cold start (handshake failed). Repackaged as `index.js` →
+   **heediq-api#46 MERGED + deployed.**
+
+**Smoke script** lives in scratchpad (`chat-e2e.mjs`, Node 22 global WebSocket). Per D-147 it should be
+generalized into a committed `tests/e2e/` smoke (owning repo) — **not yet done.**
+
+**Backlog raised this session:** evaluate **WIF / keyless Anthropic auth** (Console Workload Identity
+Federation — GA, no static key, auto-refresh; would retire the per-service Claude secrets + rotation +
+onboarding gap; needs AWS-Lambda→Anthropic federation feasibility verified). Also verify `ws-pusher`
+(`heediq-ws-status-pusher`) + `classification-pusher` now behave post-deploy (D-061/Step-3 paths).
+
 ## Step 5 — Web (`heediq-web`) — ⬜
 Bump 0.15.3 (was 0.14.0 at last check — `/contexts`, `/context-grants`, and now `/conversations` routes plus the `ContextGrant`/chat contracts are all available to build against). Context tree/library, source detail (curated `ExtractedItem`s), the interactive review wizard (D-137 steps 1–2), Context chat UI streaming via `useWsEvent('chat_delta'/'chat_complete'/'chat_failed')`. Kit + motion system only; all copy through `t()` (map `DOMAIN_PROFILES` slugs → labels).
 
