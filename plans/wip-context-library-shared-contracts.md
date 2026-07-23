@@ -104,15 +104,9 @@ Federation — GA, no static key, auto-refresh; would retire the per-service Cla
 onboarding gap; needs AWS-Lambda→Anthropic federation feasibility verified). Also verify `ws-pusher`
 (`heediq-ws-status-pusher`) + `classification-pusher` now behave post-deploy (D-061/Step-3 paths).
 
-## Step 5 — Web (`heediq-web`) — ⬜
-Bump 0.15.3 (was 0.14.0 at last check — `/contexts`, `/context-grants`, and now `/conversations` routes plus the `ContextGrant`/chat contracts are all available to build against). Context tree/library, source detail (curated `ExtractedItem`s), the interactive review wizard (D-137 steps 1–2), Context chat UI streaming via `useWsEvent('chat_delta'/'chat_complete'/'chat_failed')`. Kit + motion system only; all copy through `t()` (map `DOMAIN_PROFILES` slugs → labels).
+## Step 5 — Web (`heediq-web`) — ✅ DONE & MERGED (see the Step 5 summary + Step 6 kickoff below)
 
-**Chat UI bar (read before building the chat panel):** `rules/04-loading-and-feedback.md` §6 — hold the
-chat panel to the ChatGPT/Claude.ai feel specifically (token-by-token streaming, pre-first-token
-thinking indicator, scroll-aware auto-scroll, Stop/Retry, incremental markdown, per-turn copy) — this
-is a flagship surface the user explicitly wants held to that bar, not treated as a generic async form.
-
-## Session 2026-07-23 (Step 5 kickoff) — progress
+## Session 2026-07-23 (Step 5 build) — progress log
 - **Cleanup 1 — roles PATCH fix → PR OPEN [heediq-api#47](https://github.com/heediq/heediq-api/pull/47).** Branch `fix/roles-patch-permissions-reserved-word` was stale (cut after #45, before #46) — its diff spuriously *reverted* #46's WS-zip `index.js` fix. Merged `develop` in (auto-resolved deploy.yml to develop's version); branch now diffs only `roles.ts` + `roles.test.ts`. Test gate green: typecheck + 260 unit, roles integration suite 5/5 (DynamoDB Local, incl. the new PATCH-with-permissions regression). Left for review — not merged.
 - **Cleanup 2 — heediq-infra#64 already MERGED** (df89a7c on develop; local switched off the branch). **`scripts/setup.sh` re-run on staging+prod BLOCKED**: all four SSO sessions (`heediq-shared/dev/staging/prod`) expired; `aws sso login` needs an interactive browser flow unavailable in this session, and setup.sh runs all four accounts in one `set -e` pass (fails fast at the shared `verify_auth`). **Handed back to Andrii: `aws sso login --profile heediq-{shared,dev,staging,prod}` then `bash heediq-infra/scripts/setup.sh`.**
 - **Step 5 bump DONE** — `@heediq/shared ^0.13.0 → ^0.15.3` on new branch **`feature/context-library-web`** (commit `0ceec80`). Bump surfaced a real gap the test gate caught: `PERMISSIONS` gained `context:{read,create,update,delete,share}` (D-146) but the `en` translation had no `rolesSettings.permissions` labels → `permission-coverage.test` failed. Added the five labels. Typecheck clean, 213 unit tests green.
@@ -128,28 +122,18 @@ is a flagship surface the user explicitly wants held to that bar, not treated as
     - **D-147 smoke committed** in **heediq-chat** (branch `test/context-chat-e2e-smoke`): `tests/e2e/chat-smoke.mjs` + `pnpm run e2e:chat` + `tests/e2e/README.md`. Generalized from the 2026-07-23 scratchpad smoke; standalone Node ≥22, env-driven, config-guarded (syntax + guard verified; a real run needs a live dev ID token). **Separate PR from the web branch (different repo).**
     - **Chat backend follow-ups logged** in MEMORY engineering backlog: server-side turn cancel (Stop is client-side only), no-duplicate regenerate (Retry re-posts), conversation rename/auto-title.
 
-## Step 5 — ALL SLICES DONE & PR'd
-Backend items endpoint (heediq-api#48) merged. **Web: PR [heediq-web#41](https://github.com/heediq/heediq-web/pull/41) OPEN** (`feature/context-library-web` → develop, shared bump + slices A–D, 60 files/260 tests green). **D-147 smoke: PR [heediq-chat#3](https://github.com/heediq/heediq-chat/pull/3) OPEN** (`test/context-chat-e2e-smoke`). Both awaiting review — not merged.
+## Step 5 — ✅ DONE & MERGED (2026-07-23)
+Backend items endpoint [heediq-api#48](https://github.com/heediq/heediq-api/pull/48) merged. **Web [heediq-web#41](https://github.com/heediq/heediq-web/pull/41) MERGED** to develop (shared bump 0.13→0.15.3 + slices A–D: Context tree/library, source detail + curated items, D-137 review wizard, streaming chat panel; 60 files/260 tests green). **D-147 smoke [heediq-chat#3](https://github.com/heediq/heediq-chat/pull/3) MERGED** (`heediq-chat/tests/e2e/chat-smoke.mjs`). Also merged this session: [heediq-api#47](https://github.com/heediq/heediq-api/pull/47) (roles PATCH reserved-word fix). Local feature branches now stale — Step 0 next session syncs to develop.
 
-## Next session — Step 5 (Web) — READY TO START
-Chat backend fully merged (all 4 repos) **and dev-smoke GREEN 2026-07-23** (see "Step 4c-ii smoke check"
-above). Nothing left on the backend. **Kick off Step 5 like this:**
-1. **First, resolve the two open cleanup items** (non-blocking, both worked around live):
-   - PR the roles PATCH fix — branch `fix/roles-patch-permissions-reserved-word` on **heediq-api**
-     (committed, typecheck clean) — run the roles integration suite (DynamoDB Local) then `gh pr create`.
-   - **heediq-infra#64** (OIDC immutable-subject trust) — review/merge, then re-run `scripts/setup.sh`
-     on staging/prod accounts.
-2. **Bump `@heediq/shared` 0.14.0 → 0.15.3** in heediq-web (all `/contexts`, `/context-grants`,
-   `/conversations` routes + ContextGrant/chat contracts available).
-3. Read `rules/03-ui-kit.md` + `rules/04-loading-and-feedback.md` (§6 for the chat panel bar) +
-   `heediq-web/README.md` + sub-module READMEs; then **write a Step-2 plan and get approval before UI code.**
-4. Build: Context tree/library, source detail (curated `ExtractedItem`s), review wizard (D-137 steps 1–2),
-   Context chat panel streaming via `useWsEvent('chat_delta'/'chat_complete'/'chat_failed')`. Kit + motion
-   only; copy through `t()` (map `DOMAIN_PROFILES` slugs → labels). Tree/library + wizard don't need chat
-   and can ship first; wire the chat panel in once its screens exist.
-5. Per **D-147**, generalize the passing smoke (`scratchpad/chat-e2e.mjs`) into a committed `tests/e2e/`.
+## Next session — Step 6 (fast-follow) — READY TO START
+Kick off like this:
+1. **Step 0** as usual (git sync all repos → develop; blocking coherence check). Local `heediq-web`/`heediq-chat` are on merged feature branches — switch to develop + pull.
+2. **Two carried-over items (non-blocking):**
+   - **`heediq-infra scripts/setup.sh` re-run on staging + prod still owed** (dual-subject OIDC trust, #64 merged). Blocked all session on expired SSO — needs `aws sso login --profile heediq-{shared,dev,staging,prod}` then `bash heediq-infra/scripts/setup.sh` (runs all four accounts one pass).
+   - **Chat backend follow-ups** logged in `memory/codebase/MEMORY.md` engineering backlog: server-side turn cancel (web Stop is client-side only), no-duplicate regenerate (web Retry re-posts), conversation rename/auto-title.
+3. **Step 6 proper — D-136 Decision Ledger + review-wizard step 3.** Split: the **backend half** (ledger *generation* pass — `DecisionLedgerEntry` schema already in `@heediq/shared`; needs generation logic likely in a worker/heediq-chat + API read/fill routes + chat-time gating, D-136) is independent and can go first off develop; the **web half** (wizard step 3, ledger fill-in UI) builds on the now-merged slices C/D. Write a Step-2 plan + get approval before code (new contracts/decisions likely).
 
-## Step 6 — Fast-follow — ⬜
+## Step 6 — Fast-follow — ⬜ (scope; see "Next session — Step 6" above for the kickoff)
 Decision Ledger generation + fill-in UI + chat-time gating (D-136) + wizard step 3 (D-137).
 
 ## Standing follow-ups
