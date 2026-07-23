@@ -64,3 +64,5 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-142** · Context Library — cross-org Context sharing via regulated grants (design now, build fast-follow) · Architecture / Policy · Locked · → `heediq-infra/lib/foundation/README.md`
 - **D-145** · Context Library — `chat_failed` WS event for a failed chat turn · Architecture · Locked · → `heediq-shared/src/ws.ts`
 - **D-146** · Appending a permission requires backfilling existing orgs' system roles · Architecture · Locked · → `heediq-api/README.md`
+- **D-148** · Context Library — Decision Ledger generation is a review-time async reconciliation in a new `heediq-ledger` worker · Architecture / Product · Locked · → `heediq-shared/src/`
+- **D-149** · Context Library — chat-time ledger gating is a simple all-or-nothing rule at `POST /conversations/:id/messages` · Architecture · Locked · → `heediq-api/README.md`

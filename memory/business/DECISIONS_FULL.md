@@ -1752,3 +1752,43 @@ scripted, real-stack smoke per feature catches wiring/permission/deploy gaps and
 works on dev" into a repeatable artifact instead of a manual one-off.
 **Supersedes:** — **Superseded by:** —
 **Related code:** — (harness home: owning repo `tests/e2e/`; first instance is the Context-chat smoke)
+
+### D-148 · Context Library — Decision Ledger generation is a review-time async reconciliation in a new `heediq-ledger` worker (2026-07-23) — Locked
+**Area:** Architecture / Product
+**Decision:** Ledger generation (D-136) runs as a **review-time async reconciliation pass**. On
+review-approval, after the API commits the source's kept `ExtractedItem`s, it enqueues a ledger job
+(`{ contextId, sourceId, orgId, tier }`) onto a new `heediq-ledger` SQS queue. A **new dedicated
+worker** (SQS+Lambda, D-065 pattern — *not* the summarization or chat worker) loads the Context's
+existing ledger + this source's kept items, makes **one prompt-cached Claude call** (D-139 free→Haiku
+/ paid→Sonnet tier map), and **persists** reconciled entries with computed status — `confirmed`,
+`needs_review` (auto-answer confidence < `LEDGER_REVIEW_CONFIDENCE_THRESHOLD` 0.5), or `open` (topic
+with no answer) — appending `sourceRefs`; a previously-`confirmed` entry the new source changes flips
+to `needs_review`. It then pushes a new `ledger_ready` WS event; the D-137 wizard step 3 reads via
+`GET /contexts/:id/ledger` and fills. Persist-then-review (consistent with the D-135 ExtractedItem
+model — no separate pending-proposal staging).
+**Why:** The ledger is context-level and deduplicated, so reconciliation needs the chosen Context
+(unknown at ingest) and an LLM to merge/dedup against prior entries — a review-time pass fits D-137's
+"reconciliation" step. A dedicated worker keeps the Claude call off the 30s API Lambda (D-139) and
+isolates ledger scaling/failure from ingest and chat. Chosen over ingest-time per-source candidates
+(context-less, weaker dedup) and over folding it into an existing worker (mixed responsibility).
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-shared/src/` (contracts), `heediq-ledger/` (worker, to be created)
+
+### D-149 · Context Library — chat-time ledger gating is a simple all-or-nothing rule at `POST /conversations/:id/messages` (2026-07-23) — Locked
+**Area:** Architecture
+**Decision:** Chat-time gating (D-136) is enforced **synchronously in the API** at
+`POST /conversations/:id/messages`, before persisting/enqueuing the turn: query the Context's ledger,
+and if **any** entry is `open`/`needs_review` and the request didn't set `bypassLedgerGating`, return
+a `LEDGER_GATED` response listing the blocking entries and do **not** enqueue. The user fills them
+(ledger PATCH) and retries, or retries with `bypassLedgerGating: true`. No extra Claude call and no new
+WS event — it's a cheap DynamoDB query (D-139 requires only the *generation* Claude call to be async).
+Ledger mutations reuse the existing `context:update` permission (+ `canAccessContext` `'contribute'`
+for cross-org grants) — no new permission, so no D-146 backfill. The heediq-chat worker is unchanged;
+its `loadLedgerAnswers` (settled answers into the prompt) stays.
+**Why:** An all-or-nothing rule is deterministic, adds zero model cost/latency, and is the right MVP
+for the "precise context" gate; chosen over an LLM prerequisite-relevance pre-pass (better UX but a
+Claude call on every gated turn) — revisit if the rule proves too aggressive. Enforcing in the API
+(not the worker) avoids a wasted worker invocation and returns the block synchronously so the client
+can prompt the fill without a WS round-trip.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-api/README.md` (conversations + ledger routes)
