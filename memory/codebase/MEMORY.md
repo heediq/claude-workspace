@@ -71,7 +71,8 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   Context Library review UI (in progress).
   README: `../../heediq-web/README.md` (sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
   `src/features/contexts/` (Context Library slice A — tree/library + detail + create),
-  `src/features/sources/` (slice B — source detail: Summary + curated ExtractedItems),
+  `src/features/sources/` (slice B — source detail: Summary + curated ExtractedItems; slice C review
+  wizard is `src/routes/ReviewWizardPage.tsx`),
   `src/components/layout/`, `src/components/ui/PasswordRequirements/`, `src/components/ui/Logo/`,
   `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/IdentityProviderButton/`,
   `src/components/ui/FullPageLoading/`) · Decisions: D-008, D-020, D-024, D-028–D-030, D-043,
