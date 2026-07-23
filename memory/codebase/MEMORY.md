@@ -73,6 +73,7 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   `src/features/contexts/` (Context Library slice A — tree/library + detail + create),
   `src/features/sources/` (slice B — source detail: Summary + curated ExtractedItems; slice C review
   wizard is `src/routes/ReviewWizardPage.tsx`),
+  `src/features/chat/` (slice D — streaming Context chat panel, lazy-loaded; consumes chat_* WS events),
   `src/components/layout/`, `src/components/ui/PasswordRequirements/`, `src/components/ui/Logo/`,
   `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/IdentityProviderButton/`,
   `src/components/ui/FullPageLoading/`) · Decisions: D-008, D-020, D-024, D-028–D-030, D-043,
@@ -111,10 +112,15 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
 - **RBAC catalog-append backfill migration (D-146)** — no tooling yet; when a permission is appended
   to `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled. Currently a
   manual per-org PATCH (done for the dev admin org 2026-07-22). Needs a scripted migration.
-- **E2E dev-smoke harness (D-147)** — no shared harness/CI wiring yet; first instance is the
-  Context-chat Node smoke (create Context → conversation → post → chat_delta/chat_complete over WS),
-  **verified green on dev 2026-07-23** (script in scratchpad, not yet committed). Generalize into each
-  repo's `tests/e2e/` and decide a token-provisioning helper.
+- **E2E dev-smoke harness (D-147)** — first instance **committed**: `heediq-chat/tests/e2e/chat-smoke.mjs`
+  (`pnpm run e2e:chat`), the Context-chat happy path (create Context → conversation → post →
+  chat_delta/chat_complete over WS), verified green on dev 2026-07-23. Still open: a shared
+  token-provisioning helper and CI wiring, and smokes for the other features.
+- **Chat backend follow-ups (from slice D UX limits)** — (1) **server-side turn cancel**: the web
+  Stop is client-side only (worker keeps generating, persists the full message); needs a cancel path.
+  (2) **no-duplicate regenerate/retry**: web Retry re-posts the last user message as a new turn (no
+  regenerate endpoint), so it adds a user message. (3) **conversation rename / auto-title**: new chats
+  get a default "New chat" title; no rename or first-message auto-title endpoint yet.
 - **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA,
   SDK auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no
   static key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets, their rotation,
