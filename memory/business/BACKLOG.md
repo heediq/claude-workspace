@@ -38,3 +38,8 @@ here) rather than keeping it in both places.
 - **Proactive assistant reasoning.** `product.md`'s north-star end-state — Heediq surfacing what's
   due / what was decided unprompted, not just answering in reactive chat. Still north-star, no
   scoping done.
+- **Cross-org Context sharing UI (D-142).** The grant backend is fully built + tested (issue/revoke
+  routes, `/shared-with-me`, `context:share` perm, live per-request authorization). The *frontend* —
+  a share dialog (grant by email + access tier + expiry), a "shared with me" view, and revoke — was
+  deliberately deferred out of Step 5 (2026-07-23) to keep that step to tree/library + source detail +
+  review wizard + chat. Scope it as its own web slice once those land.
