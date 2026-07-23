@@ -112,6 +112,14 @@ chat panel to the ChatGPT/Claude.ai feel specifically (token-by-token streaming,
 thinking indicator, scroll-aware auto-scroll, Stop/Retry, incremental markdown, per-turn copy) — this
 is a flagship surface the user explicitly wants held to that bar, not treated as a generic async form.
 
+## Session 2026-07-23 (Step 5 kickoff) — progress
+- **Cleanup 1 — roles PATCH fix → PR OPEN [heediq-api#47](https://github.com/heediq/heediq-api/pull/47).** Branch `fix/roles-patch-permissions-reserved-word` was stale (cut after #45, before #46) — its diff spuriously *reverted* #46's WS-zip `index.js` fix. Merged `develop` in (auto-resolved deploy.yml to develop's version); branch now diffs only `roles.ts` + `roles.test.ts`. Test gate green: typecheck + 260 unit, roles integration suite 5/5 (DynamoDB Local, incl. the new PATCH-with-permissions regression). Left for review — not merged.
+- **Cleanup 2 — heediq-infra#64 already MERGED** (df89a7c on develop; local switched off the branch). **`scripts/setup.sh` re-run on staging+prod BLOCKED**: all four SSO sessions (`heediq-shared/dev/staging/prod`) expired; `aws sso login` needs an interactive browser flow unavailable in this session, and setup.sh runs all four accounts in one `set -e` pass (fails fast at the shared `verify_auth`). **Handed back to Andrii: `aws sso login --profile heediq-{shared,dev,staging,prod}` then `bash heediq-infra/scripts/setup.sh`.**
+- **Step 5 bump DONE** — `@heediq/shared ^0.13.0 → ^0.15.3` on new branch **`feature/context-library-web`** (commit `0ceec80`). Bump surfaced a real gap the test gate caught: `PERMISSIONS` gained `context:{read,create,update,delete,share}` (D-146) but the `en` translation had no `rolesSettings.permissions` labels → `permission-coverage.test` failed. Added the five labels. Typecheck clean, 213 unit tests green.
+- **Backend dep found for Step 5:** no endpoint returns a Source's `ExtractedItem`s (`GET /sources/:id` returns only the Source; review route reads items internally). Source-detail + review-wizard both need a new **`GET /sources/:id/items`** heediq-api route (no new shared contract — `ExtractedItemSchema` exists). Flagged in the Step-2 plan as a prerequisite API slice.
+- **Kit gaps for Step 5:** no `EmptyState`, `Skeleton`, `Tabs`, `Tree`, `Stepper`, chat primitives, or markdown-render dep — all to be added to the kit + `/dev/ui` gallery.
+- **Step-2 plan presented to Andrii 2026-07-23 — awaiting approval before any UI code.**
+
 ## Next session — Step 5 (Web) — READY TO START
 Chat backend fully merged (all 4 repos) **and dev-smoke GREEN 2026-07-23** (see "Step 4c-ii smoke check"
 above). Nothing left on the backend. **Kick off Step 5 like this:**
