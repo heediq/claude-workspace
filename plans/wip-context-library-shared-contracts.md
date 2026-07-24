@@ -133,7 +133,7 @@ Kick off like this:
    - **Chat backend follow-ups** logged in `memory/codebase/MEMORY.md` engineering backlog: server-side turn cancel (web Stop is client-side only), no-duplicate regenerate (web Retry re-posts), conversation rename/auto-title.
 3. **Step 6 proper — D-136 Decision Ledger + review-wizard step 3.** Split: the **backend half** (ledger *generation* pass — `DecisionLedgerEntry` schema already in `@heediq/shared`; needs generation logic likely in a worker/heediq-chat + API read/fill routes + chat-time gating, D-136) is independent and can go first off develop; the **web half** (wizard step 3, ledger fill-in UI) builds on the now-merged slices C/D. Write a Step-2 plan + get approval before code (new contracts/decisions likely).
 
-## Step 6 — Fast-follow (D-136 Decision Ledger + D-137 wizard step 3) — 🟡 IN PROGRESS (backend half done; 6a/6b merged, 6c deployed, 6d PR'd — web half is next)
+## Step 6 — Fast-follow (D-136 Decision Ledger + D-137 wizard step 3) — 🟢 BACKEND COMPLETE (6a/6b/6d merged & deployed, 6c deployed; ledger repo develop+main protected — web half is next)
 
 **Session 2026-07-23 (Step 6 kickoff).** Step 0 clean (all repos synced to develop; coherence check
 green — manifest counts match, D-132 already archived). `setup.sh` re-run **skipped** by Andrii (not
@@ -172,13 +172,13 @@ event; reuses `context:update` perm → no D-146 backfill). Both in `DECISIONS_F
   added after the push — re-run went green; grant the package BEFORE first push next time.**
   **Out-of-band remaining (Andrii):** `/heediq/ledger/anthropic-api-key` provisioned for **dev only** —
   add staging/prod when those deploys are needed (deploy only runs them on `main`).
-- **6d · `heediq-api` — ✅ DONE → PR [heediq-api#49](https://github.com/heediq/heediq-api/pull/49)** (branch `feature/context-library-ledger-api`).
+- **6d · `heediq-api` — ✅ DONE, MERGED & DEPLOYED → PR [heediq-api#49](https://github.com/heediq/heediq-api/pull/49)** (branch `feature/context-library-ledger-api`).
   Review route best-effort enqueues ledger job (only when `keptCount > 0`, log-and-continue);
   `src/routes/ledger.ts` (GET list / POST add / PATCH fill-confirm-edit / DELETE, `context:update` +
   `canAccessContext('contribute')`, GET at `read`; user writes force `origin=user`/`confidence=1.0` +
   audit ids-only); D-149 gating in `conversations.ts` POST /messages → 409 `LEDGER_GATED` +
   `blockingEntries`, `bypassLedgerGating` opt-out. Shared bumped to `^0.15.4`. 281 tests green,
-  typecheck clean, README updated. PR opened to `develop` (awaiting CI/review).
+  typecheck clean, README updated. Merged to `develop` and deployed to dev.
 - **Web half (LATER, separate plan):** wizard step 3 + ledger fill-in UI + gating prompt; consumes `ledger_ready` + `LEDGER_GATED`.
 
 ## Standing follow-ups
