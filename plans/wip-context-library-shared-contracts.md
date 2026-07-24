@@ -158,10 +158,19 @@ event; reuses `context:update` perm → no D-146 backfill). Both in `DECISIONS_F
   read contexts/extracted-items, read-write decision-ledger; `grantPush` for `ledger_ready` + `WS_CONNECTIONS_TABLE_NAME`);
   `bin/infra.ts` composes after ChatStack; ApiStack `LEDGER_QUEUE_URL` + scoped `sqs:SendMessage`; `COMPUTE.lambda.ledger`.
   No new table. Tests 232 green (+19 ledger-stack, +2 api producer), synth clean. README Stack Map + Chat/Ledger sections (Chat doc gap backfilled). **Out-of-band before deploy:** provision `/heediq/ledger/anthropic-api-key` per workload account.
-- **6c · new `heediq-ledger` worker repo — ⬜ (create only on explicit go-ahead).** Mirrors heediq-chat
-  layout; reconciliation Claude pass (prompt caching, D-139 tier map); writes entries w/ computed status;
-  own `ledger_ready` wsPush. **Out-of-band (Andrii):** provision `/heediq/ledger/anthropic-api-key`; add
-  `heediq/heediq-ledger` to `@heediq/shared` Packages "Manage Actions access"; default branch `develop` + branch protection.
+- **6c · new `heediq-ledger` worker repo — 🟢 BUILT LOCALLY, awaiting repo push.** Mirrors heediq-chat
+  layout (pnpm/vitest/esbuild, CI + per-env deploy). Sources: `config.ts` (Secrets Manager key at cold
+  start), `loader.ts` (loadContext w/ org-ownership guard + loadExistingLedger + loadKeptItems),
+  `provider.ts` (`ClaudeProvider.reconcile`, permissive JSON, `cache_control` on stable instructions,
+  D-139 tier map free→Haiku/paid→Sonnet), **pure `reconcile.ts`** (trust boundary: status recompute
+  D-136, matchEntryId resolution, user-answer preservation, confirmed→needs_review flip, sourceRefs
+  union), `writer.ts` (BatchWrite upserts chunked 25), `wsPush.ts` (own org-scoped `ledger_ready`
+  push via by-org GSI). 40 unit tests green (typecheck clean, esbuild bundle 983kb OK). README written.
+  Local git initialised on branch `develop`, initial commit `e8197ff`. **BLOCKED:** `gh repo create`
+  denied by the auto-mode classifier — needs the user to create `heediq/heediq-ledger` (public) + push,
+  or add a Bash allow rule. **Out-of-band (Andrii):** provision `/heediq/ledger/anthropic-api-key` per
+  workload account; add `heediq/heediq-ledger` to `@heediq/shared` Packages "Manage Actions access";
+  default branch `develop` + branch protection.
 - **6d · `heediq-api` — ⬜.** Review route enqueues ledger job (best-effort, log-and-continue);
   `src/routes/ledger.ts` (GET list / POST add / PATCH fill-confirm-edit / DELETE, `context:update` +
   `canAccessContext('contribute')` + audit); D-149 gating in `conversations.ts` POST /messages.
