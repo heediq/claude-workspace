@@ -1795,3 +1795,25 @@ Claude call on every gated turn) — revisit if the rule proves too aggressive. 
 can prompt the fill without a WS round-trip.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-api/README.md` (conversations + ledger routes)
+
+### D-150 · First Capture / Ingestion UI — all three D-026 input methods ship together (2026-08-03) — Locked
+**Area:** Product / Design
+**Decision:** The first Capture/Ingestion UI in heediq-web ships **all three** D-026 input methods in
+the same test round — live mic recording, audio-file upload, and text-file upload — built as the full
+D-026 Listen-centered post-auth landing (the "Listen" hero as primary CTA, audio-upload and text-upload
+as secondary actions), with the recordings/sources library as a separate nav page (the real
+`SourcesLibraryPage` list replaces its stub). Text upload skips transcription via a **dedicated
+`POST /sources/:id/text`** endpoint (parallel to the audio `POST /sources/:id/jobs` enqueue): it writes
+the text to `heediq-sources[sourceId].transcript` and enqueues a `SummarizationJobMessage`
+(`sourceType:'text'`, `contentRef:sourceId`) to the summarization queue (D-065), which the worker and
+downstream `classification_ready` → D-137 review wizard already handle. Live recording is online-only
+for now (offline capture + queued upload + Wake Lock stay deferred, D-119).
+**Why:** The capture UI is the #1 pre-dogfooding blocker (no way to get content in), so the round
+targets a complete ingestion front door rather than a partial one; all three methods reuse one
+create→process→review spine so the incremental cost of the two upload paths on top of record is small.
+A dedicated `/text` endpoint (over overloading `POST /sources` with an optional text body) keeps the
+create route single-purpose and mirrors the existing audio enqueue split. The text path is chosen as
+the first *implementation* slice because its backend gap is the smallest (worker + shared + infra grant
+already built; only the API enqueue is missing) — fastest to real end-to-end content.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/features/sources/` + capture surface (to be built), `heediq-api/README.md` (`/sources/:id/text`)

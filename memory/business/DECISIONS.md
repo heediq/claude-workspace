@@ -17,7 +17,7 @@ Fully-superseded decisions (no substantive content still active) live in
 |---|---|---|
 | `decisions/architecture.md` | Architecture & Data Stores | 62 |
 | `decisions/infra.md` | Infrastructure, Deploy & Ops | 28 |
-| `decisions/product.md` | Product, Access & Billing | 20 |
+| `decisions/product.md` | Product, Access & Billing | 21 |
 | `decisions/design-brand.md` | Brand & Design | 12 |
 | `decisions/process.md` | Process (this workspace) | 10 |
 | `decisions/pricing-cost-policy.md` | Pricing, Cost & Policy | 7 |

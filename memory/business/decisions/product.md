@@ -24,3 +24,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-141** · Context Library — Context visibility model: personal / group / org, permission-gated · Product / Architecture · Locked · → `heediq-infra/lib/foundation/README.md`
 - **D-143** · Heediq serves B2B and B2C; org is the universal tenant boundary · Product · Locked · → `memory/business/product.md`
 - **D-144** · Primary positioning is a contextual-memory platform; meetings are one ingestion path · Product · Locked · → `memory/business/product.md`
+- **D-150** · First Capture/Ingestion UI — record + audio-upload + text-upload ship together (D-026 Listen landing); text via dedicated `POST /sources/:id/text` · Product / Design · Locked · → `heediq-web/src/features/sources/`
