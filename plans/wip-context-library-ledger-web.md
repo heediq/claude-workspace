@@ -36,12 +36,21 @@ Three sub-features on a shared foundation, shipped as three incremental PRs to `
 - Tests: `LedgerReconcileStep.test.tsx` (5); updated `ReviewWizardPage.test.tsx` (post-file advance).
   Full gate green (`test:pre-pr`: typecheck + 283 tests).
 
-## 7c — Chat gating banner — ⏳ AFTER 7b
-- `ChatThread.send`: catch `ApiClientError` code `LEDGER_GATED`, read `details.blockingEntries`
-  (`LedgerGatedDetailsSchema`), render a `Callout` (warning) above the composer listing blocking
-  topics with inline answer fields (PATCH via `useUpdateLedgerEntry`). As each clears it drops; when
-  empty, auto-retry the send. Persistent "Send anyway" → resend with `bypassLedgerGating: true`.
-  Non-gated errors keep the existing toast path. No new WS event (D-149 is synchronous).
+## 7c — Chat gating banner — ✅ DONE, PR #44 (CI green)
+- `usePostMessage` takes optional `bypassLedgerGating` (omitted from body unless set).
+- `ChatThread` (now takes `contextId`): `send(text, { bypass })` remembers the pending text; `onError`
+  catches `ApiClientError` code `LEDGER_GATED`, parses `LedgerGatedDetailsSchema`, sets a `gate` state
+  (no toast). Non-gated errors keep the toast path.
+- `src/features/chat/LedgerGateBanner.tsx` (new): `Callout`(warning) above the composer. Reads blockers
+  **live from `useLedger`** (not the stale error payload) filtered to the gated entryIds, renders them as
+  `LedgerEntryRow`s to fill in place; a `sawBlocking` ref guards a premature auto-resolve on first paint,
+  then fires `onAllResolved` → parent re-sends (no bypass). "Send anyway" → resend `{ bypass: true }`;
+  "Dismiss" closes.
+- `ContextChatPage` threads `contextId` in. Tests: `LedgerGateBanner.test.tsx` (4) + ChatThread gated
+  case. Full gate green (`test:pre-pr`: typecheck + 288 tests).
+
+**Gotcha found:** `LedgerBlockingEntry.entryId` is a **uuid** in the schema — test fixtures must use a
+real uuid or `LedgerGatedDetailsSchema.safeParse` fails and the code falls through to the toast path.
 
 ## Notes / gotchas
 - `needs_review` shares the amber `active` tone with in-progress by design (D-072 — no warning token).
