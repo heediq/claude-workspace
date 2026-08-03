@@ -16,12 +16,6 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
 - Product feature backlog (postponed/not-yet-scoped feature ideas, distinct from the engineering
   backlog below): **`../business/BACKLOG.md`**.
 
-## In-progress product work
-- **Context Library** — full build status, step tracking, and forward-deps live in
-  `../../plans/wip-context-library-shared-contracts.md`; full spec in
-  `../../plans/context-library-spec.md`. Decisions: D-124–D-144. Dependency map: `Context Library
-  (D-124–D-144)`.
-
 ## Modules / Features (pointers)
 
 - **RBAC & audit trail** — dynamic per-org roles/groups/permissions gate every mutating
@@ -69,28 +63,23 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
 
 - **Decision Ledger** — per-Context curated roll-up of decisions/open-questions (D-136); entry status
   (confirmed/needs_review/open) derived from answer+confidence, never trusted from the model. Review-time
-  async reconciliation merges kept items → pushes `ledger_ready` (D-148, worker = `heediq-ledger`);
-  chat-time gating blocks sends over a Context with open/needs_review entries (`LEDGER_GATED` 409) unless
-  `bypassLedgerGating` (D-149). Web: standing view + review-wizard step 3 + chat gate banner.
-  READMEs: `../../heediq-ledger/README.md` (reconcile worker), `../../heediq-api/README.md` (ledger CRUD
-  routes + D-149 gate), `../../heediq-web/src/features/ledger/README.md` (+ `features/chat/` gate banner)
-  · Decisions: D-136, D-137, D-148, D-149 · Dependency map: `Decision Ledger (D-136/D-137/D-148/D-149)`
+  async reconciliation merges kept items → `ledger_ready` (D-148, worker `heediq-ledger`); chat-time
+  gating blocks sends when a Context has open/needs_review entries (`LEDGER_GATED` 409, override with
+  `bypassLedgerGating`, D-149). Web: standing view + wizard step 3 + chat gate banner.
+  READMEs: `../../heediq-ledger/README.md`, `../../heediq-api/README.md` (CRUD + gate),
+  `../../heediq-web/src/features/ledger/README.md` · Decisions: D-136, D-137, D-148, D-149 ·
+  Dependency map: `Decision Ledger (D-136/D-137/D-148/D-149)`
 
 - **heediq-web** — Vite + React + TS PWA frontend; UI kit, auth flows, WS client, motion system,
-  Context Library review UI (in progress).
-  README: `../../heediq-web/README.md` (sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
-  `src/features/contexts/` (Context Library slice A — tree/library + detail + create),
-  `src/features/sources/` (slice B — source detail: Summary + curated ExtractedItems; slice C review
-  wizard is `src/routes/ReviewWizardPage.tsx`),
-  `src/features/chat/` (slice D — streaming Context chat panel, lazy-loaded; consumes chat_* WS events;
-  catches `LEDGER_GATED` → `LedgerGateBanner`, D-149),
-  `src/features/ledger/` (Decision Ledger — standing view + review-wizard step 3; hooks/`LedgerEntryRow`
-  reused by the chat gate banner),
-  `src/components/layout/`, `src/components/ui/PasswordRequirements/`, `src/components/ui/Logo/`,
-  `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/IdentityProviderButton/`,
-  `src/components/ui/FullPageLoading/`) · Decisions: D-008, D-020, D-024, D-028–D-030, D-043,
-  D-072–D-076, D-077–D-079, D-081–D-083, D-087–D-091, D-094, D-097, D-110, D-116–D-123, D-124–D-144 ·
-  Dependency map: `heediq-web (PWA frontend)`, `Context Library (D-124–D-144)`
+  Context Library UI.
+  README: `../../heediq-web/README.md` · sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
+  `src/features/contexts/` (Library slice A), `src/features/sources/` (B; C review wizard =
+  `src/routes/ReviewWizardPage.tsx`), `src/features/chat/` (D — streaming chat, lazy),
+  `src/features/ledger/` (Decision Ledger — see its own entry), `src/components/layout/`, `src/lib/ws/`,
+  `src/lib/pwa/`, `src/components/ui/{PasswordRequirements,Logo,IdentityProviderButton,FullPageLoading}/`
+  · Decisions: D-008, D-020, D-024, D-028–D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083,
+  D-087–D-091, D-094, D-097, D-110, D-116–D-123, D-124–D-144 · Dependency map:
+  `heediq-web (PWA frontend)`, `Context Library (D-124–D-144)`
 
 <!--
 - **<feature/area>** — <one-line summary>.
@@ -133,6 +122,12 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   (2) **no-duplicate regenerate/retry**: web Retry re-posts the last user message as a new turn (no
   regenerate endpoint), so it adds a user message. (3) **conversation rename / auto-title**: new chats
   get a default "New chat" title; no rename or first-message auto-title endpoint yet.
+- **Staging/prod deploy prerequisites owed** — two out-of-band tasks done on **dev only**, still owed
+  on staging + prod before those deploys: (1) `heediq-infra/scripts/setup.sh` re-run for the
+  dual-subject OIDC trust (heediq-infra#64) — required before any *new* repo (e.g. heediq-chat,
+  heediq-ledger) can deploy to staging/prod; blocked on interactive `aws sso login`. (2)
+  `/heediq/ledger/anthropic-api-key` provisioned per-account (D-038) — dev done, staging/prod owed
+  when heediq-ledger deploys there.
 - **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA,
   SDK auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no
   static key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets, their rotation,
