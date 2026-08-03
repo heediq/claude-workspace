@@ -24,13 +24,17 @@ Three sub-features on a shared foundation, shipped as three incremental PRs to `
 - Tests: `Callout` (3), `ledger-api` (5), `LedgerEntryRow` (5), `LedgerSection` (5). Full gate green
   (`test:pre-pr`: typecheck + 278 tests).
 
-## 7b — Wizard step 3 (reconciliation) — ⏳ NEXT
-- `ReviewWizardPage`: add a 3rd `Stepper` step. On step-2 confirm (review already enqueues the ledger
-  job), advance to step 3 instead of navigating. Show a determinate "Reconciling decisions…" state
-  driven by `useWsEvent('ledger_ready')` filtered to this `contextId`+`sourceId` (§5). On the event,
-  fetch the ledger and render open/needs_review entries to fill/approve (reuse `LedgerEntryRow` or a
-  fill-only variant). "Finish later" exits any time; timeout fallback → `ErrorState`.
-- Reuses 7a's `Callout` (info/warning) + ledger hooks.
+## 7b — Wizard step 3 (reconciliation) — ✅ DONE, PR #43 (CI green)
+- `ReviewWizardPage`: 3rd `Stepper` step (`ledger` · "Decisions"). Step-2 confirm now advances to
+  step 3 (`setStep(2)`) instead of navigating; the `alreadyFiled` early-return is gated to `step === 0`
+  so the source flipping to `approved` post-file doesn't eject the wizard.
+- `src/features/ledger/LedgerReconcileStep.tsx` (new): phase machine `reconciling → ready | timedOut`.
+  Waits with a visible "Reconciling decisions…" `Callout`(info)+`Spinner`, driven by
+  `useWsEvent('ledger_ready')` filtered to this `contextId`+`sourceId`. On ready, `useLedger` (enabled
+  only then) fetches and surfaces `open`/`needs_review` entries as `LedgerEntryRow`s to fill; all-settled
+  → `EmptyState`; 90s timeout → `ErrorState` + "Finish later". **Done** always exits to the source.
+- Tests: `LedgerReconcileStep.test.tsx` (5); updated `ReviewWizardPage.test.tsx` (post-file advance).
+  Full gate green (`test:pre-pr`: typecheck + 283 tests).
 
 ## 7c — Chat gating banner — ⏳ AFTER 7b
 - `ChatThread.send`: catch `ApiClientError` code `LEDGER_GATED`, read `details.blockingEntries`
