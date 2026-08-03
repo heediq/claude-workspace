@@ -74,8 +74,13 @@ it work."
 
 ### Context Library (D-124–D-144)
 - **Upstream**: heediq-shared Context Library contracts, heediq-infra Context Library tables (`heediq-contexts`, `heediq-extracted-items`, `heediq-decision-ledger`, `heediq-conversations`, `heediq-chat-messages`, `heediq-context-grants`), heediq-infra `ChatStack` (SQS `heediq-chat`+DLQ, D-138/D-139)
-- **Downstream**: heediq-worker-summarization, heediq-api, heediq-chat (new repo, D-138/D-139 — consumes `ChatJobMessage`, own WS-push), heediq-web (slice A shipped: `/contexts` tree/library + `src/features/contexts/`; B source-detail / C review-wizard / D chat panel in progress), heediq-worker-transcription `models.py` (deferred mirror update)
+- **Downstream**: heediq-worker-summarization, heediq-api, heediq-chat (new repo, D-138/D-139 — consumes `ChatJobMessage`, own WS-push), heediq-ledger (D-148 reconcile worker), heediq-web (slices A–D shipped: contexts / source-detail / review-wizard / chat panel; Decision Ledger — own entry below), heediq-worker-transcription `models.py` (deferred mirror update)
 - **Shared surfaces**: `Summary` schema, `Source` classification fields, `DOMAIN_PROFILES`, `wsPush.ts`/`useWsEvent`, `create-tables.ts` mirror, `heediq-context-grants` table, `canAccessContext()` gate, `ChatJobMessage`/`chat_delta`/`chat_complete`/`chat_failed` (D-145)
+
+### Decision Ledger (D-136/D-137/D-148/D-149)
+- **Upstream**: heediq-shared ledger contracts (`DecisionLedgerEntry`, ledger CRUD requests, `LedgerGatedDetails`, `ledger_ready`), heediq-infra `LedgerStack` (`heediq-ledger` SQS+DLQ, `heediq-decision-ledger` table), heediq-api review route (enqueues the ledger job on approval), Secrets Manager (Claude key), Context Library (contexts + extracted-items it reconciles)
+- **Downstream**: heediq-web (standing ledger view, review-wizard step 3 reconciliation, chat gate banner), heediq-api chat send (D-149 synchronous gate)
+- **Shared surfaces**: `heediq-decision-ledger` table, `heediq-ledger` SQS queue, `ledger_ready` WS event, `LEDGER_GATED` error code + `bypassLedgerGating` flag, `DecisionLedgerEntry` schema, web `features/ledger` hooks + `LedgerEntryRow` (reused by chat `LedgerGateBanner`), status-from-answer/confidence derivation (never trusted from the model — enforced in both heediq-ledger `reconcile.ts` and heediq-api)
 
 ### Observability (D-085, D-093)
 - **Upstream**: reads other stacks'/repos' resource names only (no construct-level dependency)

@@ -67,13 +67,25 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   D-067, D-068, D-084, D-085, D-093, D-100, D-130, D-133, D-135, D-141 · Dependency map:
   `heediq-worker-summarization`
 
+- **Decision Ledger** — per-Context curated roll-up of decisions/open-questions (D-136); entry status
+  (confirmed/needs_review/open) derived from answer+confidence, never trusted from the model. Review-time
+  async reconciliation merges kept items → pushes `ledger_ready` (D-148, worker = `heediq-ledger`);
+  chat-time gating blocks sends over a Context with open/needs_review entries (`LEDGER_GATED` 409) unless
+  `bypassLedgerGating` (D-149). Web: standing view + review-wizard step 3 + chat gate banner.
+  READMEs: `../../heediq-ledger/README.md` (reconcile worker), `../../heediq-api/README.md` (ledger CRUD
+  routes + D-149 gate), `../../heediq-web/src/features/ledger/README.md` (+ `features/chat/` gate banner)
+  · Decisions: D-136, D-137, D-148, D-149 · Dependency map: `Decision Ledger (D-136/D-137/D-148/D-149)`
+
 - **heediq-web** — Vite + React + TS PWA frontend; UI kit, auth flows, WS client, motion system,
   Context Library review UI (in progress).
   README: `../../heediq-web/README.md` (sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
   `src/features/contexts/` (Context Library slice A — tree/library + detail + create),
   `src/features/sources/` (slice B — source detail: Summary + curated ExtractedItems; slice C review
   wizard is `src/routes/ReviewWizardPage.tsx`),
-  `src/features/chat/` (slice D — streaming Context chat panel, lazy-loaded; consumes chat_* WS events),
+  `src/features/chat/` (slice D — streaming Context chat panel, lazy-loaded; consumes chat_* WS events;
+  catches `LEDGER_GATED` → `LedgerGateBanner`, D-149),
+  `src/features/ledger/` (Decision Ledger — standing view + review-wizard step 3; hooks/`LedgerEntryRow`
+  reused by the chat gate banner),
   `src/components/layout/`, `src/components/ui/PasswordRequirements/`, `src/components/ui/Logo/`,
   `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/IdentityProviderButton/`,
   `src/components/ui/FullPageLoading/`) · Decisions: D-008, D-020, D-024, D-028–D-030, D-043,
