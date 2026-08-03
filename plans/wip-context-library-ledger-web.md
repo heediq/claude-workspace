@@ -52,6 +52,12 @@ Three sub-features on a shared foundation, shipped as three incremental PRs to `
 **Gotcha found:** `LedgerBlockingEntry.entryId` is a **uuid** in the schema — test fixtures must use a
 real uuid or `LedgerGatedDetailsSchema.safeParse` fails and the code falls through to the toast path.
 
+## ✅ ALL SHIPPED — 7a #42, 7b #43, 7c #44 all merged to `develop`
+Codebase memory written: `MEMORY.md` "Decision Ledger" entry + `feature_dependency_map.md`
+`Decision Ledger (D-136/D-137/D-148/D-149)` entry (backend + web, one coherent entry). This branch's
+work is complete; safe to close this WIP file once the branch is deleted. **MEMORY.md is at 141/150 —
+flag a consolidation pass before the next big feature entry.**
+
 ## Notes / gotchas
 - `needs_review` shares the amber `active` tone with in-progress by design (D-072 — no warning token).
 - `ledger_ready` payload = `{ contextId, sourceId, entryCount }`; filter on both ids (same discipline
