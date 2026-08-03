@@ -8,9 +8,11 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
 - [x] **PR1 — heediq-shared** (branch `feature/capture-ingestion-contracts` off `develop`):
       `IngestTextRequestSchema` (`{text}`); optional `sourceType` on `SourceSchema`. Tests green (284).
       → **PR heediq-shared#50** (open). Blocks PR2/web on merge + version publish + Renovate bump.
-- [ ] **PR2 — heediq-api** (off `develop`): `POST /sources/:id/text` (write transcript+status=processing,
-      enqueue SummarizationJobMessage sourceType=text); presign stamps `audioS3Key`+sourceType=audio
-      on the source row (unblocks `/:id/jobs`). Tests in sources.test.ts / upload.test.ts.
+- [x] **PR2 — heediq-api** (branch `feature/text-ingest-endpoint` off `develop`): `POST /sources/:id/text`
+      (write transcript+status=processing+sourceType=text, enqueue SummarizationJobMessage sourceType=text
+      with tier msg-attr, failed-rollback on enqueue error); presign stamps `audioS3Key`+sourceType=audio
+      on the source row (unblocks `/:id/jobs`). Tests in sources.test.ts (6) / upload.test.ts (3); full
+      suite 291 green, typecheck+build clean. dep bumped `@heediq/shared` → `^0.15.5`.
 - [ ] **PR3a — heediq-web**: real SourcesLibraryPage list (`useSourcesList`, GET /sources) + Sources
       nav link + WS live-update. Tests.
 - [ ] **PR3b — heediq-web**: capture landing `/capture` (post-auth redirect moves here) + text-upload
@@ -27,7 +29,9 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
 - Usage indicator (PR3d) may drop to a follow-up if `GET /me` doesn't expose plan+usageLifetimeCount.
 
 ## Status
-- **PR1 done** — heediq-shared#50 open (contracts, tests green). Awaiting review/merge.
-- **Next: PR2 (heediq-api)** — BLOCKED until #50 merges + `@heediq/shared` publishes a new version and
-  heediq-api's dep bumps off `^0.15.4` (that version lacks `IngestTextRequest`). Then build
-  `POST /sources/:id/text` + presign `audioS3Key` stamp off `develop`.
+- **PR1 done** — heediq-shared#50 merged; `@heediq/shared@0.15.5` published (bump chain #52→#53, publish
+  run 30850255124). Local GH Packages read token was stale — refreshed `gh` with `read:packages`.
+- **PR2 done (code)** — `feature/text-ingest-endpoint` off `develop`; heediq-api now on `@heediq/shared@0.15.5`.
+  291 tests green, typecheck+build clean. → opening PR to `develop`.
+- **Next: PR3a (heediq-web)** — real SourcesLibraryPage list. Web is still on the older `@heediq/shared`;
+  it needs `sourceType`/`IngestTextRequest` only from PR3b onward, so a shared reinstall is due before PR3b.
