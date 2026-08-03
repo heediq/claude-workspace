@@ -5,8 +5,9 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
 **Decision:** D-150 (locked 2026-08-03). Reuses D-026 / D-065 / D-137; online-only record (D-119).
 
 ## Slices / PRs (all land this round; each ≤3 files / 1 behavior)
-- [ ] **PR1 — heediq-shared** (branch `feature/capture-ingestion-contracts` off `develop`):
-      `IngestTextRequestSchema` (`{text}`); optional `sourceType` on `SourceSchema`. Tests.
+- [x] **PR1 — heediq-shared** (branch `feature/capture-ingestion-contracts` off `develop`):
+      `IngestTextRequestSchema` (`{text}`); optional `sourceType` on `SourceSchema`. Tests green (284).
+      → **PR heediq-shared#50** (open). Blocks PR2/web on merge + version publish + Renovate bump.
 - [ ] **PR2 — heediq-api** (off `develop`): `POST /sources/:id/text` (write transcript+status=processing,
       enqueue SummarizationJobMessage sourceType=text); presign stamps `audioS3Key`+sourceType=audio
       on the source row (unblocks `/:id/jobs`). Tests in sources.test.ts / upload.test.ts.
@@ -26,4 +27,7 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
 - Usage indicator (PR3d) may drop to a follow-up if `GET /me` doesn't expose plan+usageLifetimeCount.
 
 ## Status
-- Current: **PR1 starting.** D-150 recorded + committed. Nothing else built yet.
+- **PR1 done** — heediq-shared#50 open (contracts, tests green). Awaiting review/merge.
+- **Next: PR2 (heediq-api)** — BLOCKED until #50 merges + `@heediq/shared` publishes a new version and
+  heediq-api's dep bumps off `^0.15.4` (that version lacks `IngestTextRequest`). Then build
+  `POST /sources/:id/text` + presign `audioS3Key` stamp off `develop`.
