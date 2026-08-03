@@ -20,6 +20,10 @@ here) rather than keeping it in both places.
   `SourcesLibraryPage` list (also stubbed). **Until this exists there is no way to get content into
   the Context Library through the product** — the #1 build item before dogfooding. Scope for the first
   test (record vs upload vs both) needs a quick decision + build plan.
+  - **Out of the first capture UI (deferred input paths):** the paid-tier **meeting bot** (D-025 —
+    calendar OAuth + third-party agent, cross-platform Zoom/Teams/Meet, explicitly post-MVP) and
+    **arbitrary connectors** (email/Drive/calendar — see Context Library section below). The first
+    capture UI is record / audio-upload / text-upload only (D-026).
 
 ## Context Library (D-124–D-126)
 - **Additional output types / starter-prompt library.** D-126 locks chat as the generation

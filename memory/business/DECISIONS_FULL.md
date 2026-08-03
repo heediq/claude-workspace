@@ -145,6 +145,9 @@ deliver.
 **Decision:** Paid tier supports an automated meeting bot via a third-party agent (e.g.
 Recall.ai) with calendar OAuth integration, rather than building a custom bot in-house.
 **Why:** third-party agents already solve cross-platform call-joining reliably.
+**Timing:** post-MVP — paid-tier capability, not part of the first free-tier dogfood. Cross-platform
+coverage (Zoom / Microsoft Teams / Google Meet) is exactly what the third-party agent provides, so
+there is no per-platform bot work in-house.
 **Related:** `memory/business/product.md`
 
 ---
