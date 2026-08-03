@@ -134,3 +134,13 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   and the "new service forgot its secret" onboarding gap (all hit 2026-07-23). Needs AWS-Lambda→
   Anthropic federation feasibility verified first; touches heediq-chat + heediq-worker-summarization
   provider/config + infra + Console setup. Would supersede the per-service-secret choice for Claude keys.
+- **Product analytics / user-journey instrumentation** — no analytics anywhere yet. Before/at test
+  start, instrument heediq-web (and key backend events) into a product-analytics tool (Amplitude a
+  candidate, not locked) to see funnels/activation/per-feature usage during dogfooding. Needs an event
+  taxonomy + must respect D-093 (ids/metadata only — never transcript/message/PII content). Vendor +
+  scope = a decision when picked up.
+- **Shared WS-push library** — the connections-table-query + API-Gateway-Management push logic is
+  duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (each re-implements
+  its own; heediq-worker-summarization uses the DDB-stream `ws-pusher` variant instead). Extract one
+  shared package (own repo/pkg — can't live in types-only `@heediq/shared`) so push semantics + the
+  by-user/by-org/by-broadcast GSI access live in exactly one place.

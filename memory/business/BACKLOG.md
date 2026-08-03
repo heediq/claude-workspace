@@ -10,6 +10,17 @@ toward — the "we'll come back to this" list. Distinct from:
 When an item here gets scoped and locked, move it to `DECISIONS.md` (or supersede/remove it from
 here) rather than keeping it in both places.
 
+## Capture / ingestion (near-term — blocks end-to-end testing)
+- **Ingestion front-end (the capture UI) — MISSING.** The backend front door is fully built
+  (`POST /sources` + `POST /upload/presign` → S3 → transcription → classify/extract → review), but
+  heediq-web has **no** capture screen: post-auth users land on `/sources`, which is a "coming soon"
+  stub, there is no record/upload UI, and no `POST /sources` call exists in the app. Needs (1) a
+  create-Source + record-meeting and/or file-upload flow (presigned PUT, upload/processing status,
+  handoff into the D-137 review wizard via the `classification_ready` WS event), and (2) the real
+  `SourcesLibraryPage` list (also stubbed). **Until this exists there is no way to get content into
+  the Context Library through the product** — the #1 build item before dogfooding. Scope for the first
+  test (record vs upload vs both) needs a quick decision + build plan.
+
 ## Context Library (D-124–D-126)
 - **Additional output types / starter-prompt library.** D-126 locks chat as the generation
   mechanism; the actual set of predefined starter prompts (test plans, acceptance criteria,
