@@ -72,7 +72,8 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
   redirect + `SourcesLibraryPage` Capture CTA + `TextIngestForm`/`useIngestText`. Note: `CapturePage.
   test.tsx` deliberately omits a `beforeEach` mock reset — a vitest v2 `vi.fn` spy-result-tracking bug
   mis-flags the intentionally-caught ingest-failure rejection as unhandled (comment in-file).
-- **PR3c done (code)** — branch `feat/capture-audio-upload` off `develop`. New `Progress` kit primitive
+- **PR3c done** — heediq-web#48 merged (squash) + deployed to dev (run 30882024370). **308 web tests
+  green.** Branch `feat/capture-audio-upload` off `develop`. New `Progress` kit primitive
   (`src/components/ui/Progress/` — determinate bar, `role="progressbar"` ARIA, `accent`/`success` tones,
   width animates on the shared motion tokens; gallery + README; `common.progress` i18n added).
   `useUploadAudio` in `sources-api.ts` (factored a shared `createSourceShell` out of `useIngestText`):
@@ -82,9 +83,11 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
   alongside `TextIngestForm` under method headings. Tests: 3 `Progress` + 5 new audio in
   `CapturePage.test.tsx` (stubbed `FakeXHR`, inputs told apart by `accept`, no-`beforeEach`-reset kept).
   **308 web tests green, typecheck clean.** READMEs (`src/features/sources/`, `Progress/`) + codebase
-  MEMORY updated. → **next: PR to `develop` via `gh`, watch CI, squash+delete, sync, watch dev deploy.**
-- **Next after PR3c ships: PR3d** — `ListenButton` + `useMediaRecorder` + live record; TopBar usage
-  indicator. Same merge→deploy→continue cadence.
+  MEMORY updated.
+- **Next: PR3d (the last slice)** — `ListenButton` kit component (3-state) + `useMediaRecorder` + live
+  record on `/capture`; TopBar usage/limit indicator (D-026, may drop to a follow-up if `GET /me`
+  doesn't expose plan+usageLifetimeCount). Tests + gallery + README. Same merge→deploy→continue cadence.
+  On PR3d landing the Capture/Ingestion feature is complete — delete this WIP file.
 
 ### Cold-start kickoff (paste into the next session)
 > Continue the Capture/Ingestion UI plan (`claude-workspace/plans/wip-capture-ingestion-ui.md`).
