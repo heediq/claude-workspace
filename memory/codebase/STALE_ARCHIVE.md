@@ -494,3 +494,36 @@ scoped, audited grant is the minimal safe primitive that opens the org wall exac
 owner allows and no further.
 **Supersedes:** — (regulated exception to D-021; builds on D-107 audit/permissions, D-141 Context model) **Superseded by:** —
 **Related code:** `heediq-infra/lib/foundation/context-library-tables.ts` (`heediq-context-grants`), `heediq-shared/src/` (grant schema + access enum), `heediq-api/` (grant routes + cross-org authorization middleware)
+
+## 2026-08-04 · memory/codebase/MEMORY.md (heediq-web pointer) · README-duplicating implementation detail pulled out of the index during a consolidation pass; the index now points to `src/features/sources/README.md` for the Capture ingest-path mechanics
+The `heediq-web` sub-module pointer previously inlined the full Capture ingest breakdown:
+
+> `src/features/sources/` (B; C review wizard = `src/routes/ReviewWizardPage.tsx`; Capture/ingest landing `/capture` = `src/routes/CapturePage.tsx`, all three D-026 methods: `TextIngestForm`/`useIngestText` (text), `AudioIngestForm`/`useUploadAudio` (audio: create → presign → XHR PUT w/ progress → `POST /:id/jobs {model:'small'}`), `RecordIngestForm`/`useMediaRecorder` (live mic → `audio/webm` Blob through the same `useUploadAudio`; `ListenButton` kit 3-state; D-119), D-150)
+
+(This create→presign→XHR-PUT→`POST /:id/jobs {model:'small'}` flow, the `useMediaRecorder`→`audio/webm`→`useUploadAudio` record path, and the `ListenButton` 3-state kit primitive are all documented in `heediq-web/src/features/sources/README.md` and the `ListenButton` README — the index only needs to name the modules and point there.)
+
+## 2026-08-04 · memory/codebase/MEMORY.md (engineering backlog) · dated completed-work narration trimmed out of active backlog entries during a consolidation pass; only the still-outstanding work stays in MEMORY.md
+Verbose, history-carrying versions of five backlog entries, verbatim before trimming:
+
+- **TopBar usage/limit indicator (D-026)** — deferred from Capture (heediq-web#49 shipped record-only).
+  Blocked: no free-tier limit constant; `usageLifetimeCount` is set to `0` at provisioning, never
+  incremented (no live signal); D-018 free tier is a decay ratchet + **soft prompt, not a `used/limit` cap**
+  — a meter needs a product decision + counter wiring (API), then builds off `GET /me`.
+- **RBAC catalog-append backfill migration (D-146)** — no tooling yet; when a permission is appended
+  to `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled. Currently a
+  manual per-org PATCH (done for the dev admin org 2026-07-22). Needs a scripted migration.
+- **E2E dev-smoke harness (D-147)** — first instance **committed**: `heediq-chat/tests/e2e/chat-smoke.mjs`
+  (`pnpm run e2e:chat`), the Context-chat happy path (create Context → conversation → post →
+  chat_delta/chat_complete over WS), green on dev 2026-07-23. Open: shared token-provisioning helper + CI
+  wiring, and smokes for the other features.
+- **Staging/prod deploy prerequisites owed** — two out-of-band tasks done on **dev only**, still owed on
+  staging + prod: (1) `heediq-infra/scripts/setup.sh` re-run for the dual-subject OIDC trust
+  (heediq-infra#64) — required before any *new* repo (heediq-chat, heediq-ledger) can deploy to staging/prod;
+  blocked on interactive `aws sso login`. (2) `/heediq/ledger/anthropic-api-key` provisioned per-account
+  (D-038) — dev done, staging/prod owed when heediq-ledger deploys there.
+- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA, SDK
+  auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no static
+  key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets + rotation + the "new
+  service forgot its secret" gap (all hit 2026-07-23). Needs AWS-Lambda→Anthropic federation feasibility
+  verified first; touches heediq-chat + heediq-worker-summarization + infra + Console. Supersedes the
+  per-service-secret choice for Claude keys.
