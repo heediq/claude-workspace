@@ -118,9 +118,10 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
 - **RBAC catalog-append backfill migration (D-146)** — no tooling yet; when a permission is appended to
   `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled (currently a manual
   per-org PATCH). Needs a scripted migration.
-- **E2E dev-smoke harness (D-147)** — first smoke committed: `heediq-chat/tests/e2e/chat-smoke.mjs`
-  (`pnpm run e2e:chat`), the Context-chat happy path over WS. Open: a shared token-provisioning helper +
-  CI wiring, and smokes for the other features.
+- **E2E dev-smoke harness (D-147)** — two smokes committed: `heediq-chat` `chat-smoke.mjs` (`e2e:chat`,
+  Context-chat happy path) and `heediq-api/tests/e2e/full-loop-smoke.mjs` (`e2e:full-loop`, the whole
+  capture→classify→review→Context→chat loop via the D-150 text path). Open: a shared token-provisioning
+  helper + CI wiring, and an audio/transcription-path smoke.
 - **Chat backend follow-ups (slice D UX limits)** — (1) **server-side turn cancel**: web Stop is
   client-side only (worker keeps generating + persists); needs a cancel path. (2) **no-duplicate
   regenerate/retry**: web Retry re-posts the last user message as a new turn (no regenerate endpoint).
