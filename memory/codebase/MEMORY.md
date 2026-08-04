@@ -133,10 +133,10 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   `/heediq/<svc>/anthropic-api-key` secrets + rotation. Needs AWS-Lambda→Anthropic federation feasibility
   verified first; touches heediq-chat + heediq-worker-summarization + infra + Console. Supersedes the
   per-service-secret choice.
-- **Product analytics / user-journey instrumentation** — none yet. Before/at test start, instrument
-  heediq-web + key backend events into a product-analytics tool (Amplitude a candidate, not locked) for
-  funnels/activation/per-feature usage. Needs an event taxonomy + must respect D-093 (ids/metadata only,
-  never transcript/message/PII). Vendor+scope = a decision when picked up.
+- **Product analytics / user-journey instrumentation (D-151)** — vendor locked: **Amplitude free tier**;
+  v1 scope = the MVP critical-path funnel (capture→source→transcription-ready→review→items-kept→chat),
+  ids/metadata only per D-093. **In progress** for the dogfood — heediq-web analytics client + event
+  calls to build.
 - **Shared WS-push library** — the connections-table-query + API-Gateway-Management push logic is
   duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (heediq-worker-summarization
   uses the DDB-stream `ws-pusher` variant). Extract one shared package (own repo/pkg — can't live in

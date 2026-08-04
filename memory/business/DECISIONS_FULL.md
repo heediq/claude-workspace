@@ -1817,3 +1817,21 @@ the first *implementation* slice because its backend gap is the smallest (worker
 already built; only the API enqueue is missing) — fastest to real end-to-end content.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/src/features/sources/` + capture surface (to be built), `heediq-api/README.md` (`/sources/:id/text`)
+
+### D-151 · Product-analytics vendor: Amplitude (free tier) for user-journey instrumentation (2026-08-04) — Locked
+**Area:** Architecture / Product
+**Decision:** Amplitude is the product-analytics tool for Heediq, starting on its **free tier** (sufficient
+for the dogfooding phase; revisit packaging only when event volume or feature needs outgrow free). The
+first instrumentation pass covers the **MVP critical-path funnel** — capture started (by method:
+record/audio/text) → source created → transcription ready → review wizard opened → items kept → Context
+chat sent — instrumented in heediq-web plus the key backend completion events. Every event carries
+**ids/metadata only, never transcript / message / PII text** (D-093). The event taxonomy stays small and
+additive: expand only where the dogfood surfaces a real drop-off worth resolving. No self-hosted or
+alternative analytics stack is added.
+**Why:** The internal dogfood needs activation/funnel/drop-off signal to be worth running (otherwise it
+yields anecdotes, not learning); Amplitude's free tier delivers this at zero cost with no infra to build,
+and its event model maps cleanly onto the capture→review→chat funnel. Restricting instrumentation to
+ids/metadata keeps analytics inside the existing privacy posture (D-093) so it never becomes a PII sink.
+Scoping v1 to the critical path avoids over-instrumenting before real usage shows which questions matter.
+**Supersedes:** — (scopes the "Product analytics / user-journey instrumentation" engineering-backlog item) **Superseded by:** —
+**Related code:** heediq-web (analytics client + critical-path event calls — to be built), `heediq-shared/src/logger.ts` (D-093 privacy boundary this must respect)

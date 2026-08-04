@@ -66,3 +66,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-146** · Appending a permission requires backfilling existing orgs' system roles · Architecture · Locked · → `heediq-api/README.md`
 - **D-148** · Context Library — Decision Ledger generation is a review-time async reconciliation in a new `heediq-ledger` worker · Architecture / Product · Locked · → `heediq-shared/src/`
 - **D-149** · Context Library — chat-time ledger gating is a simple all-or-nothing rule at `POST /conversations/:id/messages` · Architecture · Locked · → `heediq-api/README.md`
+- **D-151** · Product-analytics vendor: Amplitude (free tier); v1 instruments the MVP critical-path funnel, ids/metadata only per D-093 · Architecture / Product · Locked · → `heediq-web` (analytics client, to be built)
