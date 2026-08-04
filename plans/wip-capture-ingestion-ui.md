@@ -43,8 +43,77 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
         already at the `/capture` route so the form itself doesn't re-gate. Reject oversize/wrong-type
         files client-side with a toast before presigning. Tests in `CapturePage.test.tsx` (mock presign +
         a stubbed XHR) — **keep the no-`beforeEach`-reset pattern** (see the vitest note below).
-- [ ] **PR3d — heediq-web**: `ListenButton` kit component (3-state) + `useMediaRecorder` + live record;
-      TopBar usage/limit indicator (D-026). Tests + gallery + README.
+- [ ] **PR3d — heediq-web** (web-only; the whole upload→transcribe pipeline already exists from PR3c):
+      live mic recording on `/capture` + the TopBar usage/limit indicator (D-026). Suggested branch
+      `feat/capture-live-record` off `develop`. Likely 2 shippable chunks (keep each ≤3 files / 1
+      behavior — split if it grows):
+      **(A) Live record.**
+      1. `ListenButton` **kit primitive** (`src/components/ui/ListenButton/`) — the canonical **3-state**
+         control from rules 03 §4 / 04 §4: `idle` (mic icon, "Start recording") → `recording` (stop
+         square + a live elapsed timer, pulsing/record affordance) → `processing` (Spinner, disabled).
+         States driven by a `state` prop; labels/aria passed in by the feature via `t()` (compose like
+         `Spinner` takes `aria-label`, don't hardcode copy). Gallery entry (all 3 states) + README
+         (rules 03 §8/§9). Reduced-motion honored on the pulse.
+      2. `useMediaRecorder` hook (`src/features/sources/` or `src/lib/`) — `getUserMedia({audio:true})`
+         + `MediaRecorder`; collects chunks, and on stop resolves an **`audio/webm` Blob**. **Online-only
+         (D-119)** — no offline/IndexedDB buffering. Handle: permission-denied, no-`MediaRecorder`
+         support (feature-detect → `unsupported` copy), empty/0-length capture. Exposes
+         `start/stop/state/elapsedMs`.
+      3. `RecordIngestForm` (third method on `CapturePage`, under a "Record" heading beside Audio/Text) —
+         drives `ListenButton` + `useMediaRecorder`; on stop, wrap the Blob as a `File`
+         (`new File([blob], name, {type:'audio/webm'})`) and **feed it straight through the existing
+         `useUploadAudio`** (contentType `'audio/webm'`) → same presign → XHR PUT (progress via the PR3c
+         `Progress` bar) → `POST /:id/jobs {model:'small'}` → navigate to detail. **This is the big
+         reuse**: PR3d adds capture, not a second upload path. Auto-title `capture.record.defaultTitle`
+         (date-stamped), editable before submit. `useAsyncAction` guard; all copy `t()`.
+      **(B) TopBar usage/limit indicator (D-026).** Feasible now — `GET /me` returns `org.plan` +
+      `org.usageLifetimeCount` (`GetMeResponse`, `src/lib/rbac/types.ts`); reuse the existing `/me`
+      query pattern (`src/lib/rbac/usePermissions.ts`, same `queryKey`). Free tier: show
+      `used / limit` used + a near/at-limit state; paid: hidden or "Unlimited". A kit chip/meter in
+      `src/components/layout/TopBar` (add a small `UsageMeter` primitive if none fits). **One open item:
+      the free-tier limit number** — grep shared/decisions (D-011/D-019/D-059 cost basis) or heediq-api
+      for the free lifetime cap constant before hardcoding; if it isn't a shared constant, that's a
+      tiny shared PR (or read it from `/me` if the API starts returning a limit). If the number can't be
+      sourced cleanly, ship (A) and split (B) to its own follow-up PR.
+      - Tests: `ListenButton` states (gallery-level), `useMediaRecorder` (mock `MediaRecorder`/
+        `getUserMedia`), `CapturePage.test.tsx` record path (mock recorder → reuse the PR3c stubbed-XHR
+        presign/upload/jobs assertions), usage indicator render (free under/at limit, paid hidden).
+        **Keep the no-`beforeEach`-reset pattern.**
+      - On PR3d landing the Capture/Ingestion feature is complete → **delete this WIP file** (Step 6).
+
+  **PR3d copy — pre-generated, ready to wire (en/translation.json):**
+  ```jsonc
+  // capture.record.*
+  "record": {
+    "heading": "Record",
+    "prompt": "Record straight from your mic — we’ll transcribe it into your library when you stop.",
+    "start": "Start recording",
+    "stop": "Stop recording",
+    "recording": "Recording… {{time}}",          // live elapsed, mm:ss
+    "processing": "Uploading…",
+    "titleLabel": "Title",
+    "defaultTitle": "Recording {{date}}",         // e.g. "Recording Aug 4, 2026"
+    "recordAnother": "Record again",
+    "permissionDenied": "Heediq needs microphone access to record. Allow it in your browser settings, then try again.",
+    "unsupported": "Your browser can’t record audio. Upload an audio file instead.",
+    "empty": "That recording was empty — nothing was captured.",
+    "submitError": "Something went wrong saving your recording. Please try again."
+  },
+  // ListenButton aria (screen-reader state announcements; passed in from RecordIngestForm)
+  "listenButton": {
+    "idleAria": "Start recording",
+    "recordingAria": "Recording, {{time}} elapsed. Activate to stop.",
+    "processingAria": "Processing your recording"
+  },
+  // TopBar usage/limit (D-026) — free tier
+  "usage": {
+    "used": "{{used}} of {{limit}} free transcriptions used",
+    "remaining": "{{remaining}} left",
+    "limitReached": "You’ve used all {{limit}} free transcriptions.",
+    "unlimited": "Unlimited"
+  }
+  ```
+  Also update `capture.subtitle` to drop "live recording is coming soon" once (A) ships.
 
 ## Decisions / notes taken
 - API bases off `develop` (ledger PR still open on its own branch — our sources.ts/upload.ts changes
@@ -52,7 +121,13 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
 - No new WS event: reuse `job_status` + `classification_ready`.
 - Text has no tier-gating (no model choice); tier only selects Haiku/Sonnet downstream (D-067).
   Audio DOES take a whisper `model` at `/jobs` — PR3c sends `'small'` (free-safe); `large-v3` is paid-only.
-- Usage indicator (PR3d) may drop to a follow-up if `GET /me` doesn't expose plan+usageLifetimeCount.
+- Usage indicator (PR3d) is **feasible now** — `GET /me` (`GetMeResponse`) returns `org.plan` +
+  `org.usageLifetimeCount`; reuse the `usePermissions.ts` `/me` query. Only open item is the free-tier
+  limit number (see PR3d (B)). No new endpoint needed.
+- PR3d **reuses PR3c's `useUploadAudio` wholesale** — a recording is just an `audio/webm` File fed
+  through the same create→presign→XHR-PUT→jobs path. PR3d adds *capture* (ListenButton +
+  useMediaRecorder), not a new upload path. No shared/api PR expected (except possibly the free-tier
+  limit constant for the usage meter).
 - **PR3c is web-only** — the presign endpoint, `/jobs`, and the `PresignUpload*` contracts already exist
   (shared 0.15.5, api on dev). No shared/api PR needed.
 - **Testing gotcha (vitest v2):** on a `vi.fn` API mock, a `beforeEach` `mockReset`/`mockClear`/
@@ -84,16 +159,21 @@ landing, plus the real SourcesLibraryPage list. #1 pre-dogfooding blocker.
   `CapturePage.test.tsx` (stubbed `FakeXHR`, inputs told apart by `accept`, no-`beforeEach`-reset kept).
   **308 web tests green, typecheck clean.** READMEs (`src/features/sources/`, `Progress/`) + codebase
   MEMORY updated.
-- **Next: PR3d (the last slice)** — `ListenButton` kit component (3-state) + `useMediaRecorder` + live
-  record on `/capture`; TopBar usage/limit indicator (D-026, may drop to a follow-up if `GET /me`
-  doesn't expose plan+usageLifetimeCount). Tests + gallery + README. Same merge→deploy→continue cadence.
-  On PR3d landing the Capture/Ingestion feature is complete — delete this WIP file.
+- **Next: PR3d (the last slice)** — live mic record on `/capture` + TopBar usage indicator. Full spec
+  is the PR3d checklist item above (ListenButton 3-state kit primitive + `useMediaRecorder` +
+  `RecordIngestForm` reusing `useUploadAudio`; D-026 usage meter off `GET /me`). Copy is pre-generated
+  in the checklist item. On PR3d landing the whole Capture/Ingestion feature is done — delete this WIP.
 
 ### Cold-start kickoff (paste into the next session)
 > Continue the Capture/Ingestion UI plan (`claude-workspace/plans/wip-capture-ingestion-ui.md`).
-> PR3a/PR3b are merged + deployed to dev. Start **PR3c — audio-file upload** on a new branch
-> `feat/capture-audio-upload` off `develop`. It's web-only (presign, `/jobs`, and the `PresignUpload*`
-> contracts already exist). Build `AudioIngestForm` + `useUploadAudio` per the PR3c checklist item
-> (create → presign → XHR PUT with progress → `POST /:id/jobs {model:'small'}` → navigate to detail),
-> add a `Progress` kit primitive for the upload bar (gallery + README), tests using the no-`beforeEach`-
-> reset pattern. Then ship it merge→deploy→continue like the others.
+> PR3a/PR3b/PR3c are all merged + deployed to dev — text-file, audio-file upload, the `Progress` kit
+> primitive, and `useUploadAudio` are live. Start **PR3d — live mic recording** on a new branch
+> `feat/capture-live-record` off `develop`. It's web-only and the whole upload→transcribe pipeline
+> already exists: build a 3-state `ListenButton` kit primitive (gallery + README), a `useMediaRecorder`
+> hook (getUserMedia + MediaRecorder → an `audio/webm` Blob, online-only per D-119, handle
+> permission-denied/unsupported/empty), and a `RecordIngestForm` on `CapturePage` that wraps the Blob
+> as a File and **feeds it straight through the existing `useUploadAudio`** → navigate to detail. Then
+> add the D-026 TopBar usage/limit indicator off `GET /me` (`org.plan` + `org.usageLifetimeCount` —
+> find the free-tier limit constant first; split it to a follow-up PR if that number can't be sourced
+> cleanly). Copy is pre-generated in the PR3d checklist item; keep the no-`beforeEach`-reset test
+> pattern. Ship merge→deploy→continue like the others, then delete this WIP file.
