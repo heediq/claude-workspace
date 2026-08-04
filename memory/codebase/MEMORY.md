@@ -74,7 +74,10 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   Context Library UI.
   README: `../../heediq-web/README.md` · sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
   `src/features/contexts/` (Library slice A), `src/features/sources/` (B; C review wizard =
-  `src/routes/ReviewWizardPage.tsx`), `src/features/chat/` (D — streaming chat, lazy),
+  `src/routes/ReviewWizardPage.tsx`; Capture/ingest landing `/capture` = `src/routes/CapturePage.tsx`
+  + `TextIngestForm`/`useIngestText` (text) and `AudioIngestForm`/`useUploadAudio` (audio: create →
+  presign → XHR PUT w/ progress → `POST /:id/jobs {model:'small'}`), D-026/D-150), `src/features/chat/`
+  (D — streaming chat, lazy),
   `src/features/ledger/` (Decision Ledger — see its own entry), `src/components/layout/`, `src/lib/ws/`,
   `src/lib/pwa/`, `src/components/ui/{PasswordRequirements,Logo,IdentityProviderButton,FullPageLoading}/`
   · Decisions: D-008, D-020, D-024, D-028–D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083,
