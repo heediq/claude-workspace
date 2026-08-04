@@ -74,9 +74,10 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   Context Library UI.
   README: `../../heediq-web/README.md` · sub-module READMEs: `src/lib/auth/`, `src/features/auth/`,
   `src/features/contexts/` (Library slice A), `src/features/sources/` (B; C review wizard =
-  `src/routes/ReviewWizardPage.tsx`; Capture/ingest landing `/capture` = `src/routes/CapturePage.tsx`
-  + `TextIngestForm`/`useIngestText` (text) and `AudioIngestForm`/`useUploadAudio` (audio: create →
-  presign → XHR PUT w/ progress → `POST /:id/jobs {model:'small'}`), D-026/D-150), `src/features/chat/`
+  `src/routes/ReviewWizardPage.tsx`; Capture/ingest landing `/capture` = `src/routes/CapturePage.tsx`, all three D-026 methods:
+  `TextIngestForm`/`useIngestText` (text), `AudioIngestForm`/`useUploadAudio` (audio: create → presign →
+  XHR PUT w/ progress → `POST /:id/jobs {model:'small'}`), `RecordIngestForm`/`useMediaRecorder` (live
+  mic → `audio/webm` Blob through the same `useUploadAudio`; `ListenButton` kit 3-state; D-119), D-150), `src/features/chat/`
   (D — streaming chat, lazy),
   `src/features/ledger/` (Decision Ledger — see its own entry), `src/components/layout/`, `src/lib/ws/`,
   `src/lib/pwa/`, `src/components/ui/{PasswordRequirements,Logo,IdentityProviderButton,FullPageLoading}/`
@@ -98,6 +99,10 @@ _(Facts that span multiple modules and don't belong in any single README.)_
 ## Engineering backlog (not yet planned)
 _(Deferred technical work, not tied to a single feature. Promote to a README/decision once scoped.)_
 
+- **TopBar usage/limit indicator (D-026)** — deferred from Capture (heediq-web#49 shipped record-only).
+  Blocked: no free-tier limit constant; `usageLifetimeCount` is set to `0` at provisioning, never
+  incremented (no live signal); D-018 free tier is a decay ratchet + **soft prompt, not a `used/limit` cap**
+  — a meter needs a product decision + counter wiring (API), then builds off `GET /me`.
 - **Design precision** — no Figma/pixel-precise reference process yet; UI kit components risk being
   built against guesses.
 - **Multitenancy feature-flag control** — no per-org/tenant feature toggle mechanism.
@@ -118,32 +123,28 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   manual per-org PATCH (done for the dev admin org 2026-07-22). Needs a scripted migration.
 - **E2E dev-smoke harness (D-147)** — first instance **committed**: `heediq-chat/tests/e2e/chat-smoke.mjs`
   (`pnpm run e2e:chat`), the Context-chat happy path (create Context → conversation → post →
-  chat_delta/chat_complete over WS), verified green on dev 2026-07-23. Still open: a shared
-  token-provisioning helper and CI wiring, and smokes for the other features.
-- **Chat backend follow-ups (from slice D UX limits)** — (1) **server-side turn cancel**: the web
-  Stop is client-side only (worker keeps generating, persists the full message); needs a cancel path.
-  (2) **no-duplicate regenerate/retry**: web Retry re-posts the last user message as a new turn (no
-  regenerate endpoint), so it adds a user message. (3) **conversation rename / auto-title**: new chats
-  get a default "New chat" title; no rename or first-message auto-title endpoint yet.
-- **Staging/prod deploy prerequisites owed** — two out-of-band tasks done on **dev only**, still owed
-  on staging + prod before those deploys: (1) `heediq-infra/scripts/setup.sh` re-run for the
-  dual-subject OIDC trust (heediq-infra#64) — required before any *new* repo (e.g. heediq-chat,
-  heediq-ledger) can deploy to staging/prod; blocked on interactive `aws sso login`. (2)
-  `/heediq/ledger/anthropic-api-key` provisioned per-account (D-038) — dev done, staging/prod owed
-  when heediq-ledger deploys there.
-- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA,
-  SDK auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no
-  static key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets, their rotation,
-  and the "new service forgot its secret" onboarding gap (all hit 2026-07-23). Needs AWS-Lambda→
-  Anthropic federation feasibility verified first; touches heediq-chat + heediq-worker-summarization
-  provider/config + infra + Console setup. Would supersede the per-service-secret choice for Claude keys.
-- **Product analytics / user-journey instrumentation** — no analytics anywhere yet. Before/at test
-  start, instrument heediq-web (and key backend events) into a product-analytics tool (Amplitude a
-  candidate, not locked) to see funnels/activation/per-feature usage during dogfooding. Needs an event
-  taxonomy + must respect D-093 (ids/metadata only — never transcript/message/PII content). Vendor +
-  scope = a decision when picked up.
+  chat_delta/chat_complete over WS), green on dev 2026-07-23. Open: shared token-provisioning helper + CI
+  wiring, and smokes for the other features.
+- **Chat backend follow-ups (slice D UX limits)** — (1) **server-side turn cancel**: web Stop is
+  client-side only (worker keeps generating + persists); needs a cancel path. (2) **no-duplicate
+  regenerate/retry**: web Retry re-posts the last user message as a new turn (no regenerate endpoint).
+  (3) **conversation rename / auto-title**: new chats get "New chat"; no rename/auto-title endpoint yet.
+- **Staging/prod deploy prerequisites owed** — two out-of-band tasks done on **dev only**, still owed on
+  staging + prod: (1) `heediq-infra/scripts/setup.sh` re-run for the dual-subject OIDC trust
+  (heediq-infra#64) — required before any *new* repo (heediq-chat, heediq-ledger) can deploy to staging/prod;
+  blocked on interactive `aws sso login`. (2) `/heediq/ledger/anthropic-api-key` provisioned per-account
+  (D-038) — dev done, staging/prod owed when heediq-ledger deploys there.
+- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (Anthropic Console; GA, SDK
+  auto-detects 4 env vars, exchanges a workload JWT at `/v1/oauth/token`, auto-refreshes — no static
+  key). Would retire the per-service `/heediq/<svc>/anthropic-api-key` secrets + rotation + the "new
+  service forgot its secret" gap (all hit 2026-07-23). Needs AWS-Lambda→Anthropic federation feasibility
+  verified first; touches heediq-chat + heediq-worker-summarization + infra + Console. Supersedes the
+  per-service-secret choice for Claude keys.
+- **Product analytics / user-journey instrumentation** — none yet. Before/at test start, instrument
+  heediq-web + key backend events into a product-analytics tool (Amplitude a candidate, not locked) for
+  funnels/activation/per-feature usage. Needs an event taxonomy + must respect D-093 (ids/metadata only,
+  never transcript/message/PII). Vendor+scope = a decision when picked up.
 - **Shared WS-push library** — the connections-table-query + API-Gateway-Management push logic is
-  duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (each re-implements
-  its own; heediq-worker-summarization uses the DDB-stream `ws-pusher` variant instead). Extract one
-  shared package (own repo/pkg — can't live in types-only `@heediq/shared`) so push semantics + the
-  by-user/by-org/by-broadcast GSI access live in exactly one place.
+  duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (heediq-worker-summarization
+  uses the DDB-stream `ws-pusher` variant). Extract one shared package (own repo/pkg — can't live in
+  types-only `@heediq/shared`) so push semantics + the by-user/by-org/by-broadcast GSI access live once.
