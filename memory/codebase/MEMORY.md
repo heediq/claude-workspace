@@ -97,54 +97,23 @@ _(Facts that span multiple modules and don't belong in any single README.)_
 ## Engineering backlog (not yet planned)
 _(Deferred technical work, not tied to a single feature. Promote to a README/decision once scoped.)_
 
-- **TopBar usage/limit indicator (D-026)** — deferred from Capture. Blocked: no free-tier limit constant;
-  `usageLifetimeCount` never incremented (set to `0` at provisioning); D-018 free tier is a soft decay
-  ratchet, not a `used/limit` cap. Needs a product decision + counter wiring (API) before it builds off
-  `GET /me`.
-- **Design precision** — no Figma/pixel-precise reference process yet; UI kit components risk being
-  built against guesses.
-- **Multitenancy feature-flag control** — no per-org/tenant feature toggle mechanism.
-- **E2E & stress testing framework** — stack locked (`05-testing.md`: Playwright, k6). Package-local
-  Playwright **responsive/no-overflow harness** exists (`heediq-web/e2e/`, `pnpm test:responsive`, D-153) —
-  frontend UI gate only; cross-stack E2E journeys (D-147) + k6 stress + CI wiring still not built.
-- **General API rate limiting** — D-097/D-098 cover OTP-endpoint abuse protection specifically;
-  no general-purpose throttling exists for other routes yet.
-- **Dependency vulnerability scanning** — Renovate (D-048) only auto-bumps `@heediq/shared`; no
-  `npm audit`/`pip audit`/image-scanning CI gate in any repo.
-- **Secrets rotation policy** — D-038 defines where secrets live, not how/when they rotate.
-- **Alerting thresholds / on-call** — D-085 gives dashboards, nothing defines page/Slack/none.
-- **Backup/DR restore drills** — retention defined (D-022), restore never tested.
-- **Bundle-size budget enforcement** — `07-engineering-standards.md` §6 states the principle, no
-  CI gate.
-- **Offline recording + queued upload + Wake Lock** — part of D-024's PWA scope, deferred by D-119.
-- **RBAC catalog-append backfill migration (D-146)** — no tooling yet; when a permission is appended to
-  `@heediq/shared`'s `PERMISSIONS`, existing orgs' system roles must be backfilled (currently a manual
-  per-org PATCH). Needs a scripted migration.
-- **E2E dev-smoke harness (D-147)** — two smokes committed: `heediq-chat` `chat-smoke.mjs` (`e2e:chat`,
-  Context-chat happy path) and `heediq-api/tests/e2e/full-loop-smoke.mjs` (`e2e:full-loop`, the whole
-  capture→classify→review→Context→chat loop via the D-150 text path). Open: a shared token-provisioning
-  helper + CI wiring, and an audio/transcription-path smoke.
-- **Chat backend follow-ups (slice D UX limits)** — (1) **server-side turn cancel**: web Stop is
-  client-side only (worker keeps generating + persists); needs a cancel path. (2) **no-duplicate
-  regenerate/retry**: web Retry re-posts the last user message as a new turn (no regenerate endpoint).
-  (3) **conversation rename / auto-title**: new chats get "New chat"; no rename/auto-title endpoint yet.
-- **Staging/prod deploy prerequisites owed** — done on dev, still owed on staging + prod: (1)
-  `heediq-infra/scripts/setup.sh` re-run for the dual-subject OIDC trust — required before any *new* repo
-  can deploy there; (2) `/heediq/ledger/anthropic-api-key` provisioned per-account (D-038).
-- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation (SDK auto-detects env vars,
-  exchanges a workload JWT, auto-refreshes — no static key) to retire the per-service
-  `/heediq/<svc>/anthropic-api-key` secrets + rotation. Needs AWS-Lambda→Anthropic federation feasibility
-  verified first; touches heediq-chat + heediq-worker-summarization + infra + Console. Supersedes the
-  per-service-secret choice.
-- **Product analytics / user-journey instrumentation (D-151)** — vendor locked: **Amplitude free tier**;
-  v1 scope = the MVP critical-path funnel (capture→source→source-ready→review→items-kept→chat),
-  ids/metadata only per D-093. **Landed** in `heediq-web/src/lib/analytics/` — see its README for the
-  funnel/fire-site table. Single client boundary: `track(name, props)` / `identifyUser(idToken)` /
-  `resetAnalytics()`, lazy-loaded + no-op without `VITE_AMPLITUDE_API_KEY`; `AnalyticsBridge` maps the
-  `classification_ready` WS event → `source_ready`. Key baked from SSM `/heediq/web/amplitude-api-key`
-  in `deploy.yml` (optional per env). `source_ready` names the outcome (Source ready for review), not
-  the ingest path — text sources skip transcription.
-- **Shared WS-push library** — the connections-table-query + API-Gateway-Management push logic is
-  duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (heediq-worker-summarization
-  uses the DDB-stream `ws-pusher` variant). Extract one shared package (own repo/pkg — can't live in
-  types-only `@heediq/shared`) so push semantics + the by-user/by-org/by-broadcast GSI access live once.
+_(One line per item: label — status + where the detail lives. Promote to a README/decision once scoped.)_
+
+- **TopBar usage/limit indicator (D-026)** — deferred; blocked on a free-tier limit constant + `usageLifetimeCount` wiring (D-018 is a soft-decay ratchet, not a used/limit cap).
+- **Design precision** — no Figma/pixel-precise reference process; kit components risk being built against guesses.
+- **Multitenancy feature-flag control** — no per-org feature-toggle mechanism.
+- **Product analytics broadening (D-154, decided/not built)** — v1 funnel landed in `heediq-web/src/lib/analytics/` (D-151); D-154 = ~35-event typed taxonomy + cross-service correlation (user_id=accountId, org group, entity-id joins, insert_id), contract in new `heediq-shared/src/analytics.ts`, v1 server emission = heediq-api choke-point. Follow-ups: worker-side emission + session-id correlation. See D-154.
+- **E2E & stress testing (D-155, decided/not built)** — two-tier E2E: Tier 1 new mocked-backend Playwright suite over all authed flows (`VITE_E2E` synthetic-JWT auth, schema-parsed fixtures, fake WS, Amplitude-capture asserts; `pnpm test:e2e`, CI-on-PR); Tier 2 = existing D-147 dev smokes. Responsive harness landed (D-153). k6 + CI wiring pending. See D-155.
+- **E2E dev-smoke harness (D-147)** — smokes committed: `heediq-chat/chat-smoke.mjs`, `heediq-api/tests/e2e/full-loop-smoke.mjs`; open: shared token helper + CI wiring + audio-path smoke.
+- **General API rate limiting** — D-097/D-098 cover OTP endpoints only; no general throttling.
+- **Dependency vulnerability scanning** — no `npm/pip audit` or image-scan CI gate (Renovate D-048 only bumps `@heediq/shared`).
+- **Secrets rotation policy** — D-038 defines where secrets live, not rotation.
+- **Alerting thresholds / on-call** — D-085 dashboards only; no paging policy.
+- **Backup/DR restore drills** — retention set (D-022), restore never tested.
+- **Bundle-size budget enforcement** — `07-engineering-standards.md` §6 principle only, no CI gate.
+- **Offline recording + queued upload + Wake Lock** — D-024 PWA scope, deferred by D-119.
+- **RBAC catalog-append backfill migration (D-146)** — appending a permission needs system-role backfill; currently manual per-org PATCH, no tooling.
+- **Chat backend follow-ups** — server-side turn cancel (web Stop is client-only), no-duplicate regenerate (Retry re-posts), conversation rename/auto-title endpoint. See `heediq-chat/README.md`.
+- **Staging/prod deploy prereqs owed** — re-run `heediq-infra/scripts/setup.sh` for dual-subject OIDC + provision `/heediq/ledger/anthropic-api-key` per account (D-038).
+- **Keyless Anthropic auth via WIF** — evaluate Workload Identity Federation to retire per-service `/heediq/<svc>/anthropic-api-key` secrets; needs Lambda→Anthropic federation feasibility first.
+- **Shared WS-push library** — push logic duplicated across `heediq-api` `wsPush.ts` / `heediq-chat` / `heediq-ledger`; extract one shared package (own repo — can't live in types-only `@heediq/shared`).

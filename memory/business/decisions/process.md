@@ -14,3 +14,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-049** · Hotfix flow · Process · Locked · → `rules/02-git-and-commits.md`
 - **D-050** · Infra-first deployment convention · Process / Infra · Locked · → `heediq-infra/`
 - **D-147** · Scripted E2E happy-path smoke per feature against dev stack · Process · Locked · → owning repo `tests/e2e/`
+- **D-155** · Two-tier E2E: mocked-backend browser Playwright tier (synthetic-JWT auth seam, schema-parsed API mocks, injected fake WS, Amplitude-capture assertions; CI-on-PR) + real-stack D-147 smokes · Process · Locked · → `heediq-web/e2e/`

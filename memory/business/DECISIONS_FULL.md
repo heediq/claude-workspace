@@ -1881,3 +1881,97 @@ Centralising the frame in `PageContainer`/`PageHeader` means a future spacing or
 one edit, not N.
 **Supersedes:** — **Superseded by:** —
 **Related code:** `heediq-web/src/components/layout/` (`PageContainer.tsx`, `PageHeader.tsx`), `heediq-web/src/components/ui/Table/` (reflow), `heediq-web/e2e/` + `playwright.config.ts`, `rules/03-ui-kit.md` §7, `rules/05-testing.md`
+
+### D-154 · Analytics taxonomy + cross-service identity & correlation model (2026-08-05) — Locked
+**Area:** Architecture
+**Decision:** Broaden product analytics from the D-151 critical-path funnel to a curated, **typed**
+taxonomy covering every meaningful interaction across all existing flows, on a shared identity/
+correlation model that stitches browser-emitted and backend-emitted events together. **Canonical id
+set (the join keys), ids/enums/counts only (D-093):** `userId = custom:accountId` (D-099) → Amplitude
+`user_id` on client and server (never Cognito `sub`, never `email`); `orgId = custom:orgId` →
+Amplitude **Group** `org` (group value = `orgId`) on both sides + `orgId` user property; per-entity
+ids as props (`sourceId`, `jobId`, `contextId`, `conversationId`, `messageId`, `roleId`, `groupId`,
+`grantId`) + enums (`method`, `role`, `tier`, `visibility`, `surface`, `provider`, `status`) + counts
+(`keptCount`, `entryCount`). **Client identity:** Amplitude Browser SDK `setUserId(accountId)` +
+`setGroup('org', orgId)`; `identifyUser` extended to set the org group, still reads only id/enum
+claims, never `email`. **Server identity (heediq-api choke-point only in v1):** emit via Amplitude
+Node HTTP V2 (`@amplitude/analytics-node`) with `user_id = accountId`, `groups: { org: orgId }`, no
+device_id, `time` from the domain-event timestamp, and a **deterministic `insert_id =
+hash(eventType + primaryEntityId + stage)`** so at-least-once Lambda/DDB-stream retries never
+double-count. **Correlation model = user + entity ids** (chosen): no shared `session_id` threaded
+through the async pipeline — Amplitude stitches on `user_id`; browser and server events join on the
+**entity id** they share (client `capture_started {sourceId}` ↔ server `source_processing_completed
+{sourceId, jobId}` under one `user_id`, rolled up by the `org` group). Per-action session stitching
+(propagate the existing `X-Request-Id` into SQS→workers) is a designed-for additive follow-up, not
+built now. **Client/server contract lives in `@heediq/shared`:** a schema-only
+`heediq-shared/src/analytics.ts` holds the canonical id-prop types + the cross-service event names +
+a pure builder (mirroring `buildWsEvent`); heediq-web keeps its richer interaction EventMap but
+imports the shared id-prop types so the join keys can't drift, and heediq-api wraps the Amplitude
+Node SDK around the shared builder. **Client taxonomy ≈ 35 typed events** across auth/nav/capture/
+source/review/context/chat/ledger/rbac/audit/settings/pwa (the existing 8 kept). **Server events
+(v1, heediq-api only), deliberately disjoint from client interaction events to avoid double-counting:**
+`source_processing_completed {sourceId, jobId, status}`, `user_provisioned {tier}`, `login_completed
+{method}` — backend truth the browser can't authoritatively emit (client = intent/interactions;
+server = authoritative async outcomes + auth-trigger lifecycle). **Privacy (D-093) unchanged and
+structurally enforced:** typed maps are the only shapes `track`/the server helper accept (no free-form
+bag), autocapture stays disabled, no email/transcript/message/title ever sent, and a generic unit
+guard asserts no denylisted key appears in any EventMap entry. Analytics is a **testable contract**
+(mechanism in D-155): E2E route-mocks the Amplitude ingestion endpoint and asserts events+ids fired;
+server unit tests assert `user_id`/`groups`/`insert_id`/id-only props.
+**Why:** Flexible funnels/dashboards need coverage beyond the 6-event critical path, but "track
+everything" without an identity model yields events that can't be joined across the client/backend
+boundary. Pinning `user_id = accountId` + an `org` group + shared entity ids as the join keys makes
+cross-service correlation work with zero pipeline plumbing, while `insert_id` keeps at-least-once
+backend emitters idempotent. Keeping id-prop types + cross-service names in `@heediq/shared` prevents
+client/server drift the same way `buildWsEvent`/`WsEventEnvelopeSchema` do for WS. API-choke-point
+scope proves the server→Amplitude path and correlation end-to-end at one integration point, leaving
+worker emission as an additive follow-up. Restricting to ids/enums/counts keeps analytics inside the
+existing D-093 privacy posture so it never becomes a PII sink.
+**Supersedes:** — (extends D-151's funnel; the broad taxonomy it deferred) **Superseded by:** —
+**Related code:** `heediq-web/src/lib/analytics/` (client boundary + `AnalyticsBridge` + README),
+`heediq-shared/src/analytics.ts` (new — id-prop types + cross-service names + builder),
+`heediq-api/src/lib/analytics.ts` (new — Amplitude Node emit helper),
+`heediq-api/src/handlers/classification-pusher.ts` + auth triggers (server emit sites),
+`heediq-shared/src/logger.ts` (D-093 boundary this respects)
+
+### D-155 · Two-tier E2E architecture: mocked-backend browser Playwright tier + real-stack D-147 smokes (2026-08-05) — Locked
+**Area:** Process
+**Decision:** Heediq's end-to-end testing is **two complementary tiers**. **Tier 1 — mocked-backend
+browser E2E (new, wide, CI-on-PR):** a Playwright suite in `heediq-web` driving every authed user flow
+with Cognito auth, the REST API, and the WebSocket layer all **mocked**, so authed routes run with no
+live backend. *Auth mock:* mint a synthetic unsigned ID-token JWT (`header.base64url(claims).sig`)
+carrying `custom:accountId/orgId/role/email`-shaped claims — the approach the analytics unit tests
+already use (`makeIdToken`); a Playwright auth fixture seeds the session through a small DEV/E2E-gated
+seam (`import.meta.env.VITE_E2E`) that calls `setSession`; no real Cognito, no token-endpoint round
+trip. Signature is never validated client-side (API mocked; `authMiddleware` is server-only), so the
+synthetic token suffices. Per-persona fixtures (admin/member/custom-role + a cross-org identity) drive
+RBAC + the `Can` gate. *API mock:* `page.route(VITE_API_BASE_URL + '/api/v1/**')` fulfilled from typed
+fixtures **parsed through `@heediq/shared` Zod schemas** so a mock can't drift from the contract. *WS
+mock:* an injected fake `WebSocket` (init-script) exposing `window.__wsEmit(envelope)` so a test
+deterministically fires `WsEventEnvelope`s (validated against `WsEventEnvelopeSchema`) — drives
+`classification_ready`→source_ready, `job_status`, `chat_delta/complete/failed`, `ledger_ready` —
+without a server, honoring D-111 in-test. *Analytics assertion (ties D-154):* route-mock
+`**/*.amplitude.com/**`, capture posted batches, assert the expected event names + ids fired — the
+mechanism that makes analytics a verifiable contract. *Placement/running:* a second Playwright config
+(`playwright.flows.config.ts`, `webServer` with `VITE_E2E=1`) + `pnpm test:e2e`, leaving
+`test:responsive` (D-153) untouched; fully mocked + deterministic so it runs in **CI on PR** (no AWS),
+and is **not** in the local `test:pre-pr` unit gate (needs browser + dev server, like the responsive
+harness). **Tier 2 — real-dev-stack smokes (existing D-147, keep + extend):** the scripted happy-path
+smokes against the deployed `dev` stack (real auth/API/WS) stay (`heediq-chat/chat-smoke.mjs`,
+`heediq-api/tests/e2e/full-loop-smoke.mjs`); extend per the open backlog with the owed audio/
+transcription-path smoke + a shared token-provisioning helper; run deliberately post-deploy, not on
+PR. **The split is intentional, not redundant:** Tier 1 verifies client behavior, RBAC gating,
+loading/error branches, and the analytics contract shape (fast, deterministic, every PR); Tier 2
+verifies wiring/permissions/deploy config that mocks structurally cannot catch (the D-147 rationale — a
+stale RBAC seed passed all mocked tests). Neither replaces the other.
+**Why:** Going wide on authed flows needs a fast, deterministic, no-AWS tier or coverage won't run on
+every PR; mocking Cognito/API/WS at the network + a tiny DEV seam gives that. Reusing the synthetic-JWT
+approach already proven in unit tests, and parsing API fixtures through `@heediq/shared`, keeps mocks
+honest against the real contracts. Building on the existing `heediq-web/e2e/` harness keeps one
+browser-test home. Keeping the D-147 real-stack smokes as a distinct tier preserves the one thing mocks
+can't give — proof the deployed system is actually wired.
+**Supersedes:** — (extends D-030's E2E layer and D-147's per-feature smoke) **Superseded by:** —
+**Related code:** `heediq-web/playwright.flows.config.ts` (new), `heediq-web/e2e/flows/*`,
+`heediq-web/e2e/fixtures/`, `heediq-web/e2e/support/` (auth fixture, fake WS, amplitude capture),
+`heediq-web/e2e/README.md` (new), the `VITE_E2E` auth seam in `heediq-web/src/lib/auth/`, existing
+Tier-2 smokes in `heediq-chat/` + `heediq-api/tests/e2e/`
