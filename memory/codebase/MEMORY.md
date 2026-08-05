@@ -135,9 +135,13 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
   verified first; touches heediq-chat + heediq-worker-summarization + infra + Console. Supersedes the
   per-service-secret choice.
 - **Product analytics / user-journey instrumentation (D-151)** — vendor locked: **Amplitude free tier**;
-  v1 scope = the MVP critical-path funnel (capture→source→transcription-ready→review→items-kept→chat),
-  ids/metadata only per D-093. **In progress** for the dogfood — heediq-web analytics client + event
-  calls to build.
+  v1 scope = the MVP critical-path funnel (capture→source→source-ready→review→items-kept→chat),
+  ids/metadata only per D-093. **Landed** in `heediq-web/src/lib/analytics/` — see its README for the
+  funnel/fire-site table. Single client boundary: `track(name, props)` / `identifyUser(idToken)` /
+  `resetAnalytics()`, lazy-loaded + no-op without `VITE_AMPLITUDE_API_KEY`; `AnalyticsBridge` maps the
+  `classification_ready` WS event → `source_ready`. Key baked from SSM `/heediq/web/amplitude-api-key`
+  in `deploy.yml` (optional per env). `source_ready` names the outcome (Source ready for review), not
+  the ingest path — text sources skip transcription.
 - **Shared WS-push library** — the connections-table-query + API-Gateway-Management push logic is
   duplicated across `heediq-api` `wsPush.ts`, `heediq-chat`, and `heediq-ledger` (heediq-worker-summarization
   uses the DDB-stream `ws-pusher` variant). Extract one shared package (own repo/pkg — can't live in
