@@ -1838,3 +1838,46 @@ ids/metadata keeps analytics inside the existing privacy posture (D-093) so it n
 Scoping v1 to the critical path avoids over-instrumenting before real usage shows which questions matter.
 **Supersedes:** — (scopes the "Product analytics / user-journey instrumentation" engineering-backlog item) **Superseded by:** —
 **Related code:** `heediq-web/src/lib/analytics/` (the single client boundary + funnel/fire-site table in its README), `heediq-shared/src/logger.ts` (D-093 privacy boundary this must respect)
+
+### D-152 · Mobile-first primary navigation: bottom tab bar (mobile) + top bar (desktop), secondary/destructive actions in Settings (2026-08-05) — Locked
+**Area:** Brand & Design
+**Decision:** Heediq's primary navigation is a fixed **bottom tab bar** on phones (`BottomTabBar`,
+`md:hidden`, thumb-reachable, safe-area-padded) and a **top bar** on desktop (`TopBar`,
+`hidden md:flex`). Both render from a single source of truth (`heediq-web/src/components/layout/nav-items.ts`)
+so the two surfaces can never drift, and both are permission-gated identically. A top-only menu is not
+an acceptable mobile pattern. **Secondary and destructive actions — logout, account — live inside the
+Settings page, never in primary nav**; logout was deliberately removed from the top bar and buried in a
+Settings "Account" card. The app content sits in a `<main>` with `pb-bottom-nav md:pb-0` so the fixed
+bar never overlaps the last row.
+**Why:** The MVP shipped with a desktop-style top menu that overflowed and was unreachable by thumb on
+phones — wrong for a mobile-first PWA (D-119/D-121). The bottom tab bar is the platform-native mobile
+pattern; keeping a desktop top bar preserves the wider affordance where there's room. One `nav-items`
+source removes the classic drift bug (nav added in one place, missing in the other). Burying logout in
+Settings stops an easily-mis-tapped destructive action from occupying prime thumb real estate while
+keeping it discoverable.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/components/layout/` (`nav-items.ts`, `BottomTabBar.tsx`, `TopBar.tsx`, `AppShell.tsx`, README), `rules/03-ui-kit.md` §7.3
+
+### D-153 · Mobile-first responsive layout system: PageContainer/PageHeader frame, table→card reflow, no-horizontal-overflow invariant guarded by Playwright (2026-08-05) — Locked
+**Area:** Brand & Design
+**Decision:** Every authenticated screen is framed by two mandatory layout primitives —
+**`PageContainer`** (centralised max-width, mobile-first gutter `px-4 sm:px-6 lg:px-8`, vertical rhythm)
+and **`PageHeader`** (`h1` + description + actions row) — replacing hand-rolled `mx-auto max-w-* p-*`
+wrappers, which are now a layout-layer golden-rule violation. Genuine full-height split layouts (e.g.
+the Context Library master/detail) are the documented exception. Data **tables reflow to stacked cards
+below `sm` (640px)** (industry best practice): each row becomes a bordered card and each cell a
+`label: value` line via `Table.Cell`'s `label` prop — no horizontal scroll for primary content. The
+governing invariant is **no horizontal page overflow at any supported width (320/375/768/1280)**,
+enforced by a package-local **Playwright responsive harness** (`heediq-web/e2e/responsive.e2e.ts`,
+`pnpm test:responsive`) asserting `scrollWidth ≤ viewport` on every backend-free route. Tap targets are
+≥44px and fixed/bottom elements respect device safe areas (`viewport-fit=cover` + `env(safe-area-inset-*)`).
+A missing `h1` type token (page titles silently fell back to body size) was fixed as part of this.
+**Why:** The MVP UI overflowed horizontally on phones, mis-sized page titles, and let every page invent
+its own width/padding — the visible symptoms of having no shared page frame and no objective responsive
+gate. A `scrollWidth ≤ viewport` assertion is machine-checkable and catches what screenshot review
+misses (an un-shrinkable flex child, a wide table, a long token). Reflowing tables to cards is the
+established mobile pattern for tabular data and removes the last common source of horizontal scroll.
+Centralising the frame in `PageContainer`/`PageHeader` means a future spacing or breakpoint change is
+one edit, not N.
+**Supersedes:** — **Superseded by:** —
+**Related code:** `heediq-web/src/components/layout/` (`PageContainer.tsx`, `PageHeader.tsx`), `heediq-web/src/components/ui/Table/` (reflow), `heediq-web/e2e/` + `playwright.config.ts`, `rules/03-ui-kit.md` §7, `rules/05-testing.md`

@@ -79,8 +79,9 @@ narrative, no PR links, no implementation detail. See `rules/08-memory.md` for t
   `src/features/chat/` (D — streaming chat, lazy), `src/features/ledger/` (Decision Ledger — see its own
   entry), `src/components/layout/`, `src/lib/ws/`, `src/lib/pwa/`, `src/components/ui/` (UI kit)
   · Decisions: D-008, D-020, D-024, D-028–D-030, D-043, D-072–D-076, D-077–D-079, D-081–D-083,
-  D-087–D-091, D-094, D-097, D-110, D-116–D-123, D-124–D-144 · Dependency map:
+  D-087–D-091, D-094, D-097, D-110, D-116–D-123, D-124–D-144, D-152, D-153 · Dependency map:
   `heediq-web (PWA frontend)`, `Context Library (D-124–D-144)`
+  · Mobile-first layout (D-152/D-153): `src/components/layout/` owns nav + page frame; tables reflow to cards below `sm`; no-overflow invariant guarded by Playwright (`e2e/`, `pnpm test:responsive`) — see its README.
 
 <!--
 - **<feature/area>** — <one-line summary>.
@@ -103,8 +104,9 @@ _(Deferred technical work, not tied to a single feature. Promote to a README/dec
 - **Design precision** — no Figma/pixel-precise reference process yet; UI kit components risk being
   built against guesses.
 - **Multitenancy feature-flag control** — no per-org/tenant feature toggle mechanism.
-- **E2E & stress testing framework** — stack locked (`05-testing.md`: Playwright, k6) but no test
-  infrastructure/CI wiring built yet.
+- **E2E & stress testing framework** — stack locked (`05-testing.md`: Playwright, k6). Package-local
+  Playwright **responsive/no-overflow harness** exists (`heediq-web/e2e/`, `pnpm test:responsive`, D-153) —
+  frontend UI gate only; cross-stack E2E journeys (D-147) + k6 stress + CI wiring still not built.
 - **General API rate limiting** — D-097/D-098 cover OTP-endpoint abuse protection specifically;
   no general-purpose throttling exists for other routes yet.
 - **Dependency vulnerability scanning** — Renovate (D-048) only auto-bumps `@heediq/shared`; no

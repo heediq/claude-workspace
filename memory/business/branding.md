@@ -180,6 +180,19 @@ loading; `LoadingMark` doesn't replace it.
   (pills, the Listen button)
 - Border width: 1px hairline default, 2px for focus rings
 
+## Layout & navigation (mobile-first — D-152, D-153)
+- **Breakpoints:** Tailwind defaults, min-width only — `sm` 640 / `md` 768 / `lg` 1024. Base styles are
+  the phone layout; prefixes add capability as the screen grows. Gutters step up (`px-4 sm:px-6 lg:px-8`).
+- **Primary nav:** bottom tab bar on mobile (`md:hidden`, thumb-reachable, safe-area-padded) + top bar
+  on desktop (`hidden md:flex`); both from one `nav-items.ts` source. Logout / account live in Settings,
+  never in primary nav.
+- **Page frame:** every authed screen uses `PageContainer` (max-width + mobile-first gutter + rhythm) +
+  `PageHeader` (`h1` + description + actions). No hand-rolled `mx-auto max-w-* p-*` wrappers.
+- **Tables:** reflow to stacked `label: value` cards below `sm`; no horizontal scroll for primary content.
+- **Invariant:** no horizontal page overflow at 320/375/768/1280 (Playwright `test:responsive` gate).
+- **Touch:** interactive targets ≥44px; `viewport-fit=cover` + `env(safe-area-inset-*)` for notch/home bar.
+- Type scale carries an `h1` token (24px) distinct from `display` (28px) and `h2` (20px).
+
 ## Listen button — three states
 - **Idle:** solid accent fill, mic icon, label "Listen"
 - **Recording:** surface-1 fill + accent border + pulsing accent ring, stop/square icon, label

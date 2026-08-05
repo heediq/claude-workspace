@@ -38,6 +38,13 @@ Vitest against DynamoDB Local / LocalStack (backend integration), Playwright (E2
   and keyboard/a11y behavior.
 - Test that data screens render the three branches correctly: **loading skeleton · content · error
   state** (see `04-loading-and-feedback.md`).
+- **Mobile-first responsive gate (`03-ui-kit.md` §7).** `heediq-web` carries a package-local Playwright
+  harness (`heediq-web/e2e/*.e2e.ts`, run via `pnpm test:responsive`) that asserts the
+  **no-horizontal-overflow invariant** at 320 / 375 / 768 / 1280 px on every backend-free route (`/`,
+  `/dev/ui`). It is a real browser check distinct from the cross-stack E2E journeys above — any UI
+  change must keep it green, and any new backend-free route (or gallery entry) is added to it. Because
+  it needs the vite dev server + a browser, it is **not** part of the local `test:pre-pr` gate; run it
+  when a change touches layout, a shared primitive, or the gallery.
 
 ## The pre-PR gate (Step 4.6)
 `npm run test:pre-pr` (typecheck + unit) green, **and** the related integration suites pass. Never
