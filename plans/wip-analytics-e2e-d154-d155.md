@@ -78,17 +78,57 @@ This spans multiple repos/branches — tracked here as one initiative, one phase
     both repos; both stacks `cdk synth` clean with and without the flag; all 3 handler bundles build
     with Amplitude inlined (~590 KB).
 
-- **Phase D — `heediq-web` E2E Tier 1** ⬜ not started.
-  `playwright.flows.config.ts` (`VITE_E2E=1`) + `pnpm test:e2e`; `e2e/support/` (auth fixture via
-  synthetic unsigned JWT + a DEV/E2E-gated `VITE_E2E` seam, fake WS `__wsEmit`, Amplitude ingestion
-  route-mock/capture); `e2e/fixtures/` (API mocks parsed through `@heediq/shared` Zod schemas);
-  `e2e/flows/*.e2e.ts` per journey (login/identity, capture→processing→review→filing, Context
-  Library, chat, RBAC, audit log, settings) each asserting UI outcome + fired D-154 analytics events;
-  `e2e/README.md`; wire into CI-on-PR.
+- **Phase D — `heediq-web` E2E Tier 1** ✅ built on branch, all green, **not yet PR'd** (awaiting
+  the user's go-ahead to commit/push — workspace rule: commit only when asked). Built as one branch
+  per the user's "everything in one branch" choice.
+  - **Production seam (the one prod-source change)**: `src/lib/auth/e2e-seam.ts` — `readE2eSession()`
+    returns `window.__E2E_SESSION__` only when `import.meta.env.VITE_E2E` is set (statically
+    dead-code-eliminated in real builds). `AuthContext.tsx` bootstraps from it at mount, before the
+    refresh-token branch. Guard unit tests: `e2e-seam.test.ts` (3 — incl. the D-155 "seam absent
+    unless VITE_E2E" assertion: returns null even with a planted blob when the flag is unset) +
+    an `AuthContext.test.tsx` case (planted session boots authenticated, skips the refresh round trip).
+  - **Config/wiring**: `playwright.flows.config.ts` (`testDir e2e/flows`, port 5273, Chromium,
+    webServer `pnpm dev` with `VITE_E2E=1` + dummy API/WS/Amplitude env); `playwright.config.ts`
+    gains `testIgnore '**/flows/**'` so the responsive harness and flow tier never collide;
+    `package.json` `test:e2e` script.
+  - **Harness** `e2e/support/`: `test.ts` (extends base with `persona` option + `api`/`analytics`
+    fixtures, overrides `page` to install auth + WS fakes; re-exports `emitWs`); `auth.ts`
+    (`PERSONAS` admin/member/custom/crossOrg, `makeIdToken`, `plantSession` via `addInitScript`);
+    `api.ts` (`ApiMock` route-mocking `**/api/v1/**`, `on`/`onError`, unmatched → `404 E2E_UNMOCKED`);
+    `ws.ts` (fake `window.WebSocket` + `emitWs`); `amplitude.ts` (regex route-mock of `*.amplitude.com`
+    — POST batch capture with gzip/deflate/brotli decode, GET remote-config stub — `waitForEvent`
+    asserting `user_id` on track events, `waitForGroup` for the `org` group which rides on `$identify`);
+    `ids.ts` (fixed UUIDs).
+  - **Fixtures** `e2e/fixtures/`: `me.ts` (`GET /me` per persona, the D-102 `<Can>` authority) +
+    `domain.ts` (source/extractedItem/context/contextTree/conversation/chatMessage), every builder
+    `parse`d through `@heediq/shared` so a drifted fixture fails at construction.
+  - **Flows** `e2e/flows/` — 6 tests / 5 files, all 7 journeys, all green: `login-identity`,
+    `capture-review` (capture→WS classification→review→file, full D-154 funnel), `context-chat`
+    (library open + chat send, ×2), `rbac-settings` (admin sees + opens audit log; member sees no
+    admin cards + is redirected from `/org/audit-log` → `/settings`, ×2).
+  - `e2e/README.md` documents both tiers + how to write a flow. CI: new `e2e` job in
+    `.github/workflows/ci.yml` (installs Chromium `--with-deps`, runs `pnpm test:e2e`) alongside the
+    existing typecheck/test job, on PRs to develop/main.
+  - Full suite green: unit 346/346, typecheck clean, `pnpm test:e2e` 6/6.
 
-- **Phase E — E2E Tier 2 extensions** ⬜ not started.
-  Audio/transcription-path dev-smoke + shared token-provisioning helper, alongside the existing D-147
-  chat + full-loop smokes.
+- **Phase D — E2E Tier 1 (mocked browser Playwright)** ❌ DROPPED by D-156 (2026-08-06).
+  Was built + green on `heediq-web` branch `feature/e2e-tier1-flows`; the user rejected the mocked/
+  per-PR design. PR #53 **closed, not merged** (recoverable on the remote branch); the CI-on-PR `e2e`
+  job was reverted on `develop`. See the D-156 supersession.
+
+- **Phase E → recast as the D-156 build (E2E, single full real-backend suite)** ✅ built on branch
+  `feature/e2e-real-backend-d156` (heediq-api), awaiting user go-ahead to commit/PR:
+  - `tests/e2e/lib/auth.mjs` — shared `resolveIdToken()` (ID_TOKEN/TOKEN_FILE override else Cognito
+    `USER_PASSWORD_AUTH` provision from a seeded dev user; no AWS creds). Verbatim-copied into
+    `heediq-chat/tests/e2e/lib/auth.mjs` (separate repo). Closes the D-147 shared-helper backlog item.
+  - `tests/e2e/full-loop-smoke.mjs` + `heediq-chat/.../chat-smoke.mjs` refactored onto the helper.
+  - `tests/e2e/audio-smoke.mjs` — NEW opt-in GPU transcription-path smoke (presign→S3 PUT→jobs→Whisper
+    →summarization; synth tone WAV, asserts terminal `done`/`ready`, not wording). `pnpm e2e:audio`.
+  - `package.json`: `e2e` (=full-loop, gate default) + `e2e:audio`.
+  - `.github/workflows/deploy.yml`: `e2e` job on `main` only, runs `pnpm e2e` against the dev stack
+    (SSM `/heediq/api/{endpoint-url,ws-endpoint-url,cognito-client-id}`, `E2E_TEST_USER_*` secrets);
+    `deploy-staging` now `needs: [build, e2e]`.
+  - `tests/e2e/README.md` rewritten for D-156. All scripts `node --check` clean; YAML valid.
 
 ## Next
 **Phases A–C are done, merged to `develop`, and deployed to dev with server analytics live**
@@ -97,16 +137,24 @@ choke-point emitting the 3 backend-truth events, both against one Amplitude proj
 `/heediq/analytics/amplitude-api-key` key. Staging/prod remain opt-out (no `-c analytics=true`, param
 not yet provisioned there) — enable deliberately when ready.
 
-Immediate next action: **Phase D — E2E Tier 1** (`heediq-web` mocked-backend Playwright suite, D-155).
-Not started. Then Phase E (Tier 2 smoke extensions).
+**E2E was re-scoped by D-156**: the D-155 mocked browser tier (Phase D) is dropped; the single full
+real-backend suite is built on `feature/e2e-real-backend-d156` (heediq-api + a helper copy in
+heediq-chat). Immediate next action: **commit + open the D-156 PR when the user asks** (workspace
+rule: no commit/PR until requested; PRs via `gh`, no local merge to develop).
+
+**Two things need infra/ops setup before the gate is green in CI** (owed, not code):
+1. A seeded, CONFIRMED dev test user with a permanent password + `E2E_TEST_USER_EMAIL` /
+   `E2E_TEST_USER_PASSWORD` GitHub secrets in the `dev` environment.
+2. The Cognito app client (`/heediq/api/cognito-client-id`) must have `USER_PASSWORD_AUTH` enabled, and
+   `AWS_DEPLOY_ROLE_DEV` must permit `ssm:GetParameter` on the three params.
 
 **Validation still owed in Amplitude UI** (post-deploy, external — can't be scripted here): confirm a
 server `source_processing_completed {sourceId}` joins a client `capture_started {sourceId}` under one
 `user_id` in the `org` group, end-to-end through a real dev capture.
 
 ## Open questions / risks
-- Phase C needs a new `@amplitude/analytics-node` dependency and an SSM param in `heediq-infra` —
-  infra-first deploy order (D-050) applies.
-- The `VITE_E2E` auth seam (Phase D) must be gated strictly to non-prod builds — plan calls for a unit
-  test asserting the seam is absent unless `VITE_E2E` is set.
-- No blockers currently; each phase is independently shippable per the plan.
+- The E2E gate proves `main` HEAD against the **dev** stack — correct only while promotion is a
+  develop→main fast-forward (dev already runs that code). If a hotfix lands on `main` ahead of dev,
+  the gate would test stale code; revisit if the hotfix flow (D-049) diverges from that assumption.
+- k6 stress-test wiring still pending (was always separate from the E2E tiers).
+- No blockers currently.

@@ -1938,7 +1938,7 @@ over `classification-pusher.ts`: only the jobs pusher has `jobId` + terminal sta
 `heediq-infra/lib/shared/analytics-env.ts` (opt-in `AMPLITUDE_API_KEY` wiring),
 `heediq-shared/src/logger.ts` (D-093 boundary this respects)
 
-### D-155 · Two-tier E2E architecture: mocked-backend browser Playwright tier + real-stack D-147 smokes (2026-08-05) — Locked
+### D-155 · Two-tier E2E architecture: mocked-backend browser Playwright tier + real-stack D-147 smokes (2026-08-05) — Superseded by D-156
 **Area:** Process
 **Decision:** Heediq's end-to-end testing is **two complementary tiers**. **Tier 1 — mocked-backend
 browser E2E (new, wide, CI-on-PR):** a Playwright suite in `heediq-web` driving every authed user flow
@@ -1974,8 +1974,25 @@ approach already proven in unit tests, and parsing API fixtures through `@heediq
 honest against the real contracts. Building on the existing `heediq-web/e2e/` harness keeps one
 browser-test home. Keeping the D-147 real-stack smokes as a distinct tier preserves the one thing mocks
 can't give — proof the deployed system is actually wired.
-**Supersedes:** — (extends D-030's E2E layer and D-147's per-feature smoke) **Superseded by:** —
-**Related code:** `heediq-web/playwright.flows.config.ts` (new), `heediq-web/e2e/flows/*`,
-`heediq-web/e2e/fixtures/`, `heediq-web/e2e/support/` (auth fixture, fake WS, amplitude capture),
-`heediq-web/e2e/README.md` (new), the `VITE_E2E` auth seam in `heediq-web/src/lib/auth/`, existing
-Tier-2 smokes in `heediq-chat/` + `heediq-api/tests/e2e/`
+**Supersedes:** — (extends D-030's E2E layer and D-147's per-feature smoke) **Superseded by:** D-156
+**Related code:** existing Tier-2 smokes in `heediq-chat/` + `heediq-api/tests/e2e/` (the mocked
+Tier-1 harness this entry described was built on a branch but never merged — dropped by D-156)
+
+### D-156 · Single full real-backend E2E, gated at promote-to-staging / on-demand (2026-08-06) — Locked
+**Area:** Process
+**Decision:** Heediq's E2E is a **single full real-backend** suite that drives the deployed system
+end-to-end — real Cognito auth, real REST API + WebSocket, real data create/teardown — not the
+two-tier mocked+smoke split of D-155. The mocked-backend browser Tier 1 (synthetic-JWT `VITE_E2E`
+seam, route-mocked API/WS/Amplitude) is **dropped and not shipped**. The suite runs **only at
+promote-to-staging** (the `develop`→`main` promotion, gating the staging deploy) and **locally on
+demand** against a deployed environment — **never on every PR** and not on the dev deploy. It absorbs
+the existing D-147 dev smokes as the one real-stack E2E.
+**Why:** "E2E" should mean the whole system *including the backend* is provably wired and working; a
+mocked frontend tier proves client behavior but not the deployed system, and the team doesn't want
+per-PR E2E cost/latency — verification belongs at the promotion boundary where it protects
+staging/prod. Consolidating to one real suite drops the maintenance of a parallel mocked harness and
+its synthetic-auth seam. Accepted tradeoff: the in-browser Amplitude event-capture assertion that the
+mocked tier gave up cheaply (D-154 contract shape) is no longer a per-PR check.
+**Supersedes:** D-155 **Superseded by:** —
+**Related code:** `heediq-api/tests/e2e/` (existing real-stack smokes to grow into the suite),
+heediq-web promotion workflow (gate wiring) — module README once built
