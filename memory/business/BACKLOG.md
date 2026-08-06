@@ -53,3 +53,11 @@ here) rather than keeping it in both places.
   a share dialog (grant by email + access tier + expiry), a "shared with me" view, and revoke — was
   deliberately deferred out of Step 5 (2026-07-23) to keep that step to tree/library + source detail +
   review wizard + chat. Scope it as its own web slice once those land.
+
+## Analytics coverage gaps (D-154)
+- **Client events awaiting their UI actions.** The D-154 client taxonomy is defined in
+  `heediq-web/src/lib/analytics/` but four events have no `track()` call site yet because the action
+  itself isn't built: `source_deleted` (no delete-source UI), `context_archived` (no archive action),
+  `context_grant_created` (blocked on the cross-org sharing UI above), and **group** (as opposed to
+  role) assignment tracking in `AssignmentsModal.tsx`. Wire each event when its action lands — the
+  event type already exists, so it's a one-line `track()` per site, not new taxonomy.
