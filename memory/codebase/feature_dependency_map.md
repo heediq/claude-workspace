@@ -87,6 +87,11 @@ it work."
 - **Downstream**: none (pure dashboard layer)
 - **Shared surfaces**: `ObservabilityStack` dashboard widgets, `createLogger`/`create_logger`, `logRetentionFor()`
 
+### Product analytics (D-151, D-154)
+- **Upstream**: `@heediq/shared` analytics contract (`buildServerAnalyticsEvent` + id-prop types + cross-service event names); Amplitude (external); `custom:accountId`/`custom:orgId` ID-token claims (identity/join keys); `heediq-sources`/`heediq-users` reads for the server emit sites; SSM `/heediq/api/amplitude-api-key`
+- **Downstream**: none (fire-and-forget emission to Amplitude; no repo consumes it)
+- **Shared surfaces**: `heediq-shared/src/analytics.ts` (client+server contract), `heediq-web/src/lib/analytics/` (client boundary + `AnalyticsBridge` WS→analytics mapper), `heediq-api/src/lib/analytics.ts` (server emit helper) fired from `ws-pusher.ts`/`auth-provision.ts`/`auth-trigger-post-authentication.ts`, `heediq-infra/lib/shared/analytics-env.ts` (`AMPLITUDE_API_KEY` opt-in wiring), the `sourceId`/`orgId`/`accountId` join keys shared with capture/source + auth flows
+
 <!--
 Template:
 ### <feature>

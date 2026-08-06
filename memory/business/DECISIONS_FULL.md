@@ -1931,7 +1931,11 @@ existing D-093 privacy posture so it never becomes a PII sink.
 **Related code:** `heediq-web/src/lib/analytics/` (client boundary + `AnalyticsBridge` + README),
 `heediq-shared/src/analytics.ts` (new — id-prop types + cross-service names + builder),
 `heediq-api/src/lib/analytics.ts` (new — Amplitude Node emit helper),
-`heediq-api/src/handlers/classification-pusher.ts` + auth triggers (server emit sites),
+`heediq-api/src/handlers/ws-pusher.ts` (`source_processing_completed` on terminal job status — chosen
+over `classification-pusher.ts`: only the jobs pusher has `jobId` + terminal status + a cheap
+`userId` lookup) + auth triggers `auth-provision.ts` (`user_provisioned`) /
+`auth-trigger-post-authentication.ts` (`login_completed`) (server emit sites),
+`heediq-infra/lib/shared/analytics-env.ts` (opt-in `AMPLITUDE_API_KEY` wiring),
 `heediq-shared/src/logger.ts` (D-093 boundary this respects)
 
 ### D-155 · Two-tier E2E architecture: mocked-backend browser Playwright tier + real-stack D-147 smokes (2026-08-05) — Locked
