@@ -16,8 +16,8 @@ This spans multiple repos/branches — tracked here as one initiative, one phase
   builder). Merged to `develop`, version-bumped, merged to `main`, published as
   `@heediq/shared@0.15.6` on GitHub Packages.
 
-- **Phase B — `heediq-web` client taxonomy** ✅ done, committed on `feature/analytics-taxonomy`, not
-  yet PR'd.
+- **Phase B — `heediq-web` client taxonomy** ✅ done, merged to `develop` + deployed to dev
+  (2026-08-06, squash-merged from `feature/analytics-taxonomy`).
   - `EventMap` extended from 8 → ~38 events across auth/identity, capture/source, review, context
     library, chat, ledger, rbac, audit/settings/pwa. `identifyUser` now sets an Amplitude `org` group
     (`setGroup('org', orgId)`) alongside `setUserId(accountId)`.
@@ -41,8 +41,11 @@ This spans multiple repos/branches — tracked here as one initiative, one phase
     `context_grant_created`, and group (as opposed to role) assignment tracking in
     `AssignmentsModal.tsx`. Not yet added to `BACKLOG.md` — do that before/at PR time.
 
-- **Phase C — `heediq-api` + `heediq-infra` server choke-point** ✅ done, committed on
-  `heediq-api:feature/analytics-server-emit` + a `heediq-infra` feature branch, not yet PR'd.
+- **Phase C — `heediq-api` + `heediq-infra` server choke-point** ✅ done, merged to `develop` +
+  **deployed to dev with server analytics enabled** (2026-08-06). Merge order was infra → api → web,
+  each dev deploy watched green; verified `AMPLITUDE_API_KEY` is set on exactly the 3 emitters
+  (ws-status-pusher, auth-provision, auth-trigger-post-authentication) and absent on the non-emitters
+  (e.g. pre-signup) in the dev account.
   - `heediq-api/src/lib/analytics.ts` — `emitServerAnalytics` wraps `@heediq/shared`'s
     `buildServerAnalyticsEvent` around the Amplitude Node HTTP V2 SDK (`@amplitude/analytics-node`,
     new dep, bundled into the emitting handler bundles). Fail-safe & latency-bounded: no key → clean
@@ -59,10 +62,14 @@ This spans multiple repos/branches — tracked here as one initiative, one phase
     not refresh; skips first login — the user row doesn't exist yet, covered by `user_provisioned`).
   - `heediq-infra`: `lib/shared/analytics-env.ts` — `amplitudeApiKeyEnv(scope)` gates
     `AMPLITUDE_API_KEY` on `-c analytics=true` (opt-in per env), resolving SSM
-    `/heediq/api/amplitude-api-key` **at deploy** (value baked into the env — auth path never does a
-    runtime SSM read). Wired onto exactly the 3 emitters (WS pusher + AuthProvisionFn +
-    PostAuthenticationFn), plus `sourcesTable.grantReadData(pusherFn)` + `SOURCES_TABLE_NAME`. Absent
-    flag → no env, deploy unchanged (infra-first, D-050).
+    `/heediq/analytics/amplitude-api-key` **at deploy** (value baked into the env — auth path never
+    does a runtime SSM read). This is a **shared neutral param** (not `/heediq/web/` or `/heediq/api/`)
+    — the same Amplitude project key `heediq-web` bakes into `VITE_AMPLITUDE_API_KEY`, so client +
+    server events land in one project and the D-154 cross-service join resolves. The dev deploy passes
+    `-c analytics=true`; staging/prod stay opt-out until deliberately enabled. Wired onto exactly the
+    3 emitters (WS pusher + AuthProvisionFn + PostAuthenticationFn), plus
+    `sourcesTable.grantReadData(pusherFn)` + `SOURCES_TABLE_NAME`. Absent flag → no env, deploy
+    unchanged (infra-first, D-050).
   - Gotcha found: the shared `AnalyticsIdentitySchema` validates `orgId` as a **UUID** at runtime
     though the `.d.ts` widens it to `string` — a non-UUID `orgId` makes the builder throw (caught →
     event dropped). All emit sites pass the real `custom:orgId` UUID; tests use a valid-UUID fixture.
@@ -84,14 +91,18 @@ This spans multiple repos/branches — tracked here as one initiative, one phase
   chat + full-loop smokes.
 
 ## Next
-Phases A–C are code-complete on three unmerged branches (`heediq-web:feature/analytics-taxonomy`,
-`heediq-api:feature/analytics-server-emit`, `heediq-infra` feature branch). Immediate next action:
-decide with the user whether to open the three PRs now or keep working. **Deploy order when merging
-(D-050, infra-first):** `heediq-shared` (already published) → `heediq-infra` (provision SSM
-`/heediq/api/amplitude-api-key` + deploy with `-c analytics=true`) → `heediq-api` (emitters) →
-`heediq-web` (client). The `AMPLITUDE_API_KEY` is opt-in, so merging the code without the flag/param
-is a safe no-op until the key is provisioned. Then Phase D (E2E Tier 1) — not yet started.
-Pre-PR still owed on the `heediq-web` branch: add the D-093 acknowledged-gap events to `BACKLOG.md`.
+**Phases A–C are done, merged to `develop`, and deployed to dev with server analytics live**
+(2026-08-06). The D-154 analytics story is end-to-end in dev: client taxonomy emitting, server
+choke-point emitting the 3 backend-truth events, both against one Amplitude project via the shared
+`/heediq/analytics/amplitude-api-key` key. Staging/prod remain opt-out (no `-c analytics=true`, param
+not yet provisioned there) — enable deliberately when ready.
+
+Immediate next action: **Phase D — E2E Tier 1** (`heediq-web` mocked-backend Playwright suite, D-155).
+Not started. Then Phase E (Tier 2 smoke extensions).
+
+**Validation still owed in Amplitude UI** (post-deploy, external — can't be scripted here): confirm a
+server `source_processing_completed {sourceId}` joins a client `capture_started {sourceId}` under one
+`user_id` in the `org` group, end-to-end through a real dev capture.
 
 ## Open questions / risks
 - Phase C needs a new `@amplitude/analytics-node` dependency and an SSM param in `heediq-infra` —
