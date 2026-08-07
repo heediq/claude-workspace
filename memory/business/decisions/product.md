@@ -7,7 +7,7 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-017** · Account & roles model · Product · Superseded by D-102 · → `memory/business/product.md`
 - **D-024** · Platform — mobile-first PWA · Product · Locked · → `memory/business/product.md`
 - **D-025** · Paid-tier meeting bot · Product · Locked · → `memory/business/product.md`
-- **D-060** · Model access control at API layer, not infra routing · Product / Architecture · Locked · → `heediq-api/`
+- **D-060** · Model access control at API layer, not infra routing · Product / Architecture · Locked (routing mechanism superseded by D-157; principle intact) · → `heediq-api/`
 - **D-079** · Account linking is available both reactively (login-time) and proactively (Settings) · Product · Locked · → `heediq-web/src/routes/SettingsPage.tsx`
 - **D-081** · No separate marketing/landing page — "/" is always the sign-in/sign-up screen · Product · Locked · → `heediq-web/src/App.tsx`
 - **D-111** · Every feature with async backend work must use the WS framework for responsiveness · Product · Locked · → `heediq-web/src/lib/ws/README.md`

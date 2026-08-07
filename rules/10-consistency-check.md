@@ -4,6 +4,8 @@ Run this check at the start of a new feature, after a multi-repo release, or whe
 
 This extends the per-session coherence check in `08-memory.md` (which covers only business memory files) to cover the full cross-repo surface: code, READMEs, memory indexes, and disaster recovery docs.
 
+**Standing goal (D-158):** active docs describe **only what currently exists**. Beyond fixing drift, every run actively removes obsolete content — any doc text that names a retired mechanism, deleted file, or removed resource/flow/component is rewritten to current reality (descriptive docs) or archived (decisions/`STALE_ARCHIVE.md`). "It's stale but harmless" is not a pass — a doc pointing at something gone is a finding.
+
 ---
 
 ## When to run

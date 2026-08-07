@@ -19,6 +19,26 @@ teammates get it; pull regularly.
 
 A fact is recorded once in its home and referenced elsewhere, never copied.
 
+## Active docs describe only what currently exists — history lives in archives (D-158)
+Every **active** doc — code READMEs, `memory/codebase/*`, `memory/business/architecture.md` /
+`product.md`, `DECISIONS.md` area files — describes **only the solution that exists right now**. No
+"we used to do X", no obsolete mechanism, no reference to a resource/flow/component that no longer
+exists. When a solution is replaced:
+- **Descriptive docs** (READMEs, `architecture.md`, `product.md`, `MEMORY.md`, dependency map) are
+  **rewritten to the new reality** — the old description is deleted outright, not annotated. These
+  docs carry no supersession history; they answer "how does it work *now*."
+- **Decisions** are the one exception that keeps a supersession trail, because tracking *why* things
+  changed is their whole job — but a **fully**-superseded decision (its superseding entry restates
+  whatever is still true) moves verbatim to `DECISIONS_ARCHIVE.md`, out of the active reading path;
+  a **partially**-superseded decision stays active with a dated mechanism-correction note + a
+  `Superseded by:` pointer (see `rules/09-decisions.md`).
+- **Anything that names a thing that no longer exists in code** (a deleted file, retired resource,
+  removed flag/queue/component) is either deleted or corrected the moment it's noticed — a doc that
+  points at something gone is worse than no doc.
+
+This is checked as part of the coherence scan (§ Coherence check, items 1 & 4) and is the standing
+goal of the periodic cross-repo sync (`rules/10-consistency-check.md`).
+
 ## Read at task start (Step 0c)
 - `memory/business/DECISIONS.md` — the manifest (always, it's tiny). Then open whichever
   `memory/business/decisions/<area>.md` file(s) the manifest table says cover the task's area(s) —

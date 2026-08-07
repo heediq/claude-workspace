@@ -24,7 +24,7 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-058** · SES identity in shared-services account; cross-account role for workload sending · Architecture / Infra · Superseded by D-095 · → `heediq-infra/lib/shared-services/shared-services-stack.ts`
 - **D-061** · Real-time job status via API Gateway WebSocket · Architecture / Product · Locked · → `heediq-infra/lib/websocket/websocket-stack.ts`
 - **D-065** · SummarizationStack trigger — SQS queue, source-agnostic · Architecture / Infra · Locked · → `heediq-infra/lib/summarization/summarization-stack.ts`
-- **D-066** · Transcription Spot-interruption retry — explicit SQS re-enqueue, not visibility timeout · Architecture / Infra · Locked · → `heediq-worker-transcription/src/worker.py`
+- **D-066** · Transcription Spot-interruption retry — explicit SQS re-enqueue, not visibility timeout · Architecture / Infra · Locked (consumer/re-enqueue mechanism superseded by D-157; principle intact) · → `heediq-worker-transcription/src/worker.py`
 - **D-068** · Generic entity naming — Source / Container / multi-label · Architecture · Superseded by D-129, D-128 · → `heediq-shared/src/`
 - **D-075** · Full i18n coverage in heediq-web — all user-facing text, including errors · Architecture / Product · Locked · → `heediq-web/README.md`
 - **D-076** · i18n library — react-i18next · Architecture · Locked · → `heediq-web/src/i18n/`
@@ -68,3 +68,4 @@ Part of the decisions index (`DECISIONS.md` is the manifest). Format: `rules/09-
 - **D-149** · Context Library — chat-time ledger gating is a simple all-or-nothing rule at `POST /conversations/:id/messages` · Architecture · Locked · → `heediq-api/README.md`
 - **D-151** · Product-analytics vendor: Amplitude (free tier); v1 instruments the MVP critical-path funnel, ids/metadata only per D-093 · Architecture / Product · Locked · → `heediq-web/src/lib/analytics/`
 - **D-154** · Analytics taxonomy + cross-service identity/correlation (user_id=accountId, org group, entity-id joins, insert_id dedup; ~35 client events + API-choke-point server events; contract in `@heediq/shared`) · Architecture · Locked · → `heediq-web/src/lib/analytics/`, `heediq-shared/src/analytics.ts`
+- **D-157** · Transcription SQS→GPU consumer is a dispatcher Lambda (routes to free/paid task def by message `tier`), retiring EventBridge Pipes + the tier filter/attribute; one queue, no filters; removes stale S3→SQS notification · Architecture / Infra · Locked · → `heediq-infra/lib/transcription/transcription-stack.ts`

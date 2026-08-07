@@ -53,7 +53,7 @@ EventBridge Pipes triggers an ECS Fargate Spot `RunTask` (faster-whisper, per D-
 idle cost. Job status is written to DynamoDB; client polls for completion.
 **Supersedes:** an earlier S3-event → Lambda → AWS-Transcribe-job orchestration (dropped
 alongside D-004).
-**Superseded by:** D-059 (Fargate Spot RunTask → EC2 GPU RunTask; upload/SQS/EventBridge flow unchanged), D-061 (client polling → WebSocket push)
+**Superseded by:** D-059 (Fargate Spot RunTask → EC2 GPU RunTask; upload/SQS/EventBridge flow unchanged), D-061 (client polling → WebSocket push), D-157 (EventBridge Pipes SQS→ECS consumer → dispatcher Lambda; presign→S3→SQS upload flow unchanged)
 **Related:** `memory/business/architecture.md`
 
 ### D-080 · Unverified IdP email blocks org auto-provisioning (2026-07-04) — Locked

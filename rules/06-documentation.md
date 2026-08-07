@@ -21,6 +21,11 @@ Update the nearest README whenever a change alters:
 Pure UI tweaks, copy, and behavior-neutral refactors usually don't need a README change. Always get
 the user's approval before editing a README (Step 5).
 
+**A README describes only what exists now (D-158).** When a change replaces or removes a mechanism,
+**rewrite the affected sections to the new reality and delete the old description** — a README never
+carries "previously we…" history or names a retired file/resource/component. History belongs in the
+decisions trail (`rules/08-memory.md` § Active docs; `rules/09-decisions.md`), not in a code README.
+
 ## README structure
 ```
 # <Module / Feature name>
